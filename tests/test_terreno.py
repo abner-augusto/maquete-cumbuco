@@ -5,7 +5,7 @@ import pytest
 
 from scripts.loteamento.relevo import Grade
 from scripts.loteamento.terreno import (TerrenoCfg, ajustar_datum, amostrar_grade, compor_perto, cota_plato,
-                                        encaixar, reamostrar, separar_mar)
+                                        disco_mar, encaixar, malha_entorno, reamostrar, separar_mar)
 
 CFG = TerrenoCfg(poligonal=["POL"], talude=20.0, sigma=25.0, alcance=100.0, transicao=50.0, raio=4000.0,
                  mar_rebaixo=1.0, passo_perto=10.0)
@@ -80,3 +80,29 @@ def test_reamostrar_mantem_nan_fora_do_levantamento():
     lev = _grade(lambda x, y: 30.0 if x < 0 else float("nan"), passo=5.0, x0=-100.0, y0=-100.0, n=41)
     r = reamostrar(lev, (-200.0, -200.0, 200.0, 200.0), 10.0)
     assert r.nx == 41 and r.z[20][12] == pytest.approx(30.0) and math.isnan(r.z[20][35]) and math.isnan(r.z[0][0])
+
+
+def test_entorno_tem_furo_no_perto_e_fica_no_raio():
+    dem = _grade(lambda x, y: 10.0, passo=30.0, x0=-600.0, y0=-600.0, n=41)
+    v, f = malha_entorno(dem, buraco=(-90.0, -90.0, 90.0, 90.0), centro=(0.0, 0.0), raio=500.0)
+    centros = [np.mean([v[i][:2] for i in t], axis=0) for t in f]
+    assert not any(abs(cx) < 90 and abs(cy) < 90 for cx, cy in centros)
+    assert all(math.hypot(x, y) <= 500.0 + 1e-6 for x, y, _ in v)
+    assert len(f) > 0 and all(len(t) == 3 for t in f)
+
+
+def test_borda_do_perto_e_linear_entre_nos_do_entorno():
+    f = lambda x, y: 10.0 + 0.001 * x * x + 0.02 * y  # noqa: E731 — curvo: só os nós de 30 m coincidem
+    dem = _grade(f, passo=30.0, x0=-600.0, y0=-600.0, n=41)
+    lev = reamostrar(_grade(lambda x, y: 30.0), encaixar((-240.0, -240.0, 240.0, 240.0), 30.0), 10.0)
+    g = compor_perto(lev, dem, [QUADRADO], 22.0, CFG)  # borda a 190 m > alcance + transição
+    for k in range(g.nx):  # linha de baixo: a aresta do entorno é reta entre nós de 30 m
+        x = g.x0 + k * g.passo
+        a = math.floor(x / 30.0) * 30.0
+        linear = f(a, g.y0) + (f(a + 30.0, g.y0) - f(a, g.y0)) * (x - a) / 30.0
+        assert g.z[0][k] == pytest.approx(linear, abs=0.01)
+
+
+def test_disco_do_mar_no_nivel():
+    v, f = disco_mar((10.0, 20.0), 4000.0, 1.5, n=32)
+    assert all(z == 1.5 for _, _, z in v) and len(f) == 32

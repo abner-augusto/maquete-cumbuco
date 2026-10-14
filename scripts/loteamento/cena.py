@@ -6,7 +6,7 @@ Uso: uv run python -m scripts.loteamento.cena
 import json
 import sys
 import tomllib
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import ezdxf
@@ -17,12 +17,12 @@ from scripts.comum.ambiente import RAIZ
 
 from .geometria import Ponto, area, contem, poligono_fechado, pontos_de
 from .malha import aninhar, drapear, refinar, simplificar, triangular
-from .relevo import DESTINO as RELEVO_JSON
-from .relevo import Grade, mascara, suavizar_dentro
+from .relevo import Grade, mascara
 
 DXF = RAIZ / "cache" / "dxf" / "planta-venda.dxf"
 CFG_TOML = RAIZ / "scripts" / "loteamento" / "cena.toml"
 DESTINO = RAIZ / "cache" / "cena" / "loteamento.json"
+TERRENO_JSON = RAIZ / "cache" / "cena" / "terreno.json"  # platô, morro e transição (terreno.py)
 
 
 @dataclass(frozen=True)
@@ -33,10 +33,7 @@ class CenaCfg:
     offsets: dict[str, float]
     tolerancia: float
     max_aresta: float
-    poligonal: list[str] = field(default_factory=list)  # loteamento terraplenado: relevo suave dentro
-    sigma: float = 8.0
-    transicao: float = 20.0
-    rebaixo: float = 0.6  # terreno escondido sob as áreas desce, para não furar
+    fundo_lagoa: float = 0.6  # terreno dentro da lagoa fica este tanto abaixo da água
 
     @classmethod
     def carregar(cls, caminho: Path) -> "CenaCfg":
@@ -81,13 +78,9 @@ def _malha(grupos, grade: Grade, offset: float, cfg: CenaCfg) -> tuple[list[list
     return vertices, faces
 
 
-def _terreno(grade: Grade, sob: list[list[Ponto]] | None = None, rebaixo: float = 0.0,
-             fundo: tuple[list[Ponto], float] | None = None) -> dict:
-    """Grade do relevo; dentro dos anéis `sob` (coberto pelas áreas) o terreno desce `rebaixo`, e
-    dentro do anel de `fundo` (a lagoa) não passa da cota dada."""
+def _terreno(grade: Grade, fundo: tuple[list[Ponto], float] | None = None) -> dict:
+    """Grade do terreno perto; dentro do anel de `fundo` (a lagoa) não passa da cota dada."""
     z = np.array(grade.z, dtype=float)
-    if sob:
-        z -= rebaixo * mascara(grade, sob)
     if fundo:
         anel, teto = fundo
         z = np.where(mascara(grade, [anel]), np.minimum(z, teto), z)
@@ -102,13 +95,10 @@ def _terreno(grade: Grade, sob: list[list[Ponto]] | None = None, rebaixo: float 
 
 
 def montar(msp, grade: Grade, lotes: list[dict], cfg: CenaCfg, e0: float, n0: float) -> dict:
-    poligonal = aneis_da_layer(msp, cfg.poligonal, e0, n0)
-    if poligonal:
-        grade = suavizar_dentro(grade, poligonal, cfg.sigma, cfg.transicao)
     lagoa = achar_lagoa(msp, cfg, e0, n0)
     # Água na cota baixa da margem (a média deixava água acima da margem), terreno abaixo dela.
     nivel = float(np.percentile([grade.cota(x, y) for x, y in lagoa], 10)) if lagoa else 0.0
-    objetos = [_terreno(grade, poligonal, cfg.rebaixo, (lagoa, nivel - cfg.rebaixo) if lagoa else None)]
+    objetos = [_terreno(grade, (lagoa, nivel - cfg.fundo_lagoa) if lagoa else None)]
     for papel, layers in cfg.camadas.items():
         aneis = aneis_da_layer(msp, layers, e0, n0)
         if lagoa:
@@ -136,7 +126,7 @@ def main() -> int:
     georref = json.loads((RAIZ / "dados" / "georref.json").read_text(encoding="utf-8"))
     e0, n0 = georref["origem"]["E"], georref["origem"]["N"]
     lotes = json.loads((RAIZ / "dados" / "lotes.json").read_text(encoding="utf-8"))["lotes"]
-    grade = Grade.de_json(json.loads(RELEVO_JSON.read_text(encoding="utf-8")))
+    grade = Grade.de_json(json.loads(TERRENO_JSON.read_text(encoding="utf-8")))
     cena = montar(ezdxf.readfile(DXF).modelspace(), grade, lotes, CenaCfg.carregar(CFG_TOML), e0, n0)
     DESTINO.parent.mkdir(parents=True, exist_ok=True)
     DESTINO.write_text(json.dumps(cena), encoding="utf-8")

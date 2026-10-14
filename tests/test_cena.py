@@ -69,16 +69,6 @@ def test_cfg_carrega_do_toml():
     assert "Vias" in cfg.camadas and cfg.offsets["lote"] > max(v for k, v in cfg.offsets.items() if k != "lote")
 
 
-def test_terreno_rebaixado_sob_a_poligonal():
-    from scripts.loteamento.cena import _terreno
-
-    g = Grade(0.0, 0.0, 10.0, 3, 3, [[10.0] * 3 for _ in range(3)])
-    t = _terreno(g, [[(5.0, 5.0), (15.0, 5.0), (15.0, 15.0), (5.0, 15.0)]], 0.6)
-    z = {(v[0], v[1]): v[2] for v in t["vertices"]}
-    assert z[(10.0, 10.0)] == pytest.approx(9.4)
-    assert z[(0.0, 0.0)] == pytest.approx(10.0)
-
-
 def test_lagoa_vira_furo_de_toda_area_que_a_contem(msp):
     from dataclasses import replace
 

@@ -10,10 +10,16 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
+import ezdxf
 import numpy as np
 from scipy.ndimage import distance_transform_edt, gaussian_filter, label, map_coordinates
 
+from scripts.comum.ambiente import RAIZ
+from scripts.entorno import dem
+
+from .cena import CFG_TOML, DXF, aneis_da_layer
 from .geometria import Ponto, centroide
+from .relevo import DESTINO as RELEVO_JSON
 from .relevo import Grade, mascara
 
 
@@ -112,3 +118,84 @@ def compor_perto(lev: Grade, dem: Grade, poligonal: list[list[Ponto]], cota: flo
     t = np.clip(dist / cfg.talude, 0.0, 1.0)
     final = (1.0 - t) * cota + t * base
     return Grade(lev.x0, lev.y0, lev.passo, lev.nx, lev.ny, np.round(final, 2).tolist())
+
+
+def malha_entorno(dem: Grade, buraco: tuple[float, float, float, float], centro: tuple[float, float],
+                  raio: float) -> tuple[list[list[float]], list[list[int]]]:
+    """Grade do Copernicus em triângulos: células com os 4 cantos no raio e fora do `buraco`
+    (o terreno perto). O buraco cai em linhas da grade, então cada célula está toda dentro ou fora."""
+    bx0, by0, bx1, by1 = buraco
+    z = dem.z
+    indice: dict[tuple[int, int], int] = {}
+    vertices: list[list[float]] = []
+    faces: list[list[int]] = []
+
+    def no(i: int, j: int) -> int:
+        if (i, j) not in indice:
+            indice[(i, j)] = len(vertices)
+            vertices.append([round(dem.x0 + i * dem.passo, 2), round(dem.y0 + j * dem.passo, 2), z[j][i]])
+        return indice[(i, j)]
+
+    for j in range(dem.ny - 1):
+        for i in range(dem.nx - 1):
+            xa, ya = dem.x0 + i * dem.passo, dem.y0 + j * dem.passo
+            xb, yb = xa + dem.passo, ya + dem.passo
+            if bx0 <= xa and xb <= bx1 and by0 <= ya and yb <= by1:
+                continue
+            if any(math.hypot(x - centro[0], y - centro[1]) > raio for x in (xa, xb) for y in (ya, yb)):
+                continue
+            a, b, c, d = no(i, j), no(i + 1, j), no(i + 1, j + 1), no(i, j + 1)
+            faces += [[a, b, c], [a, c, d]]
+    return vertices, faces
+
+
+def disco_mar(centro: tuple[float, float], raio: float, nivel: float, n: int = 96) -> tuple[list[list[float]], list[list[int]]]:
+    """Plano da água: disco no raio do entorno; a terra acima do nível o esconde."""
+    cx, cy = centro
+    v = [[round(cx, 2), round(cy, 2), nivel]] + [
+        [round(cx + raio * math.cos(2 * math.pi * k / n), 2), round(cy + raio * math.sin(2 * math.pi * k / n), 2), nivel]
+        for k in range(n)]
+    return v, [[0, 1 + k, 1 + (k + 1) % n] for k in range(n)]
+
+
+DESTINO_PERTO = RAIZ / "cache" / "cena" / "terreno.json"
+DESTINO_ENTORNO = RAIZ / "cache" / "cena" / "entorno.json"
+
+
+def main() -> int:
+    sys.stdout.reconfigure(encoding="utf-8")
+    cfg = TerrenoCfg.carregar(CFG_TOML)
+    georref = json.loads((RAIZ / "dados" / "georref.json").read_text(encoding="utf-8"))
+    e0, n0 = georref["origem"]["E"], georref["origem"]["N"]
+    lotes = json.loads((RAIZ / "dados" / "lotes.json").read_text(encoding="utf-8"))["lotes"]
+    lev = Grade.de_json(json.loads(RELEVO_JSON.read_text(encoding="utf-8")))
+    bruto = Grade.de_json(json.loads(dem.DESTINO.read_text(encoding="utf-8")))
+    poligonal = aneis_da_layer(ezdxf.readfile(DXF).modelspace(), cfg.poligonal, e0, n0)
+    xs = [x for a in poligonal for x, _ in a]
+    ys = [y for a in poligonal for _, y in a]
+    folga = cfg.alcance + cfg.transicao + bruto.passo  # a borda do perto já é Copernicus puro
+    ext = encaixar((min(xs) - folga, min(ys) - folga, max(xs) + folga, max(ys) + folga), bruto.passo)
+    perto_lev = reamostrar(lev, ext, cfg.passo_perto)
+    fora = _distancia_fora(perto_lev, poligonal) > cfg.talude
+    com_mar = separar_mar(bruto, 0.0, cfg.mar_rebaixo)
+    delta = ajustar_datum(perto_lev, com_mar, fora)
+    longe = Grade(bruto.x0, bruto.y0, bruto.passo, bruto.nx, bruto.ny,
+                  (np.array(com_mar.z, dtype=float) + delta).round(2).tolist())
+    cota = cfg.plato_cota if cfg.plato_cota is not None else cota_plato(lev, lotes)
+    perto = compor_perto(perto_lev, longe, poligonal, cota, cfg)
+    centro = dem.centro_dos_lotes()
+    v, f = malha_entorno(longe, ext, centro, cfg.raio)
+    vm, fm = disco_mar(centro, cfg.raio, round(delta, 2))
+    DESTINO_PERTO.parent.mkdir(parents=True, exist_ok=True)
+    DESTINO_PERTO.write_text(json.dumps(perto.para_json()), encoding="utf-8")
+    DESTINO_ENTORNO.write_text(json.dumps({"objetos": [
+        {"nome": "Entorno", "material": "entorno", "vertices": v, "faces": f},
+        {"nome": "Mar", "material": "mar", "vertices": vm, "faces": fm},
+    ]}), encoding="utf-8")
+    print(f"platô {cota:.1f} m · levantamento − Copernicus = {delta:+.2f} m (mar nessa cota) · "
+          f"perto {perto.nx}×{perto.ny} de {perto.passo:.0f} m · entorno {len(f)} triângulos")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

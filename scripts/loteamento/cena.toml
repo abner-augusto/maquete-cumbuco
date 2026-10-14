@@ -1,14 +1,9 @@
 # Papel → layers do PLANTA VENDA.dwg usadas na cena 3D (inventário em dados/inventario-layers.md).
 tolerancia = 0.05   # m, simplificação dos contornos
-max_aresta = 8.0    # m, refino para acompanhar o relevo (suave dentro da poligonal)
+max_aresta = 8.0    # m, refino para acompanhar o relevo
 lagoa_camadas = ["APP_30"]
 lagoa_texto = "LAGOA AZUL"
-# O loteamento é terraplenado: dentro da poligonal o relevo do levantamento (com as dunas
-# naturais) é suavizado, e o terreno sob as áreas desce para não furar vias e lotes.
-poligonal = ["AR-CNT-POL"]
-sigma = 8.0        # m, suavização
-transicao = 20.0   # m, do suave ao natural fora da poligonal
-rebaixo = 0.6      # m
+fundo_lagoa = 0.6   # m, terreno dentro da lagoa abaixo da água
 
 [camadas]
 Vias = ["AR-CNT-VIA-INT", "AR-CNT-VIA-011"]

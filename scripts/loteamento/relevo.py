@@ -12,7 +12,6 @@ from dataclasses import dataclass, field
 import ezdxf
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
-from scipy.ndimage import distance_transform_edt, gaussian_filter
 
 from scripts.comum.ambiente import RAIZ
 
@@ -255,18 +254,6 @@ def mascara(grade: Grade, aneis: list[list[Ponto]]) -> np.ndarray:
             impar ^= cruza & (gx < (x1 - x0) * (gy - y0) / (y1 - y0) + x0)
         dentro |= impar
     return dentro
-
-
-def suavizar_dentro(grade: Grade, aneis: list[list[Ponto]], sigma: float, transicao: float) -> Grade:
-    """Relevo terraplenado: suave dentro dos anéis, natural fora, com transição em `transicao` metros."""
-    z = np.array(grade.z, dtype=float)
-    dentro = mascara(grade, aneis)
-    suave = gaussian_filter(z, sigma / grade.passo, mode="nearest")
-    dist = distance_transform_edt(~dentro) * grade.passo
-    peso = np.clip(1.0 - dist / transicao, 0.0, 1.0)
-    z2 = peso * suave + (1.0 - peso) * z
-    return Grade(grade.x0, grade.y0, grade.passo, grade.nx, grade.ny, np.round(z2, 2).tolist())
-
 
 
 def _densificar(pts: list[Ponto], passo: float = 10.0) -> list[Ponto]:
