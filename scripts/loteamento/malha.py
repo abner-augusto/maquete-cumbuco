@@ -38,10 +38,11 @@ def simplificar(anel: list[Ponto], tol: float) -> list[Ponto]:
 
 
 def _dentro(fora: list[Ponto], anel: list[Ponto], tol: float = 0.01) -> bool:
-    """O anel inteiro dentro de `fora` (vértice na borda conta como dentro). Anel que só cruza a
-    borda é outro contorno do mesmo desenho, não furo."""
+    """O anel inteiro dentro de `fora` (vértice na borda conta como dentro) e não todo colado na
+    borda. Anel que cruza a borda, ou que só a repete, é outro contorno do mesmo desenho, não furo."""
     lados = list(zip(fora, fora[1:] + fora[:1]))
-    return all(contem(fora, p) or min(_dist_ponto_segmento(p, a, b) for a, b in lados) <= tol for p in anel)
+    na_borda = [min(_dist_ponto_segmento(p, a, b) for a, b in lados) <= tol for p in anel]
+    return all(b or contem(fora, p) for p, b in zip(anel, na_borda)) and not all(na_borda)
 
 
 def aninhar(aneis: list[list[Ponto]]) -> list[tuple[list[Ponto], list[list[Ponto]]]]:

@@ -57,3 +57,11 @@ def test_aninhar_anel_que_atravessa_outro_nao_vira_furo():
     grupos = aninhar([QUADRADO, meio_fora])
     assert sorted(area(e) for e, _ in grupos) == [1200.0, 10000.0]
     assert all(furos == [] for _, furos in grupos)
+
+
+def test_aninhar_anel_colado_na_borda_nao_vira_furo():
+    # via desenhada duas vezes: todos os vértices do anel menor sobre a borda do maior
+    faixa = [(0.0, 0.0), (100.0, 0.0), (100.0, 100.0), (0.0, 100.0)]
+    diagonal = [(0.0, 0.0), (10.0, 0.0), (100.0, 100.0), (90.0, 100.0)]
+    grupos = aninhar([faixa, diagonal])
+    assert all(furos == [] for _, furos in grupos) and len(grupos) == 2
