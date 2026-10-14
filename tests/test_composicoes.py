@@ -47,3 +47,28 @@ def test_proporcoes(tmp_path, fonte_teste):
 def test_cores_da_variante():
     assert cores_da_variante(P, "positivo") == (P.ouro, P.bronze)
     assert cores_da_variante(P, "negativo") == (P.ouro_claro, P.ouro_claro)
+
+
+def test_cada_svg_tem_id_de_mascara_proprio(tmp_path, fonte_teste):
+    # Duas assinaturas na mesma página do site não podem repetir id (a segunda perde o vão).
+    ids = []
+    for a in gerar(P, _tipos(fonte_teste), tmp_path):
+        ids += re.findall(r'id="([^"]+)"', a.read_text(encoding="utf-8"))
+    assert len(ids) == len(set(ids))
+
+
+def test_minimos_garantem_vao_visivel(fonte_teste):
+    from scripts.marca.composicoes import minimos
+
+    m = minimos(_tipos(fonte_teste))
+    assert set(m) == set(COMPOSICOES)
+    assert 50 <= m["simbolo"][0] <= 80  # o vão do símbolo some abaixo de ~60 px
+    for nome in ("produto-horizontal", "assinatura-mae"):
+        assert m[nome][0] > m["simbolo"][0]  # símbolo menor dentro da assinatura
+
+
+def test_fracao_de_protecao_e_a_largura_do_pilar(fonte_teste):
+    from scripts.marca.composicoes import fracao_protecao
+
+    f = fracao_protecao(_tipos(fonte_teste))
+    assert 0.01 < f < 0.2

@@ -1,6 +1,6 @@
 import re
 
-from scripts.marca.brandbook import EQUIVALENTES, STATUS, html, ids_unicos
+from scripts.marca.brandbook import EQUIVALENTES, STATUS, html
 from scripts.marca.paleta import Paleta
 from scripts.marca.tokens import tema
 
@@ -10,8 +10,11 @@ NOMES = [f"{c}-{v}" for c in ("simbolo", "produto-vertical", "produto-horizontal
          for v in ("positivo", "negativo", "mono-escuro", "mono-claro")]
 
 
-def _html():
-    return html(P, tema(P), {n: SVG for n in NOMES}, {"Cinzel": "AAAA", "Jost": "BBBB"})
+MINIMOS = {"simbolo": (60, 12), "produto-vertical": (90, 20), "produto-horizontal": (180, 40), "assinatura-mae": (170, 38)}
+
+
+def _html(svgs=None):
+    return html(P, tema(P), svgs or {n: SVG for n in NOMES}, {"Cinzel": "AAAA", "Jost": "BBBB"}, MINIMOS, 0.1)
 
 
 def test_tem_as_oito_secoes():
@@ -37,17 +40,19 @@ def test_autocontido_e_confidencial():
     assert "@font-face" in h and "data:font/ttf;base64,AAAA" in h
 
 
-def test_ids_de_mascara_unicos_no_html():
-    svg = '<svg><mask id="vao"/><path mask="url(#vao)"/></svg>'
-    h = "".join(ids_unicos({"a": svg, "b": svg}).values())
-    ids = re.findall(r'id="([^"]+)"', h)
-    assert len(ids) == len(set(ids)) == 2
-    assert 'url(#vao-a)' in h and 'url(#vao-b)' in h
-
-
 def test_assinatura_repetida_no_html_nao_repete_id():
     svg = '<svg xmlns="http://www.w3.org/2000/svg"><mask id="vao"/><path mask="url(#vao)"/></svg>'
-    h = html(P, tema(P), ids_unicos({n: svg for n in NOMES}), {"Cinzel": "AAAA", "Jost": "BBBB"})
+    h = _html({n: svg for n in NOMES})
     ids = re.findall(r'id="([^"]+)"', h)
     assert len(ids) == len(set(ids))
     assert set(re.findall(r"url\(#([^)]+)\)", h)) == set(ids)  # toda máscara referida existe
+
+
+def test_tamanho_minimo_vem_da_geometria():
+    h = _html()
+    assert "<td>60 px</td><td>12 mm</td>" in h and "<td>180 px</td><td>40 mm</td>" in h
+
+
+def test_area_de_protecao_desenhada_com_x():
+    # x = 10% da largura da assinatura → padding p = x/(1+2x) da caixa tracejada
+    assert "padding:8.33%" in _html()

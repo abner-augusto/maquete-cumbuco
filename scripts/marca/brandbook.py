@@ -8,7 +8,7 @@ from pathlib import Path
 
 from scripts.comum.ambiente import RAIZ
 
-from .composicoes import COMPOSICOES, VARIANTES
+from .composicoes import COMPOSICOES, VARIANTES, Tipos, fracao_protecao, minimos
 from .composicoes import DESTINO as SVG_DIR
 from .fontes import garantir
 from .paleta import DESTINO as PALETA_JSON
@@ -30,11 +30,6 @@ EQUIVALENTES = {"Cinzel": "Trajan Pro 3 (Adobe)", "Jost": "Futura PT (ParaType)"
 _FUNDO = {"positivo": "creme", "negativo": "preto", "mono-escuro": "creme", "mono-claro": "bronze"}
 
 
-def ids_unicos(svgs: dict[str, str]) -> dict[str, str]:
-    """Cada SVG embutido ganha o próprio id de máscara; o HTML não pode repetir id."""
-    return {n: s.replace('id="vao"', f'id="vao-{n}"').replace("url(#vao)", f"url(#vao-{n})") for n, s in svgs.items()}
-
-
 class _Usos:
     """Entrega cada SVG com ids renomeados a cada uso: a mesma assinatura aparece em várias seções."""
 
@@ -51,7 +46,10 @@ def _secao(titulo: str, corpo: str) -> str:
     return f"<section><h2>{escape(titulo)}</h2>{corpo}</section>"
 
 
-def html(p: Paleta, t: dict, svgs: dict[str, str], fontes_b64: dict[str, str]) -> str:
+def html(
+    p: Paleta, t: dict, svgs: dict[str, str], fontes_b64: dict[str, str],
+    minimo: dict[str, tuple[int, int]], x_protecao: float,
+) -> str:
     svgs = _Usos(svgs)
     fundo = {"creme": p.creme, "preto": p.preto, "bronze": p.bronze}
     faces = "\n".join(
@@ -71,15 +69,20 @@ def html(p: Paleta, t: dict, svgs: dict[str, str], fontes_b64: dict[str, str]) -
     ) + "</div>"
     protecao = (
         "<p>Em volta da assinatura, deixe livre no mínimo <b>x</b>, a largura do pilar do símbolo. "
-        "Nenhum texto, borda ou imagem entra nessa área.</p>"
-        f'<div class="protecao" style="background:{p.creme}"><div class="x">{svgs["produto-horizontal-positivo"]}</div></div>'
+        "Nenhum texto, borda ou imagem entra nessa área. A linha tracejada marca esse limite em escala.</p>"
+        f'<div class="protecao" style="background:{p.creme}"><div class="area" style="padding:{100 * x_protecao / (1 + 2 * x_protecao):.2f}%">'
+        f'{svgs["produto-horizontal-positivo"]}</div></div>'
     )
-    minimo = (
-        "<table><tr><th>Versão</th><th>Tela</th><th>Impresso</th></tr>"
-        "<tr><td>Símbolo</td><td>16 px</td><td>6 mm</td></tr>"
-        "<tr><td>Produto horizontal (largura)</td><td>140 px</td><td>35 mm</td></tr>"
-        "<tr><td>Produto vertical (largura)</td><td>96 px</td><td>24 mm</td></tr>"
-        "<tr><td>Assinatura da marca-mãe (largura)</td><td>120 px</td><td>30 mm</td></tr></table>"
+    rotulos = {
+        "simbolo": "Símbolo", "produto-vertical": "Produto vertical",
+        "produto-horizontal": "Produto horizontal", "assinatura-mae": "Assinatura da marca-mãe",
+    }
+    tabela_minimo = (
+        "<p>Largura mínima para o vão entre a fita e o pilar continuar visível (meio pixel na tela, "
+        "0,1 mm no impresso). Abaixo disso, use o símbolo sozinho em tamanho maior ou o nome sem símbolo.</p>"
+        "<table><tr><th>Versão (largura)</th><th>Tela</th><th>Impresso</th></tr>"
+        + "".join(f"<tr><td>{rotulos[n]}</td><td>{px} px</td><td>{mm} mm</td></tr>" for n, (px, mm) in minimo.items())
+        + "</table>"
     )
     erros = [
         ("Distorcer", "transform:scaleX(1.5)"),
@@ -124,7 +127,7 @@ def html(p: Paleta, t: dict, svgs: dict[str, str], fontes_b64: dict[str, str]) -
         _secao(n, c)
         for n, c in (
             ("Arquitetura de marca", arquitetura), ("Versões", versoes), ("Área de proteção", protecao),
-            ("Tamanho mínimo", minimo), ("Usos incorretos", incorretos), ("Paleta", paleta),
+            ("Tamanho mínimo", tabela_minimo), ("Usos incorretos", incorretos), ("Paleta", paleta),
             ("Tipografia", tipografia), ("Cores de status", status_txt),
         )
     )
@@ -147,9 +150,9 @@ h2 {{ font-family:Cinzel, serif; font-weight:400; letter-spacing:.12em; border-b
 .grade {{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:12px; }}
 figure {{ margin:0; }} figcaption {{ font-size:12px; color:{t['claro']['tinta-2']}; padding-top:4px; }}
 .errado figcaption {{ color:#B0625A; font-weight:500; }}
-.protecao {{ padding:40px; border-radius:10px; }}
-.protecao .x {{ outline:1px dashed {p.bronze}; outline-offset:24px; }}
-.protecao svg {{ width:100%; height:auto; }}
+.protecao {{ padding:24px; border-radius:10px; }}
+.protecao .area {{ border:1px dashed {p.bronze}; }}
+.protecao svg {{ display:block; width:100%; height:auto; }}
 .cores {{ display:flex; flex-wrap:wrap; gap:16px; }}
 .cor span {{ display:block; width:120px; height:64px; border-radius:8px; border:1px solid #0002; }}
 .cor b, .cor code {{ display:block; font-size:13px; }}
@@ -182,14 +185,14 @@ def pdf(origem: Path, destino: Path) -> None:
 def main() -> int:
     p = Paleta.carregar(PALETA_JSON)
     svgs = {a.stem: a.read_text(encoding="utf-8") for a in SVG_DIR.glob("*.svg")}
-    svgs = ids_unicos(svgs)
     fontes_b64 = {
         "Cinzel": base64.b64encode(garantir("Cinzel[wght].ttf").read_bytes()).decode("ascii"),
         "Jost": base64.b64encode(garantir("Jost[wght].ttf").read_bytes()).decode("ascii"),
     }
     DESTINO.mkdir(parents=True, exist_ok=True)
     pagina = DESTINO / "index.html"
-    pagina.write_text(html(p, tema(p), svgs, fontes_b64), encoding="utf-8")
+    tipos = Tipos.padrao()
+    pagina.write_text(html(p, tema(p), svgs, fontes_b64, minimos(tipos), fracao_protecao(tipos)), encoding="utf-8")
     pdf(pagina, DESTINO / "brandbook.pdf")
     print(pagina, DESTINO / "brandbook.pdf", sep="\n")
     return 0
