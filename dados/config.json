@@ -1,0 +1,9 @@
+{
+  "mostrarPrecos": false,
+  "tabelaPrecos": {
+    "arquivo": "1-ADMINISTRATIVO/FINANCEIRO/Tab Lancamento SET26 R01.xls",
+    "nome": "SET26",
+    "referencia": "2026-09"
+  },
+  "toleranciaArea": 0.005
+}
