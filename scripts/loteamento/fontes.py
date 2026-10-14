@@ -1,4 +1,6 @@
-"""Leitura das fontes tabulares: índice de IPTU (CSV) e tabela SET26 (XLS)."""
+"""Leitura das fontes tabulares: índice de IPTU (CSV) e tabela SET26 (XLS).
+
+O calamine lê o .xls regravado pelo Excel 2016, que o xlrd rejeita (tabela de strings)."""
 
 import csv
 from dataclasses import dataclass
@@ -10,11 +12,6 @@ from .ids import id_lote
 
 ABA_SET26 = "12, 24 e 36meses"
 COL_QUADRA, COL_LOTE, COL_AREA, COL_CLASSIF, COL_PRECO_M2, COL_TOTAL = 0, 1, 2, 3, 4, 14
-
-# Erros de digitação conhecidos na coluna QUADRA da SET26. Lotes 1–7 da quadra 14
-# vieram como 14.14; a sequência 14/8–16 continua logo abaixo. A conferência com o
-# DWG acusa erro se a correção estiver errada.
-CORRECOES_QUADRA_SET26 = {14.14: 14}
 
 
 def _ler_texto(caminho: Path) -> str:
@@ -62,7 +59,7 @@ def linhas_tabela(df: pd.DataFrame) -> dict[str, LinhaPreco]:
         q, l = r[COL_QUADRA], r[COL_LOTE]
         if pd.isna(q) or pd.isna(l) or not _numero(r[COL_AREA]):
             continue
-        i = id_lote(CORRECOES_QUADRA_SET26.get(q, q), l)
+        i = id_lote(q, l)
         if i in linhas:
             raise ValueError(f"{i} duplicado na tabela")
         linhas[i] = LinhaPreco(
@@ -75,4 +72,4 @@ def linhas_tabela(df: pd.DataFrame) -> dict[str, LinhaPreco]:
 
 
 def ler_tabela_set26(caminho: Path) -> dict[str, LinhaPreco]:
-    return linhas_tabela(pd.read_excel(caminho, sheet_name=ABA_SET26, header=None))
+    return linhas_tabela(pd.read_excel(caminho, sheet_name=ABA_SET26, header=None, engine="calamine"))

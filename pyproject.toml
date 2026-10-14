@@ -2,7 +2,11 @@
 name = "maquete-cumbuco"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = ["ezdxf==1.4.4", "pandas>=2.2", "xlrd>=2.0.1"]
+dependencies = [
+    "ezdxf==1.4.4",
+    "pandas>=2.2",
+    "python-calamine>=0.8.3",
+]
 
 [dependency-groups]
 dev = ["pytest>=8"]

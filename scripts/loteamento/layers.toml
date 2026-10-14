@@ -1,5 +1,5 @@
 # Mapa papel → layer do PLANTA VENDA.dwg (07/10/2026).
-# RASCUNHO: aguarda conferência do Abner (gate da Task 4 do Plano 1).
+# Conferido pelo Abner em 14/10/2026 (gate da Task 4 do Plano 1); conferência visual na revisão final.
 
 # 342 lotes residenciais: polígono fechado, número no atributo CÓDIGO do bloco
 # SMB_LOTES, quadra pelo atributo QUADRA do bloco SMB_QUADRA dentro do polígono da quadra.

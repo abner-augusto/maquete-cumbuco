@@ -56,13 +56,6 @@ def test_linhas_tabela():
     assert t["Q01L02"] == LinhaPreco(area_m2=480.0, classificacao="A", preco_m2=1380.0, preco_total=662400.0)
 
 
-def test_linhas_tabela_corrige_quadra_14_14():
-    # Na SET26 real, os lotes 1–7 da quadra 14 estão digitados como "14.14".
-    df = _df_set26()
-    df.loc[len(df)] = [14.14, 1, 487.01, "B", 1250] + [None] * 9 + [608762.5]
-    assert "Q14L01" in linhas_tabela(df)
-
-
 def test_linhas_tabela_lote_duplicado_falha():
     df = _df_set26()
     df.loc[len(df)] = df.iloc[5]

@@ -58,7 +58,7 @@ Repo novo: `$REPOS_DIR/maquete-cumbuco`, derivado do `cv_espelho_vendas`, sem to
 | Geometria dos lotes, vias e áreas | `6-PROJETOS/01-URBANISMO/DWG/PLANTA VENDA.dwg` (07/10/2026); conferência com `00-CIDADE DAS AMÉRICAS- MASTERPLAN GERAL-R05,.dwg` |
 | Curvas de nível | DWG do urbanismo, se trouxer as curvas; senão `2-LEVANTAMENTOS/PLANTAS_BASE/C) BASE GRAFICA 1 ETAPA C CURVAS DE NIVEL 03-PL-ARQ-MPL-0721 R05.pdf` |
 | Cadastro | `4-PREFEITURA/IPTU_2025/00-INDICE IPTU 2025 - LOTES CANCUN.csv` (quadra; lote; tipo; inscrição) |
-| Preço | Tabela de preços indicada em `config.json`; hoje a referência é `1-ADMINISTRATIVO/FINANCEIRO/Tab Lancamento SET26.xls`, ainda **não validada** para venda |
+| Preço | Tabela de preços indicada em `config.json`; hoje a referência é `1-ADMINISTRATIVO/FINANCEIRO/Tab Lancamento SET26 R01.xls`, ainda **não validada** para venda |
 | Estande | `6-PROJETOS/08-ESTANDE/2026-10-07 estande - implantacao georreferenciada.kmz`, `... v10c.dwg`, `... v10c - planta humanizada.pdf`, `... v10c - humanizada Gemini (editado).png` |
 | Portaria | `6-PROJETOS/05-PORTARIA/portaria e rotatoria 3d categorizado (do SKP).blend`, artes e plantas |
 | Clube | `6-PROJETOS/04-CLUBE/` (renders e projeto anterior) |

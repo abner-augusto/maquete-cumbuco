@@ -6,7 +6,7 @@
 
 **Architecture:** Projeto Python (uv) na raiz do repo, com o pacote `scripts/`. O DWG vira DXF pelo `accoreconsole` do AutoCAD 2018. Um inventário de layers vai para o Abner conferir (gate). Depois, módulos pequenos e puros (ids, fontes, geometria, extração, georreferência, conferência) são orquestrados por `scripts/loteamento/gerar_dados.py`, que falha quando a conferência acha erro.
 
-**Tech Stack:** Python 3.12+ (máquina tem 3.14), uv, ezdxf 1.4.4, pandas + xlrd (para `.xls`), pytest.
+**Tech Stack:** Python 3.12+ (máquina tem 3.14), uv, ezdxf 1.4.4, pandas + python-calamine (para `.xls`), pytest.
 
 **Spec:** `docs/superpowers/specs/2026-10-14-maquete-cumbuco-design.md` (§3, §6, §7.1 passos 1–2, §9)
 **Plano-mestre:** `docs/superpowers/plans/2026-10-14-00-plano-mestre.md`
@@ -76,7 +76,7 @@
 name = "maquete-cumbuco"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = ["ezdxf==1.4.4", "pandas>=2.2", "xlrd>=2.0.1"]
+dependencies = ["ezdxf==1.4.4", "pandas>=2.2", "python-calamine>=0.8"]
 
 [dependency-groups]
 dev = ["pytest>=8"]
@@ -446,7 +446,7 @@ Expected: todos passam
 
 Run:
 ```bash
-uv run python -c "from scripts.comum.ambiente import terreno_dir as t; from scripts.loteamento.fontes import *; d=t(); i=ler_iptu(d/'4-PREFEITURA/IPTU_2025/00-INDICE IPTU 2025 - LOTES CANCUN.csv'); s=ler_tabela_set26(d/'1-ADMINISTRATIVO/FINANCEIRO/Tab Lancamento SET26.xls'); print(len(i), len(s), sorted(s)[:3], sorted(set(i)-set(s))[:5])"
+uv run python -c "from scripts.comum.ambiente import terreno_dir as t; from scripts.loteamento.fontes import *; d=t(); i=ler_iptu(d/'4-PREFEITURA/IPTU_2025/00-INDICE IPTU 2025 - LOTES CANCUN.csv'); s=ler_tabela_set26(d/'1-ADMINISTRATIVO/FINANCEIRO/Tab Lancamento SET26 R01.xls'); print(len(i), len(s), sorted(s)[:3], sorted(set(i)-set(s))[:5])"
 ```
 Expected: `325 347 ...`, e a lista de ids do IPTU fora da tabela (idealmente vazia). Anote o resultado na mensagem do commit; não corrija dados à mão.
 
@@ -1511,7 +1511,7 @@ git commit -m "feat(dados): conferência desenho, tabela e IPTU com relatório"
 {
   "mostrarPrecos": false,
   "tabelaPrecos": {
-    "arquivo": "1-ADMINISTRATIVO/FINANCEIRO/Tab Lancamento SET26.xls",
+    "arquivo": "1-ADMINISTRATIVO/FINANCEIRO/Tab Lancamento SET26 R01.xls",
     "nome": "SET26",
     "referencia": "2026-09"
   },
