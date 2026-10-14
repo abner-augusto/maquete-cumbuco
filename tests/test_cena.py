@@ -88,3 +88,21 @@ def test_lagoa_vira_furo_de_toda_area_que_a_contem(msp):
     v = por_nome["Verdes"]
     a = sum(area([v["vertices"][i][:2] for i in f]) for f in v["faces"])
     assert a == pytest.approx(120 * 120 - 1600, rel=0.01)
+
+
+def test_lagoa_que_e_a_propria_app_fica_so_agua():
+    # revisão final: no DXF real a APP_30 é só a lagoa (e uma ilha dentro); a lagoa virava área verde
+    doc = ezdxf.new()
+    m = doc.modelspace()
+    m.add_lwpolyline(_ret(230, 30, 40, 40), close=True, dxfattribs={"layer": "APP"})  # a lagoa
+    m.add_lwpolyline(_ret(250, 50, 10, 10), close=True, dxfattribs={"layer": "APP"})  # ilha
+    m.add_text("LAGOA AZUL", dxfattribs={"layer": "TXT", "insert": (E0 + 238, N0 + 38)})
+    g = Grade(-10.0, -10.0, 10.0, 40, 20, [[10.0 + (-10.0 + 10.0 * i) / 20 for i in range(40)] for _ in range(20)])
+    por_nome = {o["nome"]: o for o in montar(m, g, LOTES, CFG, E0, N0)["objetos"]}
+    app = por_nome["APP"]
+    assert sum(area([app["vertices"][i][:2] for i in f]) for f in app["faces"]) == pytest.approx(100, rel=0.01)
+    nivel = por_nome["Lagoa"]["vertices"][0][2]
+    margem = [g.cota(x, y) for x, y in [(230 + k, 30) for k in range(41)] + [(230 + k, 70) for k in range(41)]]
+    assert sum(z < nivel for z in margem) <= 0.1 * len(margem)  # a água não sobra acima da margem
+    dentro = [v for v in por_nome["Terreno"]["vertices"] if 230 < v[0] < 270 and 30 < v[1] < 70]
+    assert dentro and all(v[2] < nivel for v in dentro)  # o terreno não fura a água
