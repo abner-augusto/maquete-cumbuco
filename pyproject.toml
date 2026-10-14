@@ -5,6 +5,7 @@ requires-python = ">=3.12"
 dependencies = [
     "ezdxf==1.4.4",
     "fonttools>=4.67.0",
+    "mapbox-earcut>=2.1.0",
     "numpy>=2.5.4",
     "pandas>=2.2",
     "pillow>=12.3.0",
