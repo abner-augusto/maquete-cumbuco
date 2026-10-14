@@ -52,8 +52,7 @@ def test_sobrepor_tinge_a_mascara():
     assert out.getpixel((5, 5))[:3] != (r, g, b)
 
 
-# Revisão visual do Abner (14/10): mais leve — pilar vazado (lâmina curvada do E5),
-# traço fino do pé esquerdo até o chão e linha de base fechando o arco da esquerda.
+# Revisão visual do Abner (14/10): mais leve — pilar vazado (lâmina curvada do E5).
 
 
 def _px(img, x, y):
@@ -70,14 +69,9 @@ def test_pilar_vazado_com_parede_fina_e_face_larga():
     assert _px(img, x0 + 20, P.pilar_topo - P.pilar_topo_espessura / 2) == 255  # faixa do topo
 
 
-def test_linha_de_base_fecha_o_arco_da_esquerda():
+def test_arco_da_esquerda_fica_aberto():
+    # Revisão do Abner (14/10): o traço do pé e a linha de base pesaram; o canto esquerdo é só a fita.
     img = raster(P, int(LARGURA))
-    assert _px(img, P.base_fim / 2, P.base_espessura / 2) == 255
-    assert _px(img, P.perna_pe + 40, P.base_espessura / 2) == 0  # depois da perna não há base
-
-
-def test_traco_do_pe_esquerdo_desce_ate_o_chao():
-    img = raster(P, int(LARGURA))
-    x_chao = P.pe_traco[1]
-    assert _px(img, x_chao, 6) == 255
-    assert _px(img, x_chao + 30, 6) == 0
+    for x in (60, 100, 200, 300):
+        assert _px(img, x, 1.5) == 0, x
+    assert "base" not in formas(P) and "traco" not in formas(P)
