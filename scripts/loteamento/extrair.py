@@ -136,14 +136,24 @@ def extrair_lotes(doc, mapa: MapaLayers) -> dict[str, LoteBruto]:
 
     rotulos_lote = _rotulos(msp, mapa.rotulo_lote, _RE_LOTE)
     areas = _rotulos(msp, mapa.area_lote, _RE_AREA) if mapa.area_lote else []
-    vias = [pontos_de(e) for e in msp if e.dxf.layer == mapa.meio_fio and e.dxftype() in _TIPOS_VIA]
+    vias = []
+    for e in msp:
+        if e.dxf.layer == mapa.meio_fio and e.dxftype() in _TIPOS_VIA:
+            pts = pontos_de(e)
+            # pontos_de tira o ponto de fechamento; a aresta último → primeiro também é meio-fio
+            if getattr(e, "closed", False) or poligono_fechado(e):
+                pts = pts + pts[:1]
+            vias.append(pts)
 
     lotes: dict[str, LoteBruto] = {}
+    poligonos_lote: list[list[Ponto]] = []
     for e in msp.query(f'LWPOLYLINE[layer=="{mapa.lotes}"]'):
-        if not poligono_fechado(e):
-            continue
         h = e.dxf.handle
+        if not poligono_fechado(e):
+            erros.append(f"lote handle {h}: polilinha aberta na layer {mapa.lotes}")
+            continue
         pts = pontos_de(e)
+        poligonos_lote.append(pts)
         dentro = [r for p, r in rotulos_lote if contem(pts, p)]
         if len(dentro) != 1:
             erros.append(f"lote handle {h}: {len(dentro)} rótulos {dentro}")
@@ -163,6 +173,10 @@ def extrair_lotes(doc, mapa: MapaLayers) -> dict[str, LoteBruto]:
             i, q, l, h, pts, _lados(e), _frente(e, vias),
             area_cad[0] if len(area_cad) == 1 else None,
         )
+
+    for p, r in rotulos_lote:
+        if not any(contem(pts, p) for pts in poligonos_lote):
+            erros.append(f"rótulo de lote {r!r} em ({p[0]:.2f}, {p[1]:.2f}) fora de qualquer lote")
 
     for i, lote in _uso_misto(msp, mapa, vias, erros).items():
         if i in lotes:

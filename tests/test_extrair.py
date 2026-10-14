@@ -106,3 +106,43 @@ def test_uso_misto_sem_poligono_e_erro(doc_sintetico, mapa_sintetico):
     with pytest.raises(ExtracaoErro) as exc:
         extrair_lotes(doc_sintetico, mapa)
     assert any("QML02" in e and "0 polígonos" in e for e in exc.value.erros)
+
+
+# Revisão final: frente pela borda de fechamento da via, segmentos degenerados,
+# polilinha de lote aberta e rótulo órfão.
+
+
+def test_frente_usa_a_aresta_de_fechamento_da_via(doc_sintetico, mapa_sintetico):
+    msp = doc_sintetico.modelspace()
+    for e in list(msp.query('LWPOLYLINE[layer=="MEIO_FIO"]')):
+        msp.delete_entity(e)
+    # Via fechada cuja aresta de fechamento (último → primeiro ponto) corre ao sul dos lotes.
+    msp.add_lwpolyline(
+        [(E0 + 65, N0 - 8), (E0 + 65, N0 - 300), (E0 - 500, N0 - 300), (E0 - 500, N0 - 8)],
+        close=True, dxfattribs={"layer": "MEIO_FIO"},
+    )
+    assert extrair_lotes(doc_sintetico, mapa_sintetico)["Q01L01"].frente_m == 10.0
+
+
+def test_segmento_degenerado_nao_vira_frente(doc_sintetico, mapa_sintetico):
+    msp = doc_sintetico.modelspace()
+    lote = next(e for e in msp.query('LWPOLYLINE[layer=="LOTES"]') if e.get_points("xy")[0] == (E0, N0))
+    # vértice extra a 2 cm do canto sudoeste, junto ao meio-fio
+    lote.set_points([(E0, N0 - 0.02), (E0, N0), (E0 + 10, N0), (E0 + 10, N0 + 20), (E0, N0 + 20)], format="xy")
+    assert extrair_lotes(doc_sintetico, mapa_sintetico)["Q01L01"].frente_m == 10.0
+
+
+def test_polilinha_de_lote_aberta_e_erro_com_handle(doc_sintetico, mapa_sintetico):
+    e = doc_sintetico.modelspace().add_lwpolyline(
+        [(E0 + 2, N0 + 30), (E0 + 8, N0 + 30), (E0 + 8, N0 + 35)], dxfattribs={"layer": "LOTES"}
+    )
+    with pytest.raises(ExtracaoErro) as exc:
+        extrair_lotes(doc_sintetico, mapa_sintetico)
+    assert any(e.dxf.handle in m and "aberta" in m for m in exc.value.erros)
+
+
+def test_rotulo_de_lote_fora_de_qualquer_lote_e_erro(doc_sintetico, mapa_sintetico):
+    doc_sintetico.modelspace().add_text("7", dxfattribs={"layer": "NUM_LOTE", "insert": (E0 + 300, N0 + 300)})
+    with pytest.raises(ExtracaoErro) as exc:
+        extrair_lotes(doc_sintetico, mapa_sintetico)
+    assert any("rótulo de lote '7'" in m and "fora de qualquer lote" in m for m in exc.value.erros)

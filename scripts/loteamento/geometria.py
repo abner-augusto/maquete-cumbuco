@@ -6,6 +6,8 @@ from ezdxf import path
 
 Ponto = tuple[float, float]
 _EPS = 1e-6
+# Lado mais curto que isto (vértice duplicado, chanfro de esquina) não é candidato a frente.
+LADO_MIN_FRENTE = 2.0
 
 
 def poligono_fechado(e) -> bool:
@@ -92,4 +94,5 @@ def indice_frente(segs: list[tuple[Ponto, Ponto, float]], vias: list[list[Ponto]
         meio = ((x0 + x1) / 2, (y0 + y1) / 2)
         return min(_dist_ponto_segmento(meio, a, b) for via in vias for a, b in zip(via, via[1:]))
 
-    return min(range(len(segs)), key=lambda i: distancia(segs[i]))
+    candidatos = [i for i, s in enumerate(segs) if s[2] >= LADO_MIN_FRENTE] or list(range(len(segs)))
+    return min(candidatos, key=lambda i: distancia(segs[i]))

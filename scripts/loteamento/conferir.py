@@ -7,6 +7,8 @@ from .extrair import LoteBruto
 from .fontes import LinhaPreco
 from .geometria import area
 
+FRENTE_MIN_AVISO = 5.0
+
 
 @dataclass
 class Relatorio:
@@ -40,6 +42,10 @@ def conferir(
                 rel.avisos.append(
                     f"{i}: área escrita no desenho {cad:.2f} m² × polígono {a:.2f} m² ({(a - cad) / cad:+.2%})"
                 )
+    for i in sorted(desenho):
+        f = lotes[i].frente_m
+        if f is not None and f < FRENTE_MIN_AVISO:
+            rel.avisos.append(f"{i}: frente de {f:.2f} m (menos de {FRENTE_MIN_AVISO:g} m), conferir no desenho")
     rel.avisos += [f"{i}: sem inscrição de IPTU" for i in sorted(desenho - set(iptu))]
     rel.avisos += [f"{i}: inscrição de IPTU de lote fora do desenho" for i in sorted(set(iptu) - desenho)]
     return rel

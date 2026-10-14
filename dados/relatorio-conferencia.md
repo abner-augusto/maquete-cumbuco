@@ -11,8 +11,9 @@ Gerado por `scripts/loteamento/gerar_dados.py`. Erro bloqueia o `lotes.json`; av
 ## Erros (0)
 
 
-## Avisos (25)
+## Avisos (26)
 
+- Q17L03: frente de 3.06 m (menos de 5 m), conferir no desenho
 - Q08L16: sem inscrição de IPTU
 - Q10L08: sem inscrição de IPTU
 - Q10L09: sem inscrição de IPTU

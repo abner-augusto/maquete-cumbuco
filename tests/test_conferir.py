@@ -61,3 +61,10 @@ def test_relatorio_markdown(tmp_path, doc_sintetico, mapa_sintetico, tabela_sint
     assert "| desenho | 3 |" in texto
     assert "## Erros (0)" in texto
     assert "- QHL01: sem inscrição de IPTU" in texto
+
+
+def test_frente_curta_e_aviso(doc_sintetico, mapa_sintetico, tabela_sintetica, iptu_sintetico):
+    lotes = _lotes(doc_sintetico, mapa_sintetico)
+    lotes["Q01L01"] = replace(lotes["Q01L01"], frente_m=0.88)
+    rel = conferir(lotes, tabela_sintetica, iptu_sintetico, False, 0.005)
+    assert "Q01L01: frente de 0.88 m (menos de 5 m), conferir no desenho" in rel.avisos
