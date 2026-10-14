@@ -70,3 +70,20 @@ def test_topo_fechado_sem_rotulo_pega_o_multiplo_de_5_da_curva_vizinha():
     vizinha = Curva(_horizontal(30).pontos, 34.0)  # intermediária logo abaixo do topo
     completar_mestras([topo], [vizinha], 5.0)
     assert topo.z == 35.0
+
+
+# O loteamento é terraplenado: dentro da poligonal o relevo é suavizado (as dunas do
+# levantamento furavam vias e lotes); fora dela, fica o natural.
+
+
+def test_suavizar_dentro_tira_a_duna_so_dentro_da_poligonal():
+    from scripts.loteamento.relevo import suavizar_dentro
+
+    z = [[10.0] * 41 for _ in range(41)]
+    z[20][20] = 30.0  # duna dentro
+    z[2][2] = 30.0  # duna fora
+    g = Grade(0.0, 0.0, 5.0, 41, 41, z)
+    poligonal = [(60.0, 60.0), (140.0, 60.0), (140.0, 140.0), (60.0, 140.0)]
+    s = suavizar_dentro(g, [poligonal], sigma=10.0, transicao=10.0)
+    assert s.z[20][20] < 15.0
+    assert s.z[2][2] == 30.0

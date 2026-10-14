@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 import ezdxf
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
+from scipy.ndimage import distance_transform_edt, gaussian_filter
 
 from scripts.comum.ambiente import RAIZ
 
@@ -142,6 +143,32 @@ def gerar_grade(curvas: list[Curva], ext: tuple[float, float, float, float], pas
     if vazio.any():
         z[vazio] = NearestNDInterpolator(pts, zs)(gx[vazio], gy[vazio])
     return Grade(float(xmin), float(ymin), float(passo), nx, ny, np.round(z, 2).tolist())
+
+
+def mascara(grade: Grade, aneis: list[list[Ponto]]) -> np.ndarray:
+    """Pontos da grade dentro de algum dos anéis (z[j][i] → mascara[j, i]); par-ímpar, vetorizado."""
+    gx, gy = np.meshgrid(grade.x0 + grade.passo * np.arange(grade.nx), grade.y0 + grade.passo * np.arange(grade.ny))
+    dentro = np.zeros(gx.shape, dtype=bool)
+    for anel in aneis:
+        impar = np.zeros(gx.shape, dtype=bool)
+        for (x0, y0), (x1, y1) in zip(anel, anel[1:] + anel[:1]):
+            if y0 == y1:
+                continue
+            cruza = (y0 > gy) != (y1 > gy)
+            impar ^= cruza & (gx < (x1 - x0) * (gy - y0) / (y1 - y0) + x0)
+        dentro |= impar
+    return dentro
+
+
+def suavizar_dentro(grade: Grade, aneis: list[list[Ponto]], sigma: float, transicao: float) -> Grade:
+    """Relevo terraplenado: suave dentro dos anéis, natural fora, com transição em `transicao` metros."""
+    z = np.array(grade.z, dtype=float)
+    dentro = mascara(grade, aneis)
+    suave = gaussian_filter(z, sigma / grade.passo, mode="nearest")
+    dist = distance_transform_edt(~dentro) * grade.passo
+    peso = np.clip(1.0 - dist / transicao, 0.0, 1.0)
+    z2 = peso * suave + (1.0 - peso) * z
+    return Grade(grade.x0, grade.y0, grade.passo, grade.nx, grade.ny, np.round(z2, 2).tolist())
 
 
 def _densificar(pts: list[Ponto], passo: float = 10.0) -> list[Ponto]:

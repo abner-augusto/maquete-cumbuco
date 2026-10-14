@@ -6,7 +6,7 @@ Uso: uv run python -m scripts.loteamento.cena
 import json
 import sys
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import ezdxf
@@ -17,7 +17,7 @@ from scripts.comum.ambiente import RAIZ
 from .geometria import Ponto, area, contem, poligono_fechado, pontos_de
 from .malha import aninhar, drapear, refinar, simplificar, triangular
 from .relevo import DESTINO as RELEVO_JSON
-from .relevo import Grade
+from .relevo import Grade, mascara, suavizar_dentro
 
 DXF = RAIZ / "cache" / "dxf" / "planta-venda.dxf"
 CFG_TOML = RAIZ / "scripts" / "loteamento" / "cena.toml"
@@ -32,6 +32,10 @@ class CenaCfg:
     offsets: dict[str, float]
     tolerancia: float
     max_aresta: float
+    poligonal: list[str] = field(default_factory=list)  # loteamento terraplenado: relevo suave dentro
+    sigma: float = 8.0
+    transicao: float = 20.0
+    rebaixo: float = 0.6  # terreno escondido sob as áreas desce, para não furar
 
     @classmethod
     def carregar(cls, caminho: Path) -> "CenaCfg":
@@ -74,8 +78,11 @@ def _malha(grupos, grade: Grade, offset: float, cfg: CenaCfg) -> tuple[list[list
     return vertices, faces
 
 
-def _terreno(grade: Grade) -> dict:
-    vs = [[round(grade.x0 + i * grade.passo, 2), round(grade.y0 + j * grade.passo, 2), grade.z[j][i]]
+def _terreno(grade: Grade, sob: list[list[Ponto]] | None = None, rebaixo: float = 0.0) -> dict:
+    """Grade do relevo; dentro dos anéis `sob` (coberto pelas áreas) o terreno desce `rebaixo`."""
+    baixo = mascara(grade, sob) if sob else None
+    vs = [[round(grade.x0 + i * grade.passo, 2), round(grade.y0 + j * grade.passo, 2),
+           round(grade.z[j][i] - (rebaixo if baixo is not None and baixo[j, i] else 0.0), 2)]
           for j in range(grade.ny) for i in range(grade.nx)]
     fs = []
     for j in range(grade.ny - 1):
@@ -86,16 +93,21 @@ def _terreno(grade: Grade) -> dict:
 
 
 def montar(msp, grade: Grade, lotes: list[dict], cfg: CenaCfg, e0: float, n0: float) -> dict:
-    objetos = [_terreno(grade)]
+    poligonal = aneis_da_layer(msp, cfg.poligonal, e0, n0)
+    if poligonal:
+        grade = suavizar_dentro(grade, poligonal, cfg.sigma, cfg.transicao)
+    objetos = [_terreno(grade, poligonal, cfg.rebaixo)]
     lagoa = achar_lagoa(msp, cfg, e0, n0)
     for papel, layers in cfg.camadas.items():
         aneis = aneis_da_layer(msp, layers, e0, n0)
         if not aneis:
             continue
+        if lagoa and lagoa not in aneis and any(contem(a, lagoa[0]) for a in aneis):
+            aneis = aneis + [lagoa]  # a água fura a área que a contém
         v, f = _malha(aninhar(aneis), grade, cfg.offsets[papel], cfg)
         objetos.append({"nome": papel, "material": papel.lower(), "vertices": v, "faces": f})
     if lagoa:
-        nivel = min(grade.cota(x, y) for x, y in lagoa)
+        nivel = sum(grade.cota(x, y) for x, y in lagoa) / len(lagoa)  # nível médio da margem
         v, t = triangular(simplificar(lagoa, cfg.tolerancia), [])
         objetos.append({"nome": "Lagoa", "material": "agua",
                         "vertices": [[round(x, 2), round(y, 2), round(nivel, 2)] for x, y in v],

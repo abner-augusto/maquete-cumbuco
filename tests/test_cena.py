@@ -67,3 +67,24 @@ def test_cfg_carrega_do_toml():
 
     cfg = CenaCfg.carregar(RAIZ / "scripts" / "loteamento" / "cena.toml")
     assert "Vias" in cfg.camadas and cfg.offsets["lote"] > max(v for k, v in cfg.offsets.items() if k != "lote")
+
+
+def test_terreno_rebaixado_sob_a_poligonal():
+    from scripts.loteamento.cena import _terreno
+
+    g = Grade(0.0, 0.0, 10.0, 3, 3, [[10.0] * 3 for _ in range(3)])
+    t = _terreno(g, [[(5.0, 5.0), (15.0, 5.0), (15.0, 15.0), (5.0, 15.0)]], 0.6)
+    z = {(v[0], v[1]): v[2] for v in t["vertices"]}
+    assert z[(10.0, 10.0)] == pytest.approx(9.4)
+    assert z[(0.0, 0.0)] == pytest.approx(10.0)
+
+
+def test_lagoa_vira_furo_de_toda_area_que_a_contem(msp):
+    from dataclasses import replace
+
+    msp.add_lwpolyline(_ret(190, -10, 120, 120), close=True, dxfattribs={"layer": "VRD"})  # verde em volta
+    cfg = replace(CFG, camadas={**CFG.camadas, "Verdes": ["VRD"]}, offsets={**CFG.offsets, "Verdes": 0.08})
+    por_nome = {o["nome"]: o for o in montar(msp, GRADE, LOTES, cfg, E0, N0)["objetos"]}
+    v = por_nome["Verdes"]
+    a = sum(area([v["vertices"][i][:2] for i in f]) for f in v["faces"])
+    assert a == pytest.approx(120 * 120 - 1600, rel=0.01)
