@@ -122,6 +122,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "ezdxf" },
+    { name = "fonttools" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "pillow" },
@@ -136,6 +137,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "ezdxf", specifier = "==1.4.4" },
+    { name = "fonttools", specifier = ">=4.67.0" },
     { name = "numpy", specifier = ">=2.5.4" },
     { name = "pandas", specifier = ">=2.2" },
     { name = "pillow", specifier = ">=12.3.0" },
