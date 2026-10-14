@@ -8,9 +8,8 @@ Gerado por `scripts/loteamento/gerar_dados.py`. Erro bloqueia o `lotes.json`; av
 | tabela | 347 |
 | iptu | 322 |
 
-## Erros (1)
+## Erros (0)
 
-- Q03L24: área do desenho 349.72 m² × tabela 360.00 m² (-2.86%)
 
 ## Avisos (25)
 
