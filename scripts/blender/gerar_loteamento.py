@@ -1,6 +1,8 @@
 """Constrói o loteamento a partir de cache/cena/loteamento.json. Roda dentro do Blender:
 
-    blender -b --factory-startup --python-exit-code 1 -P gerar_loteamento.py -- cena.json saida.blend saida.glb [previa.png]
+    blender -b --factory-startup --python-exit-code 1 -P gerar_loteamento.py -- cena.json saida.blend saida.glb [previa.png] [contexto.json]
+
+O contexto (o entorno) entra só nas prévias: não vai ao .blend nem ao GLB.
 
 Não calcula geometria: só cria malhas, materiais e exporta. Ajuste é no Python de fora.
 """
@@ -15,6 +17,7 @@ import bpy
 args = sys.argv[sys.argv.index("--") + 1 :]
 CENA, BLEND, GLB = (Path(a) for a in args[:3])
 PREVIA = Path(args[3]) if len(args) > 3 else None
+CONTEXTO = Path(args[4]) if len(args) > 4 else None
 
 # Cores de cena (ambiente, não marca): sRGB 0–1 e rugosidade.
 MATERIAIS = {
@@ -26,6 +29,8 @@ MATERIAIS = {
     "fundo": ((0.60, 0.66, 0.48), 0.95),
     "app": ((0.44, 0.56, 0.38), 0.95),
     "agua": ((0.30, 0.55, 0.62), 0.15),
+    "entorno": ((0.86, 0.80, 0.68), 0.95),  # igual ao terreno: a costura não aparece
+    "mar": ((0.18, 0.42, 0.55), 0.2),  # provisório: o front troca por shader
     "lote_residencial": ((0.93, 0.89, 0.80), 0.8),
     "lote_uso_misto": ((0.85, 0.76, 0.62), 0.8),
 }
@@ -48,8 +53,8 @@ def material(nome: str) -> bpy.types.Material:
     return m
 
 
-def construir(dados: dict) -> bpy.types.Collection:
-    col = bpy.data.collections.new("Loteamento")
+def construir(dados: dict, nome: str = "Loteamento") -> bpy.types.Collection:
+    col = bpy.data.collections.new(nome)
     bpy.context.scene.collection.children.link(col)
     for o in dados["objetos"]:
         me = bpy.data.meshes.new(o["nome"])
@@ -80,7 +85,7 @@ def _vista(cena, alvo_xyz, distancia: float, destino: Path) -> None:
     trava = cam.constraints.new("TRACK_TO")
     trava.target, trava.track_axis, trava.up_axis = alvo, "TRACK_NEGATIVE_Z", "UP_Y"
     cam.data.lens = 35
-    cam.data.clip_start, cam.data.clip_end = 1.0, distancia * 10
+    cam.data.clip_start, cam.data.clip_end = max(1.0, distancia / 200), distancia * 10  # precisão de profundidade de longe
     cena.camera = cam
     cena.render.filepath = str(destino)
     bpy.ops.render.render(write_still=True)
@@ -88,7 +93,13 @@ def _vista(cena, alvo_xyz, distancia: float, destino: Path) -> None:
     bpy.data.objects.remove(alvo)
 
 
-def previa(destino: Path, col: bpy.types.Collection) -> None:
+def _caixa(cos) -> tuple[tuple[float, float, float], float]:
+    xs, ys, zs = [c.x for c in cos], [c.y for c in cos], [c.z for c in cos]
+    centro = ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, sum(zs) / len(zs))
+    return centro, max(max(xs) - min(xs), max(ys) - min(ys))
+
+
+def previa(destino: Path, col: bpy.types.Collection, ctx: bpy.types.Collection | None = None) -> None:
     cena = bpy.context.scene
     try:
         cena.render.engine = "BLENDER_WORKBENCH"
@@ -97,12 +108,18 @@ def previa(destino: Path, col: bpy.types.Collection) -> None:
     cena.display.shading.color_type = "MATERIAL"
     cena.display.shading.light = "STUDIO"
     cena.render.resolution_x, cena.render.resolution_y = 1600, 1000
+    sufixo = lambda s: destino.with_name(destino.stem + s + destino.suffix)  # noqa: E731
+    if ctx is not None:
+        centro, raio = _caixa([v.co for ob in ctx.objects for v in ob.data.vertices])
+        _vista(cena, centro, raio * 1.1, sufixo("-entorno"))
     lotes = [v.co for ob in col.objects if ob.name.startswith("Q") for v in ob.data.vertices]
-    xs, ys, zs = [c.x for c in lotes], [c.y for c in lotes], [c.z for c in lotes]
-    centro = ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, sum(zs) / len(zs))
-    raio = max(max(xs) - min(xs), max(ys) - min(ys))
+    if not lotes:
+        centro, raio = _caixa([v.co for ob in col.objects for v in ob.data.vertices])
+        _vista(cena, centro, raio * 1.1, destino)
+        return
+    centro, raio = _caixa(lotes)
     _vista(cena, centro, raio * 1.1, destino)
-    _vista(cena, centro, 160.0, destino.with_name(destino.stem + "-perto" + destino.suffix))
+    _vista(cena, centro, 160.0, sufixo("-perto"))
     if "Lagoa" in col.objects:
         vs = [v.co for v in col.objects["Lagoa"].data.vertices]
         meio = (sum(c.x for c in vs) / len(vs), sum(c.y for c in vs) / len(vs), vs[0].z)
@@ -121,8 +138,9 @@ def main() -> None:
         ob.select_set(True)
     bpy.ops.export_scene.gltf(filepath=str(GLB), export_format="GLB", use_selection=True,
                               export_apply=True, export_yup=True, export_texcoords=False)
+    ctx = construir(json.loads(CONTEXTO.read_text(encoding="utf-8")), "Contexto") if CONTEXTO else None
     if PREVIA:
-        previa(PREVIA, col)
+        previa(PREVIA, col, ctx)
     tris = sum(len(p.vertices) - 2 for ob in col.objects for p in ob.data.polygons)
     print("RESUMO " + json.dumps({"objetos": len(col.objects), "triangulos": tris,
                                    "glb_mb": round(GLB.stat().st_size / 1e6, 2)}))

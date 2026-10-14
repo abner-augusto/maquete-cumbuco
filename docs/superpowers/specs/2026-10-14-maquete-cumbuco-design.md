@@ -151,7 +151,7 @@ O método é o do Benevides: **o CAD é a fonte e o Blender é só destino de sc
 
 1. **DWG → DXF** pelo ODA File Converter e **inventário de layers** do `PLANTA VENDA.dwg`: lotes, números de lote e quadra, meio-fio, calçadas, áreas verdes, APP, lagoa, curvas de nível. **Gate: o Abner confere o inventário.**
 2. **Georreferência:** verificar se o DWG está em UTM SIRGAS 2000, fuso 24S. Se não estiver, registrar o desenho pelo KMZ do estande e por pontos notáveis (rotatória, CE-090). A cena usa origem local e norte verdadeiro, e a transformação fica registrada em arquivo.
-3. **Relevo:** TIN pelas curvas de nível do projeto dentro do loteamento e Copernicus GLO-30 no entorno, costurados na borda. Sem exagero vertical.
+3. **Relevo:** platô plano na área desenhada da Fase 1 (a obra planifica o terreno), morro em volta pelas curvas do levantamento suavizadas e Copernicus GLO-30 até 4 km, costurados na borda (spec `2026-10-14-relevo-plato-entorno-design.md`, Plano 3c). Sem exagero vertical.
 4. **Geração no Blender (bpy):** terreno; lotes como placas finas assentadas no relevo, **um objeto por lote com nome `Q07L04`** (chave do clique e do `lotes.json`); vias, calçadas e meio-fio; áreas verdes; lagoa como água.
 5. **Volumes simplificados** (só casca, cobertura e aberturas principais; sem móveis nem paredes internas):
    - Estande: footprint da v10c extrudado, com cobertura.
@@ -160,7 +160,7 @@ O método é o do Benevides: **o CAD é a fonte e o Blender é só destino de sc
 
 ### 7.2 Entorno (`scripts/entorno/`)
 
-Derivado do Manoa, com novo centro e raio de cerca de 2,5 km: prédios do Overture extrudados, vias e áreas do OSM, mar, faixa de praia e dunas pelo relevo. Os minutos de carro saem do grafo OSM.
+Derivado do Manoa, com novo centro e raio de 4 km (relevo e mar do Plano 3c): prédios do Overture extrudados, vias e áreas do OSM, mar, faixa de praia e dunas pelo relevo. Os minutos de carro saem do grafo OSM.
 
 ### 7.3 Vegetação
 

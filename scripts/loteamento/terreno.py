@@ -17,7 +17,7 @@ from scipy.ndimage import distance_transform_edt, gaussian_filter, label, map_co
 from scripts.comum.ambiente import RAIZ
 from scripts.entorno import dem
 
-from .cena import CFG_TOML, DXF, aneis_da_layer
+from .cena import CFG_TOML, DXF, CenaCfg, aneis_da_layer
 from .geometria import Ponto, centroide
 from .relevo import DESTINO as RELEVO_JSON
 from .relevo import Grade, mascara
@@ -34,6 +34,7 @@ class TerrenoCfg:
     mar_rebaixo: float
     passo_perto: float
     plato_cota: float | None = None
+    plato_folga: float = 0.0  # m de platô além das áreas, antes do talude
 
     @classmethod
     def carregar(cls, caminho: Path) -> "TerrenoCfg":
@@ -96,8 +97,9 @@ def separar_mar(dem: Grade, nivel: float = 0.0, rebaixo: float = 1.0) -> Grade:
 
 
 def _distancia_fora(g: Grade, aneis: list[list[Ponto]]) -> np.ndarray:
-    """Metros de cada nó até a área dos anéis (0 dentro)."""
-    return distance_transform_edt(~mascara(g, aneis)) * g.passo
+    """Metros de cada nó até a área dos anéis (0 dentro). A distância ao nó de dentro mais perto
+    passa da distância à borda em até uma célula: desconta-se uma célula (erra para o lado do platô)."""
+    return np.maximum(distance_transform_edt(~mascara(g, aneis)) * g.passo - g.passo, 0.0)
 
 
 def compor_perto(lev: Grade, dem: Grade, poligonal: list[list[Ponto]], cota: float, cfg: TerrenoCfg) -> Grade:
@@ -115,7 +117,7 @@ def compor_perto(lev: Grade, dem: Grade, poligonal: list[list[Ponto]], cota: flo
     dist = _distancia_fora(lev, poligonal)
     peso = np.clip((cfg.alcance + cfg.transicao - dist) / cfg.transicao, 0.0, 1.0) * np.clip(cobertura, 0.0, 1.0)
     base = peso * suave + (1.0 - peso) * longe
-    t = np.clip(dist / cfg.talude, 0.0, 1.0)
+    t = np.clip((dist - cfg.plato_folga) / cfg.talude, 0.0, 1.0)
     final = (1.0 - t) * cota + t * base
     return Grade(lev.x0, lev.y0, lev.passo, lev.nx, lev.ny, np.round(final, 2).tolist())
 
@@ -170,19 +172,24 @@ def main() -> int:
     lotes = json.loads((RAIZ / "dados" / "lotes.json").read_text(encoding="utf-8"))["lotes"]
     lev = Grade.de_json(json.loads(RELEVO_JSON.read_text(encoding="utf-8")))
     bruto = Grade.de_json(json.loads(dem.DESTINO.read_text(encoding="utf-8")))
-    poligonal = aneis_da_layer(ezdxf.readfile(DXF).modelspace(), cfg.poligonal, e0, n0)
+    msp = ezdxf.readfile(DXF).modelspace()
+    poligonal = aneis_da_layer(msp, cfg.poligonal, e0, n0)
+    # O platô cobre tudo o que está desenhado (vias de acesso, verdes e lotes fora da poligonal
+    # também): nada da planta fica no talude, onde a grade de 10 m o cortaria.
+    camadas = [l for ls in CenaCfg.carregar(CFG_TOML).camadas.values() for l in ls]
+    plato = poligonal + aneis_da_layer(msp, camadas, e0, n0) + [[tuple(p) for p in l["poligono"]] for l in lotes]
     xs = [x for a in poligonal for x, _ in a]
     ys = [y for a in poligonal for _, y in a]
     folga = cfg.alcance + cfg.transicao + bruto.passo  # a borda do perto já é Copernicus puro
     ext = encaixar((min(xs) - folga, min(ys) - folga, max(xs) + folga, max(ys) + folga), bruto.passo)
     perto_lev = reamostrar(lev, ext, cfg.passo_perto)
-    fora = _distancia_fora(perto_lev, poligonal) > cfg.talude
+    fora = _distancia_fora(perto_lev, plato) > cfg.plato_folga + cfg.talude
     com_mar = separar_mar(bruto, 0.0, cfg.mar_rebaixo)
     delta = ajustar_datum(perto_lev, com_mar, fora)
     longe = Grade(bruto.x0, bruto.y0, bruto.passo, bruto.nx, bruto.ny,
                   (np.array(com_mar.z, dtype=float) + delta).round(2).tolist())
     cota = cfg.plato_cota if cfg.plato_cota is not None else cota_plato(lev, lotes)
-    perto = compor_perto(perto_lev, longe, poligonal, cota, cfg)
+    perto = compor_perto(perto_lev, longe, plato, cota, cfg)
     centro = dem.centro_dos_lotes()
     v, f = malha_entorno(longe, ext, centro, cfg.raio)
     vm, fm = disco_mar(centro, cfg.raio, round(delta, 2))

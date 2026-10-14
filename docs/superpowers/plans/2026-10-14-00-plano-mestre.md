@@ -10,8 +10,9 @@ A spec cobre cinco subsistemas independentes. Cada um tem seu plano, que produz 
 | 2a | Marca: paleta, tokens e prancha (`2026-10-14-02-marca.md`) | `paleta.json`, `tokens.css` no formato de tema do espelho, prancha comparativa | — | ⛔ escolha do logo e das fontes |
 | 2b | Marca: vetorização e brandbook (`2026-10-14-02b-marca-vetores.md`) | SVGs gerados por script, brandbook HTML+PDF | 2a | — |
 | 3 | Loteamento no Blender (`2026-10-14-03-loteamento-blender.md`) | Relevo pelas curvas cotadas, cena em JSON, `loteamento.glb` e `.blend` em `6-PROJETOS/10-MAQUETE INTERATIVA/` com 347 lotes nomeados | 1 | — |
+| 3c | Relevo simplificado (`2026-10-14-03c-relevo-plato-entorno.md`) | Platô plano, morro pelo levantamento suavizado, Copernicus até 4 km; `entorno.glb` (`Entorno`, `Mar`) costurado ao terreno perto | 3 | — |
 | 3b | Marcos (estande, portaria, clube) | Volumes simplificados posicionados, galeria em `marcos.json` | 3 | — |
-| 4 | Entorno, vegetação e pontos | `scripts/entorno` derivado do Manoa (raio de 2,5 km), vegetação instanciada, `pontos.json` com fotos e créditos, `marcos.json` → `entorno.glb` | 1 (origem local) | ⛔ lista de POIs e fotos |
+| 4 | Entorno, vegetação e pontos | `scripts/entorno` derivado do Manoa (raio de 4 km; relevo e mar já vêm do 3c), vegetação instanciada, `pontos.json` com fotos e créditos, `marcos.json` → `entorno.glb` | 1 (origem local) | ⛔ lista de POIs e fotos |
 | 5 | Front e publicação | `frontend/` derivado do espelho: Cena, Folha, Ficha, marcos, pontos, marca; Playwright; orçamento de 15 MB; Worker estático e `iniciar.cmd` | 2 (tokens), 3, 4 | ⛔ proteção do nome antes de publicar |
 
 Ao fim do Plano 5: uma única sessão de revisão visual, e depois o ponteiro no `_index.md` de Cumbuco e a entrada no `log.md` do vault.

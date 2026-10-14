@@ -106,3 +106,13 @@ def test_borda_do_perto_e_linear_entre_nos_do_entorno():
 def test_disco_do_mar_no_nivel():
     v, f = disco_mar((10.0, 20.0), 4000.0, 1.5, n=32)
     assert all(z == 1.5 for _, _, z in v) and len(f) == 32
+
+
+def test_plato_tem_folga_antes_do_talude():
+    # vias e verdes desenhados na borda: o talude só começa depois da folga
+    lev = _grade(lambda x, y: 40.0)
+    dem = _grade(lambda x, y: 40.0, passo=30.0, x0=-600.0, y0=-600.0, n=41)
+    cfg = TerrenoCfg(**{**CFG.__dict__, "plato_folga": 10.0})
+    g = compor_perto(lev, dem, [QUADRADO], 22.0, cfg)
+    assert g.z[30][36] == pytest.approx(22.0)  # (60, 0): 10 m fora da poligonal, ainda platô
+    assert g.z[30][38] > 22.0  # (80, 0): já no talude
