@@ -2,6 +2,8 @@
 
 Spec de design, aprovada em conversa em 14/10/2026. Status: **aguardando revisão do Abner**.
 
+> **Mudança de nome (14/10/2026, decisão da empresa por questão jurídica):** a marca ativa passa a ser **Cidade das Américas — Residencial Cumbuco**, com o mesmo símbolo, paleta e fontes. A família Alternativa fica guardada (`marca/svg/alternativa/`, `marca/brandbook/alternativa/`) para validar com o marketing quando o registro do nome sair, e não aparece no site. Onde esta spec diz "Alternativa", leia a família ativa.
+
 ## 1. Objetivo
 
 Um site com maquete 3D em Three.js da Fase 1 (Cancun) do loteamento Cidade das Américas, com a marca **Alternativa Residencial Cumbuco**, usado na venda dos lotes. O cliente e o corretor clicam num lote e veem a ficha dele, exploram o entorno e os pontos de interesse (próximos e distantes) e abrem o estande, a portaria e o clube com fotos e planta humanizada.
@@ -69,7 +71,7 @@ O `2-LEVANTAMENTOS/MASTER.kmz` está **desatualizado** nos lotes comerciais (ata
 
 ## 4. Marca
 
-**Arquitetura de marca:** o produto **Alternativa Residencial Cumbuco** fica em destaque, e a marca-mãe **Alternativa Desenvolvimento Urbano** entra como assinatura discreta (rodapé e carimbo).
+**Arquitetura de marca (família Alternativa, guardada):** o produto **Alternativa Residencial Cumbuco** fica em destaque, e a marca-mãe **Alternativa Desenvolvimento Urbano** entra como assinatura discreta (rodapé e carimbo).
 
 **Insumos** (todos raster, aparentemente gerados por IA):
 

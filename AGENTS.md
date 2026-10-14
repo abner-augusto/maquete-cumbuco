@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Maquete interativa 3D (Three.js) do loteamento Alternativa Residencial Cumbuco, Fase 1 (Cancun), para venda de lotes. Publicada como Worker de assets estáticos no Cloudflare e usada offline via `iniciar.cmd`.
+Maquete interativa 3D (Three.js) do loteamento Cidade das Américas — Residencial Cumbuco, Fase 1 (Cancun), para venda de lotes. Publicada como Worker de assets estáticos no Cloudflare e usada offline via `iniciar.cmd`.
 
 ## Language
 
@@ -23,4 +23,4 @@ The design spec lives in `docs/superpowers/specs/`. Read it before changing scop
 
 ## Confidentiality
 
-The name "Alternativa" is confidential until the naming compliance is signed. Do not publish a public, indexable URL without the user's explicit go-ahead.
+The active brand name is "Cidade das Américas" (`FAMILIAS`/`ATIVA` in `scripts/marca/familias.py`). The "Alternativa" family is kept only for marketing validation until the name is registered: it must not appear in the site, the active brandbook, or anything published. Do not publish a public, indexable URL without the user's explicit go-ahead.

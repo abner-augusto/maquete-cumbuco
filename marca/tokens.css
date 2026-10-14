@@ -1,5 +1,5 @@
-/* temas/alternativa — gerado por scripts/marca/tokens.py a partir de marca/paleta.json. Não editar à mão. */
-[data-tema="alternativa"] {
+/* temas/americas — gerado por scripts/marca/tokens.py a partir de marca/paleta.json. Não editar à mão. */
+[data-tema="americas"] {
   --tema-papel: #EAE3D8;
   --tema-papel-2: #E2DACD;
   --tema-areia: #DCCEB9;
@@ -28,7 +28,7 @@
   --tema-sombra-3: 0 2px 4px rgba(19, 16, 12, 0.1), 0 10px 22px rgba(19, 16, 12, 0.14);
 }
 
-[data-tema="alternativa"][data-cor="escuro"] {
+[data-tema="americas"][data-cor="escuro"] {
   --tema-papel: #0E0D0B;
   --tema-papel-2: #13100C;
   --tema-areia: #251F15;

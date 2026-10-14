@@ -73,7 +73,7 @@ def fonte_teste(tmp_path):
     caneta.moveTo((0, 0)); caneta.lineTo((0, 700)); caneta.lineTo((500, 700)); caneta.lineTo((500, 0)); caneta.closePath()
     caixa = caneta.glyph()
     vazio = TTGlyphPen(None).glyph()
-    letras = [chr(c) for c in range(ord("A"), ord("Z") + 1)] + ["Ç", "Õ", "·"]
+    letras = [chr(c) for c in range(ord("A"), ord("Z") + 1)] + ["Ç", "Õ", "É", "·"]
     nomes = [f"g{ord(c)}" for c in letras]
     fb = FontBuilder(1000, isTTF=True)
     fb.setupGlyphOrder([".notdef", "space", *nomes])

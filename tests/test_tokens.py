@@ -37,8 +37,8 @@ def test_ouro_cru_nao_vira_texto():
 
 def test_css_tem_os_dois_blocos_e_as_fontes():
     texto = css(tema(P), FONTES_PADRAO)
-    assert '[data-tema="alternativa"] {' in texto
-    assert '[data-tema="alternativa"][data-cor="escuro"] {' in texto
+    assert '[data-tema="americas"] {' in texto
+    assert '[data-tema="americas"][data-cor="escuro"] {' in texto
     assert '--tema-fonte-display: "Cinzel"' in texto
     assert texto.count("--tema-papel:") == 2
 

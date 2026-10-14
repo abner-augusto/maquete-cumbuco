@@ -103,7 +103,7 @@ def _sombras(rgb: str, a: tuple[float, float, float, float, float, float]) -> li
     ]
 
 
-def css(t: dict[str, dict[str, str]], fontes: dict[str, str], nome: str = "alternativa") -> str:
+def css(t: dict[str, dict[str, str]], fontes: dict[str, str], nome: str = "americas") -> str:
     tinta = ", ".join(str(x) for x in hex_para_rgb(t["claro"]["tinta"]))
     linhas = [
         f"/* temas/{nome} — gerado por scripts/marca/tokens.py a partir de marca/paleta.json. Não editar à mão. */",

@@ -1,6 +1,7 @@
 import re
 
 from scripts.marca.brandbook import EQUIVALENTES, STATUS, html
+from scripts.marca.familias import FAMILIAS
 from scripts.marca.paleta import Paleta
 from scripts.marca.tokens import tema
 
@@ -13,8 +14,8 @@ NOMES = [f"{c}-{v}" for c in ("simbolo", "produto-vertical", "produto-horizontal
 MINIMOS = {"simbolo": (60, 12), "produto-vertical": (90, 20), "produto-horizontal": (180, 40), "assinatura-mae": (170, 38)}
 
 
-def _html(svgs=None):
-    return html(P, tema(P), svgs or {n: SVG for n in NOMES}, {"Cinzel": "AAAA", "Jost": "BBBB"}, MINIMOS, 0.1)
+def _html(svgs=None, familia="alternativa"):
+    return html(P, tema(P), svgs or {n: SVG for n in NOMES}, {"Cinzel": "AAAA", "Jost": "BBBB"}, MINIMOS, 0.1, FAMILIAS[familia])
 
 
 def test_tem_as_oito_secoes():
@@ -56,3 +57,11 @@ def test_tamanho_minimo_vem_da_geometria():
 def test_area_de_protecao_desenhada_com_x():
     # x = 10% da largura da assinatura → padding p = x/(1+2x) da caixa tracejada
     assert "padding:8.33%" in _html()
+
+
+def test_brandbook_da_familia_ativa_nao_cita_alternativa():
+    minimos = {k: v for k, v in MINIMOS.items() if k != "assinatura-mae"}
+    nomes = [n for n in NOMES if not n.startswith("assinatura-mae")]
+    h = html(P, tema(P), {n: SVG for n in nomes}, {"Cinzel": "AAAA", "Jost": "BBBB"}, minimos, 0.1, FAMILIAS["americas"])
+    assert "alternativa" not in h.lower()
+    assert "Cidade das Américas" in h

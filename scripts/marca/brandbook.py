@@ -8,7 +8,8 @@ from pathlib import Path
 
 from scripts.comum.ambiente import RAIZ
 
-from .composicoes import COMPOSICOES, VARIANTES, Tipos, fracao_protecao, minimos
+from .composicoes import VARIANTES, Tipos, composicoes_da, fracao_protecao, minimos
+from .familias import ATIVA, FAMILIAS, Familia
 from .composicoes import DESTINO as SVG_DIR
 from .fontes import garantir
 from .paleta import DESTINO as PALETA_JSON
@@ -48,7 +49,7 @@ def _secao(titulo: str, corpo: str) -> str:
 
 def html(
     p: Paleta, t: dict, svgs: dict[str, str], fontes_b64: dict[str, str],
-    minimo: dict[str, tuple[int, int]], x_protecao: float,
+    minimo: dict[str, tuple[int, int]], x_protecao: float, f: Familia,
 ) -> str:
     svgs = _Usos(svgs)
     fundo = {"creme": p.creme, "preto": p.preto, "bronze": p.bronze}
@@ -56,16 +57,23 @@ def html(
         f'@font-face {{ font-family:"{n}"; src:url(data:font/ttf;base64,{b}) format("truetype"); font-weight:100 900; }}'
         for n, b in fontes_b64.items()
     )
-    arquitetura = (
-        "<p>O produto <b>Alternativa Residencial Cumbuco</b> vem em destaque; a marca-mãe <b>Alternativa Desenvolvimento "
-        "Urbano</b> assina de forma discreta (rodapé, carimbo). As duas usam o mesmo símbolo de arco e pilar.</p>"
-        f'<div class="par"><div class="caixa" style="background:{p.creme}">{svgs["produto-vertical-positivo"]}</div>'
-        f'<div class="caixa" style="background:{p.creme}">{svgs["assinatura-mae-positivo"]}</div></div>'
-    )
+    if f.mae:
+        arquitetura = (
+            f"<p>O produto <b>{escape(f.titulo)}</b> vem em destaque; a marca-mãe <b>{escape(f.titulo_mae or '')}</b> "
+            "assina de forma discreta (rodapé, carimbo). As duas usam o mesmo símbolo de arco e pilar.</p>"
+            f'<div class="par"><div class="caixa" style="background:{p.creme}">{svgs["produto-vertical-positivo"]}</div>'
+            f'<div class="caixa" style="background:{p.creme}">{svgs["assinatura-mae-positivo"]}</div></div>'
+        )
+    else:
+        arquitetura = (
+            f"<p>A marca é o produto <b>{escape(f.titulo)}</b>, com o símbolo de arco e pilar. "
+            "Nesta fase não há assinatura de marca-mãe.</p>"
+            f'<div class="caixa" style="background:{p.creme}">{svgs["produto-vertical-positivo"]}</div>'
+        )
     versoes = '<div class="grade">' + "".join(
         f'<figure><div class="caixa" style="background:{fundo[_FUNDO[v]]}">{svgs[f"{c}-{v}"]}</div>'
         f"<figcaption>{c} · {v}</figcaption></figure>"
-        for c in COMPOSICOES for v in VARIANTES
+        for c in composicoes_da(f) for v in VARIANTES
     ) + "</div>"
     protecao = (
         "<p>Em volta da assinatura, deixe livre no mínimo <b>x</b>, a largura do pilar do símbolo. "
@@ -114,7 +122,7 @@ def html(
     )
     tipografia = (
         '<div class="amostra" style="font-family:Cinzel"><small>Cinzel — nomes e títulos</small>'
-        '<div style="font-size:48px;letter-spacing:.18em">ALTERNATIVA</div></div>'
+        f'<div style="font-size:48px;letter-spacing:.18em">{escape(f.nome)}</div></div>'
         '<div class="amostra" style="font-family:Jost"><small>Jost — sub-linhas, texto e interface</small>'
         '<div style="font-size:22px;letter-spacing:.45em;font-weight:300">RESIDENCIAL · CUMBUCO</div>'
         '<p style="font-size:16px">Quadra 07, lote 04: 365,61 m² com frente de 12,37 m.</p></div>'
@@ -123,6 +131,10 @@ def html(
     )
     status = "".join(f'<div class="cor"><span style="background:{c}"></span><b>{n}</b><code>{c}</code></div>' for n, c in STATUS.items())
     status_txt = f'<div class="cores">{status}</div><p>Fixas em qualquer empreendimento: não seguem a marca, para o corretor ler o mapa igual em todos.</p>'
+    rodape = (
+        "Preliminar e confidencial: o nome aguarda o registro. Versão guardada para validação com o marketing."
+        if f.confidencial else "Preliminar."
+    )
     secoes = "".join(
         _secao(n, c)
         for n, c in (
@@ -163,9 +175,9 @@ footer {{ margin-top:48px; font-size:12px; color:{t['claro']['tinta-3']}; }}
 @media (max-width:640px) {{ .par {{ grid-template-columns:1fr; }} }}
 </style></head>
 <body><main>
-<header><h1>Brandbook preliminar</h1><p>Alternativa Residencial Cumbuco · Alternativa Desenvolvimento Urbano</p></header>
+<header><h1>Brandbook preliminar</h1><p>{escape(" · ".join(x for x in (f.titulo, f.titulo_mae) if x))}</p></header>
 {secoes}
-<footer>Preliminar e confidencial: o nome aguarda a assinatura do compliance. Gerado por scripts/marca/brandbook.py.</footer>
+<footer>{rodape} Gerado por scripts/marca/brandbook.py.</footer>
 </main></body></html>
 """
 
@@ -183,18 +195,20 @@ def pdf(origem: Path, destino: Path) -> None:
 
 
 def main() -> int:
-    p = Paleta.carregar(PALETA_JSON)
-    svgs = {a.stem: a.read_text(encoding="utf-8") for a in SVG_DIR.glob("*.svg")}
+    p, tipos = Paleta.carregar(PALETA_JSON), Tipos.padrao()
     fontes_b64 = {
         "Cinzel": base64.b64encode(garantir("Cinzel[wght].ttf").read_bytes()).decode("ascii"),
         "Jost": base64.b64encode(garantir("Jost[wght].ttf").read_bytes()).decode("ascii"),
     }
-    DESTINO.mkdir(parents=True, exist_ok=True)
-    pagina = DESTINO / "index.html"
-    tipos = Tipos.padrao()
-    pagina.write_text(html(p, tema(p), svgs, fontes_b64, minimos(tipos), fracao_protecao(tipos)), encoding="utf-8")
-    pdf(pagina, DESTINO / "brandbook.pdf")
-    print(pagina, DESTINO / "brandbook.pdf", sep="\n")
+    for f in FAMILIAS.values():
+        svgs = {a.stem: a.read_text(encoding="utf-8") for a in (SVG_DIR / f.chave).glob("*.svg")}
+        destino = DESTINO / f.chave
+        destino.mkdir(parents=True, exist_ok=True)
+        pagina = destino / "index.html"
+        conteudo = html(p, tema(p), svgs, fontes_b64, minimos(tipos, f), fracao_protecao(tipos, f), f)
+        pagina.write_text(conteudo, encoding="utf-8")
+        pdf(pagina, destino / "brandbook.pdf")
+        print(pagina, destino / "brandbook.pdf", "(ativa)" if f.chave == ATIVA else "", sep="\n")
     return 0
 
 

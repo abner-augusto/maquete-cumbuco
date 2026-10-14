@@ -1,4 +1,7 @@
-"""Assinaturas da marca em SVG (símbolo, produto, marca-mãe) nas quatro variantes. Uso: uv run python -m scripts.marca.composicoes"""
+"""Assinaturas da marca em SVG (símbolo, produto, marca-mãe) nas quatro variantes, uma pasta por família de nome.
+
+Uso: uv run python -m scripts.marca.composicoes
+"""
 
 import math
 import sys
@@ -10,6 +13,7 @@ from fontTools.ttLib import TTFont
 
 from scripts.comum.ambiente import RAIZ
 
+from .familias import FAMILIAS, Familia, Linha
 from .fontes import garantir
 from .letreiro import contorno, fonte
 from .paleta import DESTINO as PALETA_JSON
@@ -56,7 +60,7 @@ def cores_da_variante(p: Paleta, v: str) -> tuple[str, str]:
 def _texto(tt: TTFont, s: str, largura_alvo: float, espacamento: float, cor: str) -> Peca:
     medida = contorno(tt, s, 100, espacamento)
     l = contorno(tt, s, 100 * largura_alvo / medida.largura, espacamento)
-    return Peca(f'<path transform="translate(0 {l.altura_maiuscula:.2f})" fill="{cor}" d="{l.d}"/>', l.largura, l.altura_maiuscula)
+    return Peca(f'<path transform="translate(0 {l.topo:.2f})" fill="{cor}" d="{l.d}"/>', l.largura, l.topo)
 
 
 def _filete(largura: float, cor: str) -> Peca:
@@ -110,44 +114,53 @@ def _documento(pc: Peca) -> str:
     )
 
 
-def simbolo(t: Tipos, cs: str, ct: str) -> Peca:
+def simbolo(t: Tipos, f: Familia, cs: str, ct: str) -> Peca:
     return _simbolo(384.0, cs)
 
 
-def produto_vertical(t: Tipos, cs: str, ct: str) -> Peca:
-    return _pilha(
-        [
-            _simbolo(384.0, cs),
-            _texto(t.serifada, "ALTERNATIVA", 1100, 0.18, ct),
-            _filete(520, ct),
-            _texto(t.sans_leve, "RESIDENCIAL", 560, 0.5, ct),
-            _texto(t.sans, "CUMBUCO", 480, 0.55, ct),
-        ],
-        [70, 34, 34, 26],
-    )
+def _sub_linha(t: Tipos, linha: Linha, ct: str) -> Peca:
+    texto, peso, largura, espacamento = linha
+    return _texto(t.sans_leve if peso == "leve" else t.sans, texto, largura, espacamento, ct)
 
 
-def produto_horizontal(t: Tipos, cs: str, ct: str) -> Peca:
-    texto = _pilha_esquerda(
-        [
-            _texto(t.serifada, "ALTERNATIVA", 900, 0.18, ct),
-            _filete(900, ct),
-            _texto(t.sans_leve, "RESIDENCIAL · CUMBUCO", 900, 0.35, ct),
-        ],
-        [26, 26],
-    )
+def produto_vertical(t: Tipos, f: Familia, cs: str, ct: str) -> Peca:
+    pecas, vaos = [_simbolo(384.0, cs)], [70.0]
+    if f.sobre_nome:
+        pecas.append(_texto(t.sans_leve, f.sobre_nome, 480, 0.5, ct))
+        vaos.append(26.0)
+    pecas += [_texto(t.serifada, f.nome, 1100, 0.18, ct), _filete(520, ct)]
+    vaos += [34.0, 34.0]
+    for i, linha in enumerate(f.produto):
+        pecas.append(_sub_linha(t, linha, ct))
+        if i < len(f.produto) - 1:
+            vaos.append(26.0)
+    return _pilha(pecas, vaos)
+
+
+def produto_horizontal(t: Tipos, f: Familia, cs: str, ct: str) -> Peca:
+    pecas, vaos = [], []
+    if f.sobre_nome:
+        pecas.append(_texto(t.sans_leve, f.sobre_nome, 380, 0.5, ct))
+        vaos.append(22.0)
+    pecas += [
+        _texto(t.serifada, f.nome, 900, 0.18, ct),
+        _filete(900, ct),
+        _texto(t.sans_leve, f.produto_linha, 900, 0.35, ct),
+    ]
+    vaos += [26.0, 26.0]
+    texto = _pilha_esquerda(pecas, vaos)
     return _lado_a_lado(_simbolo(texto.altura * 1.1, cs), texto, 60)
 
 
-def assinatura_mae(t: Tipos, cs: str, ct: str) -> Peca:
+def assinatura_mae(t: Tipos, f: Familia, cs: str, ct: str) -> Peca:
     texto = _pilha_esquerda(
-        [_texto(t.serifada, "ALTERNATIVA", 900, 0.18, ct), _texto(t.sans_leve, "DESENVOLVIMENTO URBANO", 900, 0.3, ct)],
+        [_texto(t.serifada, f.nome, 900, 0.18, ct), _texto(t.sans_leve, f.mae or "", 900, 0.3, ct)],
         [30],
     )
     return _lado_a_lado(_simbolo(texto.altura * 1.1, cs), texto, 60)
 
 
-COMPOSICOES: dict[str, Callable[[Tipos, str, str], Peca]] = {
+COMPOSICOES: dict[str, Callable[[Tipos, Familia, str, str], Peca]] = {
     "simbolo": simbolo,
     "produto-vertical": produto_vertical,
     "produto-horizontal": produto_horizontal,
@@ -155,21 +168,26 @@ COMPOSICOES: dict[str, Callable[[Tipos, str, str], Peca]] = {
 }
 
 
-def minimos(t: Tipos) -> dict[str, tuple[int, int]]:
+def composicoes_da(f: Familia) -> dict[str, Callable[[Tipos, Familia, str, str], Peca]]:
+    """Composições que a família tem: sem marca-mãe, sem assinatura da marca-mãe."""
+    return {n: c for n, c in COMPOSICOES.items() if n != "assinatura-mae" or f.mae}
+
+
+def minimos(t: Tipos, f: Familia) -> dict[str, tuple[int, int]]:
     """Largura mínima (px, mm) de cada composição para o vão entre fita e pilar continuar visível."""
     vao = Parametros().vao
     saida = {}
-    for nome, compor in COMPOSICOES.items():
-        pc = compor(t, "#000000", "#000000")
+    for nome, compor in composicoes_da(f).items():
+        pc = compor(t, f, "#000000", "#000000")
         largura, vao_unidades = pc.largura + 2 * _MARGEM, vao * pc.escala
         px = math.ceil(VAO_MIN_PX * largura / vao_unidades / 5) * 5
         saida[nome] = (px, math.ceil(VAO_MIN_MM * largura / vao_unidades))
     return saida
 
 
-def fracao_protecao(t: Tipos) -> float:
+def fracao_protecao(t: Tipos, f: Familia) -> float:
     """x da área de proteção (largura do pilar) como fração da largura do produto horizontal."""
-    pc = produto_horizontal(t, "#000000", "#000000")
+    pc = produto_horizontal(t, f, "#000000", "#000000")
     x0, x1 = Parametros().pilar_x
     return (x1 - x0) * pc.escala / (pc.largura + 2 * _MARGEM)
 
@@ -188,13 +206,13 @@ def _favicon(p: Paleta) -> str:
     )
 
 
-def gerar(p: Paleta, tipos: Tipos, destino: Path) -> list[Path]:
+def gerar(p: Paleta, tipos: Tipos, destino: Path, f: Familia) -> list[Path]:
     destino.mkdir(parents=True, exist_ok=True)
     arquivos = []
-    for nome, compor in COMPOSICOES.items():
+    for nome, compor in composicoes_da(f).items():
         for v in VARIANTES:
             arq = destino / f"{nome}-{v}.svg"
-            svg = _documento(compor(tipos, *cores_da_variante(p, v)))
+            svg = _documento(compor(tipos, f, *cores_da_variante(p, v)))
             arq.write_text(_id_proprio(svg, f"{nome}-{v}"), encoding="utf-8")
             arquivos.append(arq)
     fav = destino / "favicon.svg"
@@ -203,8 +221,10 @@ def gerar(p: Paleta, tipos: Tipos, destino: Path) -> list[Path]:
 
 
 def main() -> int:
-    for a in gerar(Paleta.carregar(PALETA_JSON), Tipos.padrao(), DESTINO):
-        print(a.relative_to(RAIZ))
+    p, tipos = Paleta.carregar(PALETA_JSON), Tipos.padrao()
+    for f in FAMILIAS.values():
+        for a in gerar(p, tipos, DESTINO / f.chave, f):
+            print(a.relative_to(RAIZ))
     return 0
 
 

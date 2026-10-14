@@ -12,4 +12,6 @@
 
 **Ponto**: ponto de interesse do entorno. *Próximo* fica até cerca de 3 km, na Cena; *distante* fica no vazio, na direção real, com km e minutos verdadeiros.
 
-**Marca-mãe**: Alternativa Desenvolvimento Urbano. **Produto**: Alternativa Residencial Cumbuco.
+**Produto**: Cidade das Américas — Residencial Cumbuco. Sem marca-mãe nesta fase.
+
+**Família de nome**: o que a marca escreve sobre o mesmo símbolo, cores e fontes. A ativa é `americas`; a `alternativa` (produto Alternativa Residencial Cumbuco, marca-mãe Alternativa Desenvolvimento Urbano) fica guardada para validação com o marketing até o registro do nome.
