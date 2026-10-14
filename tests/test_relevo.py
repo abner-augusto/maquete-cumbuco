@@ -87,3 +87,116 @@ def test_suavizar_dentro_tira_a_duna_so_dentro_da_poligonal():
     s = suavizar_dentro(g, [poligonal], sigma=10.0, transicao=10.0)
     assert s.z[20][20] < 15.0
     assert s.z[2][2] == 30.0
+
+
+# Topos e fundos de duna são curvas fechadas aninhadas: a cota vem do anel que as contém,
+# um passo além, no sentido em que o relevo vinha (revisão final: 115 anéis repetiam a cota do pai).
+
+
+def _anel(r, z=None, cx=0.0, cy=0.0, n=36):
+    pts = [(cx + r * math.cos(2 * math.pi * k / n), cy + r * math.sin(2 * math.pi * k / n)) for k in range(n)]
+    return Curva(pts + pts[:1], z, fechada=True)
+
+
+def test_aneis_dentro_de_morro_sobem():
+    from scripts.loteamento.relevo import cotar_aneis
+
+    m25, m30 = _anel(200, 25.0), _anel(150, 30.0)
+    i1, i2 = _anel(100), _anel(60)
+    cotar_aneis([m25, m30], [i1, i2])
+    assert (i1.z, i2.z) == (31.0, 32.0)
+
+
+def test_aneis_dentro_de_cova_descem():
+    from scripts.loteamento.relevo import cotar_aneis
+
+    m30, m25 = _anel(200, 30.0), _anel(150, 25.0)
+    i1, i2 = _anel(100), _anel(60)
+    cotar_aneis([m30, m25], [i1, i2])
+    assert (i1.z, i2.z) == (24.0, 23.0)
+
+
+def test_mestra_fechada_sem_rotulo_no_topo_da_cadeia():
+    from scripts.loteamento.relevo import cotar_aneis
+
+    m15, m20 = _anel(300, 15.0), _anel(250, 20.0)
+    inters = [_anel(r) for r in (200, 150, 100, 60)]
+    topo = _anel(30)
+    cotar_aneis([m15, m20, topo], inters)
+    assert [c.z for c in inters] + [topo.z] == [21.0, 22.0, 23.0, 24.0, 25.0]
+
+
+def test_anel_solto_segue_o_sentido_das_curvas_de_fora():
+    from scripts.loteamento.relevo import cotar_aneis
+
+    m20, i21 = Curva(_horizontal(100, -200, 300).pontos, 20.0), Curva(_horizontal(150, -200, 300).pontos, 21.0)
+    duna = _anel(20, cx=50, cy=200)
+    cotar_aneis([m20], [i21, duna])
+    assert duna.z == 22.0
+
+
+def test_anel_fechado_nao_herda_cota_pela_ponta():
+    a = _horizontal(0, 0, 100)
+    ilha = _anel(10, cx=112, cy=0)  # primeiro vértice a 2 m da ponta da mestra cotada
+    cotar_mestras([a, ilha], [((10, 0.5), 30.0)])
+    assert ilha.z is None
+
+
+def test_curva_fechada_do_dxf_volta_ao_inicio_e_densifica_o_fecho():
+    import ezdxf
+
+    from scripts.loteamento.relevo import curva_do_dxf
+
+    e = ezdxf.new().modelspace().add_polyline2d([(1000, 2000), (1100, 2000), (1100, 2100)], close=True)
+    c = curva_do_dxf(e, 1000.0, 2000.0)
+    assert c.fechada and c.pontos[0] == c.pontos[-1] == (0.0, 0.0)
+    assert max(math.dist(a, b) for a, b in zip(c.pontos, c.pontos[1:])) < 20.0  # o fecho de 141 m foi dividido
+
+
+def test_anel_intermediario_nao_pula_a_mestra():
+    from scripts.loteamento.relevo import cotar_aneis
+
+    m25, i29 = _anel(200, 25.0), _anel(150, 29.0)  # dentro da 29 só cabe 28: a 30 seria mestra
+    i = _anel(100)
+    cotar_aneis([m25], [i29, i])
+    assert i.z == 28.0
+
+
+def test_intermediaria_longa_cota_onde_esta_entre_as_mestras():
+    # revisão final: curva aberta de km, cotada pelo meio, longe das mestras carregadas
+    m30, m35 = Curva(_horizontal(0).pontos, 30.0), Curva(_horizontal(50).pontos, 35.0)
+    longa = Curva([(float(x), 10.0) for x in range(0, 5001, 10)])
+    cotar_intermediarias([longa], [m30, m35])
+    assert longa.z == 31.0
+
+
+def test_anel_solto_no_vao_entre_mestras_fica_entre_elas():
+    from scripts.loteamento.relevo import cotar_aneis
+
+    m20, m25 = Curva(_horizontal(100, -200, 300).pontos, 20.0), Curva(_horizontal(200, -200, 300).pontos, 25.0)
+    duna, dentro = _anel(20, cx=50, cy=135), _anel(10, cx=50, cy=135)  # mais perto da 20
+    cotar_aneis([m20, m25], [duna, dentro])
+    assert (duna.z, dentro.z) == (21.0, 22.0)
+
+
+def _arco(r, z, cx=0.0, cy=0.0):
+    """Mestra fechada cortada no rótulo: arco aberto com um vão de uns 4 m."""
+    return Curva([(cx + r * math.cos(t / 20 * 6.0), cy + r * math.sin(t / 20 * 6.0)) for t in range(21)], z)
+
+
+def test_curva_cotada_dentro_do_anel_manda_o_sentido():
+    from scripts.loteamento.relevo import cotar_aneis
+
+    m25 = _anel(300, 25.0)
+    inters = [_anel(250), _anel(200)]
+    cotar_aneis([m25, _arco(50, 20.0)], inters)  # fundo de 20 lá dentro: é cova
+    assert [c.z for c in inters] == [24.0, 23.0]
+
+
+def test_topo_cotado_la_dentro_puxa_a_cadeia_ate_ele():
+    from scripts.loteamento.relevo import cotar_aneis
+
+    m25 = _anel(300, 25.0)
+    inters = [_anel(r) for r in (250, 200, 150, 120, 100)]
+    cotar_aneis([m25, _arco(30, 35.0)], inters)  # a 30 não foi desenhada: a cadeia segue subindo até o topo
+    assert [c.z for c in inters] == [26.0, 27.0, 28.0, 29.0, 31.0]

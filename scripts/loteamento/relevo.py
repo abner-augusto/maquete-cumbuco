@@ -16,6 +16,8 @@ from scipy.ndimage import distance_transform_edt, gaussian_filter
 
 from scripts.comum.ambiente import RAIZ
 
+from .geometria import area, contem
+
 Ponto = tuple[float, float]
 DXF = RAIZ / "cache" / "dxf" / "masterplan-r05.dxf"
 DESTINO = RAIZ / "cache" / "cena" / "relevo.json"
@@ -27,6 +29,7 @@ PASSO_GRADE = 5.0
 class Curva:
     pontos: list[Ponto]
     z: float | None = None
+    fechada: bool = False  # topo ou fundo de duna: cotada pelo anel que a contém (cotar_aneis)
 
 
 def _dist_polilinha(p: Ponto, pts: list[Ponto]) -> float:
@@ -64,9 +67,9 @@ def cotar_mestras(
     mudou = True
     while mudou:
         mudou = False
-        for c in (c for c in mestras if c.z is None):
+        for c in (c for c in mestras if c.z is None and not c.fechada):
             vizinha = next(
-                (m for m in mestras if m.z is not None
+                (m for m in mestras if m.z is not None and not m.fechada
                  and min(math.dist(a, b) for a in _pontas(c) for b in _pontas(m)) <= emenda),
                 None,
             )
@@ -78,25 +81,33 @@ def cotar_mestras(
 def completar_mestras(mestras: list[Curva], cotadas: list[Curva], intervalo: float = 5.0) -> None:
     """Mestra que nem rótulo nem emenda cotaram (topo de duna fechado): múltiplo de `intervalo`
     mais próximo da cota da curva cotada mais perto."""
-    for m in (m for m in mestras if m.z is None):
+    for m in (m for m in mestras if m.z is None and not m.fechada):
         p = m.pontos[len(m.pontos) // 2]
         _, z = min(((_dist_polilinha(p, c.pontos), c.z) for c in cotadas if c is not m), default=(0, None))
         if z is not None:
             m.z = float(round(z / intervalo) * intervalo)
 
 
-def cotar_intermediarias(inters: list[Curva], mestras: list[Curva], passo: float = 1.0) -> None:
-    cotadas = [m for m in mestras if m.z is not None]
-    for c in inters:
-        p = c.pontos[len(c.pontos) // 2]
-        dists = sorted((_dist_polilinha(p, m.pontos), m.z) for m in cotadas)
-        if not dists:
+def _entre_mestras(p: Ponto, cotadas: list[Curva]) -> tuple[float, float, float, float] | None:
+    """Mestra mais perto de `p` e a mais perto de cota diferente: (d1, z1, d2, z2)."""
+    d = _dist_curvas([p], cotadas)
+    ordem = np.argsort(d)
+    z1 = cotadas[ordem[0]].z
+    j = next((j for j in ordem if cotadas[j].z != z1), None)
+    return None if j is None else (float(d[ordem[0]]), z1, float(d[j]), cotadas[j].z)
+
+
+def cotar_intermediarias(inters: list[Curva], mestras: list[Curva], passo: float = 1.0, amostras: int = 40) -> None:
+    """Curva aberta: interpolada entre as duas mestras que a cercam, no trecho em que elas estão
+    mais perto (curva de km sai das mestras carregadas, e o meio dela pode estar longe de tudo)."""
+    cotadas = [m for m in mestras if m.z is not None and len(m.pontos) > 1]
+    for c in (c for c in inters if not c.fechada):
+        if not cotadas:
             continue
-        d1, z1 = dists[0]
-        outra = next(((d, z) for d, z in dists if z != z1), None)
-        if outra is None:
+        cercas = [e for p in c.pontos[:: max(1, len(c.pontos) // amostras)] if (e := _entre_mestras(p, cotadas))]
+        if not cercas:
             continue
-        d2, z2 = outra
+        d1, z1, d2, z2 = min(cercas, key=lambda e: e[0] + e[2])
         z = z1 + (z2 - z1) * d1 / (d1 + d2)
         z = round(z / passo) * passo
         sinal = 1 if z2 > z1 else -1
@@ -105,6 +116,87 @@ def cotar_intermediarias(inters: list[Curva], mestras: list[Curva], passo: float
         if (z2 - z) * sinal < passo:
             z = z2 - sinal * passo
         c.z = float(z)
+
+
+def _dist_curvas(pts: list[Ponto], curvas: list[Curva]) -> np.ndarray:
+    """Menor distância de qualquer ponto de `pts` a cada curva (vetorizado)."""
+    a = np.array([p for c in curvas for p in c.pontos[:-1]], dtype=float)
+    b = np.array([p for c in curvas for p in c.pontos[1:]], dtype=float)
+    inicio = np.cumsum([0] + [len(c.pontos) - 1 for c in curvas[:-1]])
+    ab = b - a
+    l2 = np.maximum((ab * ab).sum(axis=1), 1e-12)
+    melhor = np.full(len(a), np.inf)
+    for p in pts:
+        t = np.clip(((np.asarray(p) - a) * ab).sum(axis=1) / l2, 0.0, 1.0)
+        melhor = np.minimum(melhor, np.hypot(*(a + t[:, None] * ab - p).T))
+    return np.minimum.reduceat(melhor, inicio)
+
+
+def cotar_aneis(mestras: list[Curva], inters: list[Curva], intervalo: float = 5.0, passo: float = 1.0) -> None:
+    """Curvas fechadas (topos e fundos de duna), de fora para dentro: um passo além do anel que as
+    contém, no sentido em que o relevo vinha de fora (morro continua subindo, cova continua descendo).
+    Anel solto, sem anel em volta, toma por pai a curva cotada mais perto do lado de fora; se ela e a
+    seguinte deixam um vão (mestras sem intermediária entre elas), o anel fica no vão. Curva já cotada
+    dentro do anel manda no sentido: a cadeia caminha até ela."""
+    todas = [c for c in mestras + inters if len(c.pontos) > 1]
+    eh_mestra = {id(m) for m in mestras}
+    aneis = sorted((c for c in todas if c.fechada), key=lambda c: area(c.pontos), reverse=True)
+    caixa = {id(c): (min(x for x, _ in c.pontos), min(y for _, y in c.pontos),
+                     max(x for x, _ in c.pontos), max(y for _, y in c.pontos)) for c in aneis}
+
+    def dentro(anel: Curva, p: Ponto) -> bool:
+        x0, y0, x1, y1 = caixa[id(anel)]
+        return x0 <= p[0] <= x1 and y0 <= p[1] <= y1 and contem(anel.pontos, p)
+
+    pai: dict[int, Curva | None] = {}
+    for i, c in enumerate(aneis):
+        de_fora = [a for a in aneis[:i] if dentro(a, c.pontos[0])]
+        pai[id(c)] = de_fora[-1] if de_fora else None
+
+    def vizinha(anel: Curva, menos: float | None, de_dentro: bool = False) -> float | None:
+        lado = [q for q in todas if q is not anel and q.z is not None and q.z != menos
+                and dentro(anel, q.pontos[0]) == de_dentro]
+        if not lado:
+            return None
+        amostra = anel.pontos[:: max(1, len(anel.pontos) // 12)]
+        return lado[int(np.argmin(_dist_curvas(amostra, lado)))].z
+
+    def vizinha_de_fora(anel: Curva, menos: float | None) -> float | None:
+        return vizinha(anel, menos)
+
+    def lado_de_fora(anel: Curva) -> float | None:
+        p = pai[id(anel)]
+        if p is not None and p.z is not None and p.z != anel.z:
+            return p.z
+        return vizinha_de_fora(anel, anel.z)
+
+    for c in aneis:
+        if c.z is not None:
+            continue
+        p = pai[id(c)]
+        if p is not None:
+            if p.z is None:
+                continue
+            base, fora = p.z, lado_de_fora(p)
+        else:
+            base = vizinha_de_fora(c, None)
+            if base is None:
+                continue
+            fora = vizinha_de_fora(c, base)
+            if fora is not None and abs(fora - base) > passo:  # no vão entre duas curvas: fica entre elas
+                fora = 2 * base - fora
+        sentido = -1.0 if fora is not None and fora > base else 1.0
+        alvo = vizinha(c, base, de_dentro=True)  # curva já cotada lá dentro (topo cortado no rótulo, fundo)
+        if alvo is not None:
+            sentido = 1.0 if alvo > base else -1.0
+        if id(c) in eh_mestra:
+            z = round((base + sentido * passo) / intervalo) * intervalo
+            c.z = float(z if z != base else base + sentido * intervalo)
+        else:
+            z = base + sentido * passo
+            if z % intervalo == 0:  # a mestra existiria aqui: sem nada lá dentro, é o outro sentido;
+                z = base + 2 * sentido * passo if alvo is not None else base - sentido * passo  # com, faltou desenhá-la
+            c.z = float(z)
 
 
 @dataclass
@@ -179,6 +271,15 @@ def _densificar(pts: list[Ponto], passo: float = 10.0) -> list[Ponto]:
     return saida
 
 
+def curva_do_dxf(e, e0: float, n0: float) -> Curva:
+    """POLYLINE de curva de nível em coordenadas locais; a fechada volta ao início (o fecho conta)."""
+    pts = [(p.x - e0, p.y - n0) for p in e.points()]
+    fechada = bool(e.is_closed) and len(pts) > 2
+    if fechada and pts[0] != pts[-1]:
+        pts.append(pts[0])
+    return Curva(_densificar(pts), fechada=fechada)
+
+
 def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8")
     georref = json.loads((RAIZ / "dados" / "georref.json").read_text(encoding="utf-8"))
@@ -190,9 +291,8 @@ def main() -> int:
     perto = lambda pts: any(ext[0] - 50 <= x <= ext[2] + 50 and ext[1] - 50 <= y <= ext[3] + 50 for x, y in pts)  # noqa: E731
 
     msp = ezdxf.readfile(DXF).modelspace()
-    local = lambda e: [(p.x - e0, p.y - n0) for p in e.points()]  # noqa: E731
-    mestras = [Curva(_densificar(pts)) for e in msp.query('POLYLINE[layer=="TOP-C-MESTRA"]') if perto(pts := local(e))]
-    inters = [Curva(_densificar(pts)) for e in msp.query('POLYLINE[layer=="TOP-C-INTER"]') if perto(pts := local(e))]
+    mestras = [c for e in msp.query('POLYLINE[layer=="TOP-C-MESTRA"]') if perto((c := curva_do_dxf(e, e0, n0)).pontos)]
+    inters = [c for e in msp.query('POLYLINE[layer=="TOP-C-INTER"]') if perto((c := curva_do_dxf(e, e0, n0)).pontos)]
     rotulos = []
     for t in msp.query('TEXT[layer=="TOP-C-MESTRA"]'):
         try:
@@ -202,7 +302,8 @@ def main() -> int:
     sem = cotar_mestras(mestras, rotulos)
     cotar_intermediarias(inters, mestras)
     completar_mestras(mestras, [c for c in mestras + inters if c.z is not None])
-    cotar_intermediarias(inters, mestras)  # de novo, agora com os topos cotados
+    cotar_intermediarias(inters, mestras)  # de novo, agora com as mestras completadas
+    cotar_aneis(mestras, inters)  # topos e fundos fechados, de fora para dentro
     grade = gerar_grade(mestras + inters, ext, PASSO_GRADE)
     DESTINO.parent.mkdir(parents=True, exist_ok=True)
     DESTINO.write_text(json.dumps(grade.para_json()), encoding="utf-8")
