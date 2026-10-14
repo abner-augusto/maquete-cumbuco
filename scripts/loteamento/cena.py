@@ -40,7 +40,9 @@ class CenaCfg:
 
     @classmethod
     def carregar(cls, caminho: Path) -> "CenaCfg":
-        return cls(**tomllib.loads(caminho.read_text(encoding="utf-8")))
+        d = tomllib.loads(caminho.read_text(encoding="utf-8"))
+        d.pop("terreno", None)  # é do terreno.py
+        return cls(**d)
 
 
 def aneis_da_layer(msp, layers: list[str], e0: float, n0: float) -> list[list[Ponto]]:

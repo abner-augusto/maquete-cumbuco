@@ -21,7 +21,7 @@ from .geometria import area, contem
 Ponto = tuple[float, float]
 DXF = RAIZ / "cache" / "dxf" / "masterplan-r05.dxf"
 DESTINO = RAIZ / "cache" / "cena" / "relevo.json"
-MARGEM = 150.0  # metros de terreno além da poligonal
+MARGEM = 450.0  # m além dos lotes: o levantamento vai até alcance + transição do terreno.py
 PASSO_GRADE = 5.0
 
 
@@ -217,14 +217,19 @@ class Grade:
         return (z[j][i] * (1 - tx) + z[j][i + 1] * tx) * (1 - ty) + (z[j + 1][i] * (1 - tx) + z[j + 1][i + 1] * tx) * ty
 
     def para_json(self) -> dict:
-        return {"x0": self.x0, "y0": self.y0, "passo": self.passo, "nx": self.nx, "ny": self.ny, "z": self.z}
+        """NaN (fora do levantamento) vai como null: JSON padrão."""
+        z = [[None if v is None or math.isnan(v) else v for v in linha] for linha in self.z]
+        return {"x0": self.x0, "y0": self.y0, "passo": self.passo, "nx": self.nx, "ny": self.ny, "z": z}
 
     @classmethod
     def de_json(cls, d: dict) -> "Grade":
-        return cls(d["x0"], d["y0"], d["passo"], d["nx"], d["ny"], d["z"])
+        z = [[math.nan if v is None else v for v in linha] for linha in d["z"]]
+        return cls(d["x0"], d["y0"], d["passo"], d["nx"], d["ny"], z)
 
 
-def gerar_grade(curvas: list[Curva], ext: tuple[float, float, float, float], passo: float) -> Grade:
+def gerar_grade(curvas: list[Curva], ext: tuple[float, float, float, float], passo: float,
+                preencher: bool = True) -> Grade:
+    """Interpolação linear entre as curvas; fora delas, vizinho mais próximo ou (sem `preencher`) NaN."""
     pts = np.array([(x, y) for c in curvas if c.z is not None for x, y in c.pontos])
     zs = np.array([c.z for c in curvas if c.z is not None for _ in c.pontos])
     xmin, ymin, xmax, ymax = ext
@@ -232,7 +237,7 @@ def gerar_grade(curvas: list[Curva], ext: tuple[float, float, float, float], pas
     gx, gy = np.meshgrid(xmin + passo * np.arange(nx), ymin + passo * np.arange(ny))
     z = LinearNDInterpolator(pts, zs)(gx, gy)
     vazio = np.isnan(z)
-    if vazio.any():
+    if preencher and vazio.any():
         z[vazio] = NearestNDInterpolator(pts, zs)(gx[vazio], gy[vazio])
     return Grade(float(xmin), float(ymin), float(passo), nx, ny, np.round(z, 2).tolist())
 
@@ -261,6 +266,7 @@ def suavizar_dentro(grade: Grade, aneis: list[list[Ponto]], sigma: float, transi
     peso = np.clip(1.0 - dist / transicao, 0.0, 1.0)
     z2 = peso * suave + (1.0 - peso) * z
     return Grade(grade.x0, grade.y0, grade.passo, grade.nx, grade.ny, np.round(z2, 2).tolist())
+
 
 
 def _densificar(pts: list[Ponto], passo: float = 10.0) -> list[Ponto]:
@@ -304,14 +310,15 @@ def main() -> int:
     completar_mestras(mestras, [c for c in mestras + inters if c.z is not None])
     cotar_intermediarias(inters, mestras)  # de novo, agora com as mestras completadas
     cotar_aneis(mestras, inters)  # topos e fundos fechados, de fora para dentro
-    grade = gerar_grade(mestras + inters, ext, PASSO_GRADE)
+    grade = gerar_grade(mestras + inters, ext, PASSO_GRADE, preencher=False)
     DESTINO.parent.mkdir(parents=True, exist_ok=True)
     DESTINO.write_text(json.dumps(grade.para_json()), encoding="utf-8")
-    zs = [v for linha in grade.z for v in linha]
+    todos = [v for linha in grade.z for v in linha]
+    zs = [v for v in todos if not math.isnan(v)]
     print(
         f"mestras {len(mestras)} ({sem} sem rótulo nem emenda, completadas pela vizinha; "
         f"{sum(c.z is None for c in mestras)} sem cota) · intermediárias {len(inters)} "
-        f"({sum(c.z is None for c in inters)} sem cota) · grade {grade.nx}×{grade.ny} · cota {min(zs):.1f}–{max(zs):.1f} m"
+        f"({sum(c.z is None for c in inters)} sem cota) · grade {grade.nx}×{grade.ny} ({len(zs) / len(todos):.0%} coberta) · cota {min(zs):.1f}–{max(zs):.1f} m"
     )
     return 0
 

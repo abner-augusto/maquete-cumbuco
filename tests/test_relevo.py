@@ -1,3 +1,4 @@
+import json
 import math
 
 import pytest
@@ -70,10 +71,6 @@ def test_topo_fechado_sem_rotulo_pega_o_multiplo_de_5_da_curva_vizinha():
     vizinha = Curva(_horizontal(30).pontos, 34.0)  # intermediária logo abaixo do topo
     completar_mestras([topo], [vizinha], 5.0)
     assert topo.z == 35.0
-
-
-# O loteamento é terraplenado: dentro da poligonal o relevo é suavizado (as dunas do
-# levantamento furavam vias e lotes); fora dela, fica o natural.
 
 
 def test_suavizar_dentro_tira_a_duna_so_dentro_da_poligonal():
@@ -200,3 +197,11 @@ def test_topo_cotado_la_dentro_puxa_a_cadeia_ate_ele():
     inters = [_anel(r) for r in (250, 200, 150, 120, 100)]
     cotar_aneis([m25, _arco(30, 35.0)], inters)  # a 30 não foi desenhada: a cadeia segue subindo até o topo
     assert [c.z for c in inters] == [26.0, 27.0, 28.0, 29.0, 31.0]
+
+
+def test_grade_sem_preencher_deixa_nan_fora_das_curvas_e_vai_ao_json():
+    curvas = [Curva(_horizontal(y).pontos, 30.0 + y / 10) for y in range(0, 60, 10)]
+    g = gerar_grade(curvas, (-50.0, -50.0, 150.0, 120.0), 5.0, preencher=False)
+    assert math.isnan(g.z[0][0]) and not math.isnan(g.z[15][20])
+    volta = Grade.de_json(json.loads(json.dumps(g.para_json())))  # JSON padrão: null, não NaN
+    assert "NaN" not in json.dumps(g.para_json()) and math.isnan(volta.z[0][0])
