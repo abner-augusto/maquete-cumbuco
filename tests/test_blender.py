@@ -33,3 +33,14 @@ def test_blender_constroi_e_exporta_com_os_nomes(tmp_path):
     resumo = rodar_blender(BLENDER_PADRAO, SCRIPT, str(tmp_path / "cena.json"), str(tmp_path / "l.blend"), str(tmp_path / "l.glb"))
     assert set(nos_do_glb(tmp_path / "l.glb")) == {"Terreno", "Q01L01"}
     assert (tmp_path / "l.blend").exists() and resumo["objetos"] == 2
+
+
+@pytest.mark.skipif(not BLENDER_PADRAO.exists(), reason="Blender 5.2 ausente")
+def test_regerar_nao_deixa_blend1_na_pasta_do_terreno(tmp_path):
+    # revisão final: o .blend1 de backup ia junto para o Drive do cliente
+    cena = {"objetos": [{"nome": "Q01L01", "material": "lote_residencial",
+                         "vertices": [[0, 0, 1], [5, 0, 1], [0, 5, 1]], "faces": [[0, 1, 2]]}]}
+    (tmp_path / "cena.json").write_text(json.dumps(cena), encoding="utf-8")
+    for _ in range(2):
+        rodar_blender(BLENDER_PADRAO, SCRIPT, str(tmp_path / "cena.json"), str(tmp_path / "l.blend"), str(tmp_path / "l.glb"))
+    assert not (tmp_path / "l.blend1").exists()

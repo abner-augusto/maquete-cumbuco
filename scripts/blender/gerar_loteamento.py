@@ -114,6 +114,7 @@ def main() -> None:
     dados = json.loads(CENA.read_text(encoding="utf-8"))
     col = construir(dados)
     BLEND.parent.mkdir(parents=True, exist_ok=True)
+    bpy.context.preferences.filepaths.save_version = 0  # sem .blend1: a pasta vai para o Drive do cliente
     bpy.ops.wm.save_as_mainfile(filepath=str(BLEND))
     bpy.ops.object.select_all(action="DESELECT")
     for ob in col.objects:
