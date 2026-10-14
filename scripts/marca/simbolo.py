@@ -32,11 +32,20 @@ class Parametros:
     perna_topo: Ponto = (495.0, 205.0)  # dentro da fita
     perna_largura_topo: float = 12.0
     perna_pe: float = 424.0  # x onde a perna toca a base
-    perna_aba: float = 279.0  # x onde a aba da perna termina na base
+    perna_aba: float = 330.0  # x onde a aba da perna termina na base
     pilar_x: tuple[float, float] = (638.0, 808.0)
     pilar_topo: float = 384.0
     pilar_ombro: float = 300.0  # altura do lado direito do pilar; o topo desce em quarto de elipse
     vao: float = 9.0  # recorte entre a fita e o pilar
+    # Pilar vazado, como a lâmina curvada do E5: parede fina à esquerda, faixa no topo, face larga à direita.
+    pilar_parede: float = 12.0
+    pilar_face: float = 65.0
+    pilar_topo_espessura: float = 24.0
+    # Arco da esquerda fechado por linhas finas: traço do pé até o chão e linha de base até a perna.
+    base_espessura: float = 3.0
+    base_fim: float = 330.0
+    pe_traco: tuple[float, float] = (125.0, 100.0)  # x onde o traço sai da fita, x onde toca o chão
+    pe_traco_espessura: float = 4.0
 
     def espessura(self, u: float) -> float:
         """Espessura da fita no parâmetro u ∈ [0, 1]: fina na subida e na crista, larga na descida."""
@@ -106,8 +115,32 @@ def _pilar(p: Parametros) -> list[Ponto]:
     return [*topo, *base]
 
 
+def _pilar_vazio(p: Parametros) -> list[Ponto]:
+    """Vazio do pilar: o mesmo quarto de elipse do topo, recuado pela parede, pela face e pela faixa do topo."""
+    x0, x1 = p.pilar_x[0] + p.pilar_parede, p.pilar_x[1] - p.pilar_face
+    rx, ry = x1 - x0, p.pilar_topo - p.pilar_topo_espessura - p.pilar_ombro
+    topo = [(x0 + rx * math.cos(a), p.pilar_ombro + ry * math.sin(a)) for a in (math.pi / 2 * (1 - i / 40) for i in range(41))]
+    base = [(x, _altura_topo_fita(p, x)) for x in (x1 - (x1 - x0) * i / 40 for i in range(41))]
+    return [*topo, *base]
+
+
+def _base(p: Parametros) -> list[Ponto]:
+    e = p.base_espessura
+    return [(0.0, 0.0), (p.base_fim, 0.0), (p.base_fim, e), (0.0, e)]
+
+
+def _traco(p: Parametros) -> list[Ponto]:
+    xt, xc = p.pe_traco
+    w = p.pe_traco_espessura
+    yt = _altura_topo_fita(p, xt) - 1.0  # dentro da fita, que no pé é fina
+    return [(xt - w / 2, yt), (xt + w / 2, yt), (xc + w / 2, 0.0), (xc - w / 2, 0.0)]
+
+
 def formas(p: Parametros) -> dict[str, list[Ponto]]:
-    return {"fita": _fita(p), "perna": _perna(p), "pilar": _pilar(p)}
+    return {
+        "fita": _fita(p), "perna": _perna(p), "pilar": _pilar(p), "vazio": _pilar_vazio(p),
+        "base": _base(p), "traco": _traco(p),
+    }
 
 
 def _d(pts: list[Ponto], altura: float) -> str:
@@ -124,8 +157,10 @@ def svg_simbolo(p: Parametros, cor: str, id_mascara: str = "vao") -> str:
         f'<rect x="-50" y="-50" width="{LARGURA + 100:g}" height="{h + 100:g}" fill="white"/>'
         f'<path d="{fita}" fill="black" stroke="black" stroke-width="{2 * p.vao:g}" stroke-linejoin="round"/>'
         f"</mask></defs>"
-        f'<path d="{_d(f["pilar"], h)}" mask="url(#{id_mascara})"/>'
+        f'<path fill-rule="evenodd" d="{_d(f["pilar"], h)} {_d(f["vazio"], h)}" mask="url(#{id_mascara})"/>'
         f'<path d="{_d(f["perna"], h)}"/>'
+        f'<path d="{_d(f["base"], h)}"/>'
+        f'<path d="{_d(f["traco"], h)}"/>'
         f'<path d="{fita}"/>'
         f"</g>"
     )
@@ -139,10 +174,13 @@ def raster(p: Parametros, largura_px: int) -> Image.Image:
     px = lambda pts: [(x * k, (h - y) * k) for x, y in pts]  # noqa: E731
     f = formas(p)
     dr.polygon(px(f["pilar"]), fill=255)
+    dr.polygon(px(f["vazio"]), fill=0)
     fita = px(f["fita"])
     dr.line(fita + fita[:1], fill=0, width=max(1, round(2 * p.vao * k)), joint="curve")
     dr.polygon(fita, fill=0)
     dr.polygon(px(f["perna"]), fill=255)
+    dr.polygon(px(f["base"]), fill=255)
+    dr.polygon(px(f["traco"]), fill=255)
     dr.polygon(fita, fill=255)
     return img
 

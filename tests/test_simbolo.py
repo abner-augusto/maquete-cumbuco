@@ -22,14 +22,15 @@ def test_topo_da_perna_fica_dentro_da_fita():
 def test_pilar_nasce_atras_da_fita_com_vao():
     # No E5 o pilar não desce até a base: some atrás da fita, separado dela por um vão.
     img = raster(P, int(LARGURA))
-    x = (P.pilar_x[0] + P.pilar_x[1]) / 2
+    x = P.pilar_x[1] - P.pilar_face / 2  # na face larga (o meio do pilar é vazado)
     topo = min(_curva_topo(P), key=lambda pt: abs(pt[0] - x))  # borda de cima da fita nesse x
     linha = lambda y: int(P.pilar_topo - y)  # noqa: E731 — raster tem y para baixo
     assert img.getpixel((int(x), linha(topo[1] - 3))) == 255  # fita
     assert img.getpixel((int(x), linha(topo[1] + P.vao / 2))) == 0  # vão
     assert img.getpixel((int(x), linha(topo[1] + 3 * P.vao))) == 255  # pilar
     abaixo = topo[1] - P.espessura_maxima(x) - 3 * P.vao
-    assert img.getpixel((int(x), linha(abaixo))) == 0  # nada do pilar abaixo da fita
+    if abaixo >= 2:  # onde a fita ainda não chegou ao chão
+        assert img.getpixel((int(x), linha(abaixo))) == 0  # nada do pilar abaixo da fita
 
 
 def test_svg_valido_com_mascara_e_sem_texto():
@@ -49,3 +50,34 @@ def test_sobrepor_tinge_a_mascara():
     r, g, b = out.getpixel((2, 2))[:3]
     assert r > g and r > b
     assert out.getpixel((5, 5))[:3] != (r, g, b)
+
+
+# Revisão visual do Abner (14/10): mais leve — pilar vazado (lâmina curvada do E5),
+# traço fino do pé esquerdo até o chão e linha de base fechando o arco da esquerda.
+
+
+def _px(img, x, y):
+    return img.getpixel((int(x), int(P.pilar_topo - y)))
+
+
+def test_pilar_vazado_com_parede_fina_e_face_larga():
+    img = raster(P, int(LARGURA))
+    x0, x1 = P.pilar_x
+    y = P.pilar_ombro - 20
+    assert _px(img, x0 + P.pilar_parede / 2, y) == 255  # parede esquerda
+    assert _px(img, x0 + P.pilar_parede + 10, y) == 0  # vazio
+    assert _px(img, x1 - P.pilar_face / 2, y) == 255  # face direita
+    assert _px(img, x0 + 20, P.pilar_topo - P.pilar_topo_espessura / 2) == 255  # faixa do topo
+
+
+def test_linha_de_base_fecha_o_arco_da_esquerda():
+    img = raster(P, int(LARGURA))
+    assert _px(img, P.base_fim / 2, P.base_espessura / 2) == 255
+    assert _px(img, P.perna_pe + 40, P.base_espessura / 2) == 0  # depois da perna não há base
+
+
+def test_traco_do_pe_esquerdo_desce_ate_o_chao():
+    img = raster(P, int(LARGURA))
+    x_chao = P.pe_traco[1]
+    assert _px(img, x_chao, 6) == 255
+    assert _px(img, x_chao + 30, 6) == 0
