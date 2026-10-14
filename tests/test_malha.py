@@ -49,3 +49,11 @@ def test_refinar_limita_aresta_preserva_area_e_nao_deixa_frestas():
 def test_drapear_soma_offset_a_cota():
     g = Grade(0.0, 0.0, 10.0, 2, 2, [[10.0, 20.0], [10.0, 20.0]])
     assert drapear([(5.0, 5.0)], g, 0.1) == [[5.0, 5.0, 15.1]]
+
+
+def test_aninhar_anel_que_atravessa_outro_nao_vira_furo():
+    # revisão final: pedaços de via que cruzam a borda de outro viravam furo e sumiam
+    meio_fora = [(80.0, 40.0), (140.0, 40.0), (140.0, 60.0), (80.0, 60.0)]
+    grupos = aninhar([QUADRADO, meio_fora])
+    assert sorted(area(e) for e, _ in grupos) == [1200.0, 10000.0]
+    assert all(furos == [] for _, furos in grupos)

@@ -5,7 +5,7 @@ import math
 import mapbox_earcut
 import numpy as np
 
-from .geometria import Ponto, area, contem
+from .geometria import Ponto, _dist_ponto_segmento, area, contem
 from .relevo import Grade
 
 Tri = tuple[int, int, int]
@@ -37,12 +37,19 @@ def simplificar(anel: list[Ponto], tol: float) -> list[Ponto]:
     return ida[:-1] + volta[:-1]
 
 
+def _dentro(fora: list[Ponto], anel: list[Ponto], tol: float = 0.01) -> bool:
+    """O anel inteiro dentro de `fora` (vértice na borda conta como dentro). Anel que só cruza a
+    borda é outro contorno do mesmo desenho, não furo."""
+    lados = list(zip(fora, fora[1:] + fora[:1]))
+    return all(contem(fora, p) or min(_dist_ponto_segmento(p, a, b) for a, b in lados) <= tol for p in anel)
+
+
 def aninhar(aneis: list[list[Ponto]]) -> list[tuple[list[Ponto], list[list[Ponto]]]]:
     """Profundidade par = contorno externo; ímpar = furo do anel imediatamente de fora."""
     ordem = sorted(aneis, key=area, reverse=True)
     pais: list[int | None] = []
     for i, anel in enumerate(ordem):
-        de_fora = [j for j in range(i) if contem(ordem[j], anel[0])]
+        de_fora = [j for j in range(i) if contem(ordem[j], anel[0]) and _dentro(ordem[j], anel)]
         pais.append(de_fora[-1] if de_fora else None)
     profundidade: list[int] = []
     for pai in pais:
