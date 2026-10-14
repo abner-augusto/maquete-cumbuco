@@ -1,0 +1,22 @@
+# Papel → layers do PLANTA VENDA.dwg usadas na cena 3D (inventário em dados/inventario-layers.md).
+tolerancia = 0.05   # m, simplificação dos contornos
+max_aresta = 6.0    # m, refino para acompanhar o relevo
+lagoa_camadas = ["APP_30"]
+lagoa_texto = "LAGOA AZUL"
+
+[camadas]
+Vias = ["AR-CNT-VIA-INT", "AR-CNT-VIA-011"]
+Calcadas = ["AR-CNT-PAS-INT"]
+Verdes = ["AR-CNT-VRD-INT", "AR-CNT-VRD-EXT"]
+Institucional = ["AR-CNT-INT"]
+Fundo = ["AR-CNT-FND-TER"]
+APP = ["APP_30"]
+
+[offsets]   # m acima do terreno, para não brigar com ele (z-fighting)
+Vias = 0.06
+Calcadas = 0.10
+Verdes = 0.04
+Institucional = 0.04
+Fundo = 0.04
+APP = 0.03
+lote = 0.15
