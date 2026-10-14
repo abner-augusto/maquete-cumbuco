@@ -48,3 +48,19 @@ def test_chaves_iguais_as_do_tema_manoa():
     bloco_claro = MANOA.read_text(encoding="utf-8").split("[data-cor=")[0]
     chaves_manoa = set(re.findall(r"--tema-([a-z0-9-]+):\s*#", bloco_claro))
     assert chaves_manoa == set(CHAVES)
+
+
+REAL = Path(__file__).resolve().parents[1] / "marca" / "paleta.json"
+# Pares texto/fundo que o front do espelho usa de fato (Controles, PainelSol, Ficha, Busca).
+PARES = [
+    ("sol-texto", "sol-fundo"), ("acento-contraste", "acento-hover"), ("acento", "papel-2"),
+    *[(t, f) for t in ("tinta", "tinta-2", "tinta-3") for f in ("papel", "papel-2", "campo", "areia", "ceu")],
+]
+
+
+@pytest.mark.parametrize("paleta", [P, Paleta.carregar(REAL)], ids=["sintetica", "real"])
+@pytest.mark.parametrize("modo", ["claro", "escuro"])
+def test_pares_usados_pelo_front_passam_aa(paleta, modo):
+    t = tema(paleta)
+    for texto, fundo in PARES:
+        assert _c(t, modo, texto, fundo) >= 4.5, (texto, fundo)

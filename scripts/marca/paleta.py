@@ -47,9 +47,11 @@ class Paleta:
         return cls(**json.loads(caminho.read_text(encoding="utf-8")))
 
 
-def pixels(img: Image.Image, lado: int = 256) -> np.ndarray:
+def pixels(img: Image.Image, lado: int | None = None) -> np.ndarray:
+    """Pixels RGB; sem lado, na resolução nativa (reduzir mistura traço fino com o fundo)."""
     img = img.convert("RGB")
-    img.thumbnail((lado, lado))
+    if lado:
+        img.thumbnail((lado, lado))
     return np.asarray(img, dtype=np.float64).reshape(-1, 3)
 
 

@@ -65,3 +65,16 @@ def test_cena_de_fundo_nao_entra_no_ouro():
     parede = _imagem((186, 149, 116), com_ouro=False)
     p = medir([_imagem(CREME)], [_imagem(PRETO, com_ouro=False), parede])
     assert _perto(p.preto, PRETO)
+
+
+def test_traco_fino_com_antisserrilhado_mede_o_ouro_do_traco():
+    # P0 tem 640 px e traços finos: reduzir a imagem mistura o traço com o creme.
+    ouro = (170, 133, 73)
+    a = np.zeros((640, 640, 3), dtype=np.uint8)
+    a[:, :] = CREME
+    for x in range(20, 620, 12):
+        a[:, x : x + 4] = ouro  # traço de 4 px
+        a[:, x - 1] = [round((c + o) / 2) for c, o in zip(CREME, ouro)]  # borda antisserrilhada
+        a[:, x + 4] = [round((c + o) / 2) for c, o in zip(CREME, ouro)]
+    p = medir([Image.fromarray(a)], [_imagem(PRETO, com_ouro=False)])
+    assert _perto(p.ouro, ouro, tol=8)

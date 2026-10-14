@@ -1,51 +1,51 @@
 /* temas/alternativa — gerado por scripts/marca/tokens.py a partir de marca/paleta.json. Não editar à mão. */
 [data-tema="alternativa"] {
   --tema-papel: #EAE3D8;
-  --tema-papel-2: #E3DACD;
-  --tema-areia: #DED1BC;
-  --tema-filete: #D5C9B7;
-  --tema-filete-forte: #C0B098;
-  --tema-tinta: #15120D;
-  --tema-tinta-2: #382A15;
-  --tema-tinta-3: #483518;
-  --tema-acento: #735222;
+  --tema-papel-2: #E2DACD;
+  --tema-areia: #DCCEB9;
+  --tema-filete: #D2C7B6;
+  --tema-filete-forte: #BBAC97;
+  --tema-tinta: #13100C;
+  --tema-tinta-2: #312413;
+  --tema-tinta-3: #3F2E15;
+  --tema-acento: #64461D;
   --tema-acento-contraste: #EAE3D8;
-  --tema-acento-hover: #63471E;
-  --tema-caramelo: #B38F59;
-  --tema-sol: #E3C89C;
-  --tema-sol-texto: #7A613D;
+  --tema-acento-hover: #563D1A;
+  --tema-caramelo: #AA8549;
+  --tema-sol: #E4C89B;
+  --tema-sol-texto: #775D33;
   --tema-sol-fundo: #E8DCC9;
-  --tema-sol-sobre-tinta: #E3C89C;
-  --tema-ceu: #DED4C6;
+  --tema-sol-sobre-tinta: #E4C89B;
+  --tema-ceu: #DDD3C5;
   --tema-campo: #FFFFFF;
 
   --tema-fonte-display: "Cinzel", Georgia, serif;
   --tema-fonte-texto: "Jost", system-ui, sans-serif;
   --tema-fonte-rotulo: "Jost", system-ui, sans-serif;
 
-  --tema-sombra-1: 0 1px 2px rgba(21, 18, 13, 0.1), 0 4px 12px rgba(21, 18, 13, 0.08);
-  --tema-sombra-2: 0 -1px 0 rgba(21, 18, 13, 0.06), 0 -8px 28px rgba(21, 18, 13, 0.14);
-  --tema-sombra-3: 0 2px 4px rgba(21, 18, 13, 0.1), 0 10px 22px rgba(21, 18, 13, 0.14);
+  --tema-sombra-1: 0 1px 2px rgba(19, 16, 12, 0.1), 0 4px 12px rgba(19, 16, 12, 0.08);
+  --tema-sombra-2: 0 -1px 0 rgba(19, 16, 12, 0.06), 0 -8px 28px rgba(19, 16, 12, 0.14);
+  --tema-sombra-3: 0 2px 4px rgba(19, 16, 12, 0.1), 0 10px 22px rgba(19, 16, 12, 0.14);
 }
 
 [data-tema="alternativa"][data-cor="escuro"] {
   --tema-papel: #0E0D0B;
-  --tema-papel-2: #15120D;
-  --tema-areia: #272118;
-  --tema-filete: #20190F;
-  --tema-filete-forte: #332614;
+  --tema-papel-2: #13100C;
+  --tema-areia: #251F15;
+  --tema-filete: #1C160E;
+  --tema-filete-forte: #2D2112;
   --tema-tinta: #EAE3D8;
-  --tema-tinta-2: #C6B8A1;
-  --tema-tinta-3: #B4A286;
-  --tema-acento: #E3C89C;
+  --tema-tinta-2: #C2B4A0;
+  --tema-tinta-3: #AE9C84;
+  --tema-acento: #E4C89B;
   --tema-acento-contraste: #08090A;
-  --tema-acento-hover: #E4CDA8;
-  --tema-caramelo: #B38F59;
-  --tema-sol: #E3C89C;
-  --tema-sol-texto: #E3C89C;
-  --tema-sol-fundo: #332A1E;
-  --tema-sol-sobre-tinta: #735222;
-  --tema-ceu: #13100C;
+  --tema-acento-hover: #E5CDA7;
+  --tema-caramelo: #AA8549;
+  --tema-sol: #E4C89B;
+  --tema-sol-texto: #E4C89B;
+  --tema-sol-fundo: #30281A;
+  --tema-sol-sobre-tinta: #64461D;
+  --tema-ceu: #110F0C;
   --tema-campo: #060607;
 
   --tema-sombra-1: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.28);

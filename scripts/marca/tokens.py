@@ -23,53 +23,67 @@ def _texto_sobre(fundo: Cor, *candidatas: Cor) -> Cor:
     return next((c for c in candidatas if contraste(c, fundo) >= 4.5), ajustar_contraste(candidatas[0], fundo, 4.5))
 
 
+def _legivel(cor: Cor, fundos: list[Cor], minimo: float = 4.5) -> Cor:
+    """Ajusta a cor contra o pior dos fundos em que o front a usa, até passar em todos."""
+    for _ in range(len(fundos)):
+        pior = min(fundos, key=lambda f: contraste(cor, f))
+        if contraste(cor, pior) >= minimo:
+            break
+        cor = ajustar_contraste(cor, pior, minimo)
+    return cor
+
+
 def _claro(c: Cor, k: Cor, o: Cor, oc: Cor, b: Cor) -> dict[str, Cor]:
     papel = c
-    acento = ajustar_contraste(b, papel, 4.5)
+    fundos = [papel, misturar(c, b, 0.06), misturar(c, o, 0.22), misturar(c, b, 0.10), _BRANCO]
+    sol_fundo = misturar(c, oc, 0.25)
+    acento = _legivel(b, fundos[:2])
     return {
         "papel": papel,
-        "papel-2": misturar(c, b, 0.06),
-        "areia": misturar(c, o, 0.22),
+        "papel-2": fundos[1],
+        "areia": fundos[2],
         "filete": misturar(c, b, 0.18),
         "filete-forte": misturar(c, b, 0.35),
-        "tinta": ajustar_contraste(misturar(k, b, 0.12), papel, 7),
-        "tinta-2": ajustar_contraste(misturar(k, b, 0.45), papel, 4.5),
-        "tinta-3": ajustar_contraste(misturar(k, b, 0.60), papel, 4.5),
+        "tinta": _legivel(misturar(k, b, 0.12), fundos, 7),
+        "tinta-2": _legivel(misturar(k, b, 0.45), fundos),
+        "tinta-3": _legivel(misturar(k, b, 0.60), fundos),
         "acento": acento,
         "acento-contraste": _texto_sobre(acento, c, _BRANCO),
         "acento-hover": misturar(acento, k, 0.15),
         "caramelo": o,
         "sol": oc,
-        "sol-texto": ajustar_contraste(o, papel, 4.5),
-        "sol-fundo": misturar(c, oc, 0.25),
+        "sol-texto": _legivel(o, [papel, sol_fundo]),
+        "sol-fundo": sol_fundo,
         "sol-sobre-tinta": oc,
-        "ceu": misturar(c, b, 0.10),
+        "ceu": fundos[3],
         "campo": _BRANCO,
     }
 
 
 def _escuro(c: Cor, k: Cor, o: Cor, oc: Cor, b: Cor) -> dict[str, Cor]:
     papel = misturar(k, b, 0.06)
-    acento = ajustar_contraste(oc, papel, 4.5)
+    fundos = [papel, misturar(k, b, 0.12), misturar(k, o, 0.18), misturar(k, b, 0.10), misturar(k, _PRETO, 0.30)]
+    sol_fundo = misturar(k, o, 0.25)
+    acento = _legivel(oc, fundos[:2])
     return {
         "papel": papel,
-        "papel-2": misturar(k, b, 0.12),
-        "areia": misturar(k, o, 0.18),
+        "papel-2": fundos[1],
+        "areia": fundos[2],
         "filete": misturar(k, b, 0.22),
         "filete-forte": misturar(k, b, 0.40),
-        "tinta": ajustar_contraste(c, papel, 7),
-        "tinta-2": ajustar_contraste(misturar(c, b, 0.30), papel, 4.5),
-        "tinta-3": ajustar_contraste(misturar(c, b, 0.45), papel, 4.5),
+        "tinta": _legivel(c, fundos, 7),
+        "tinta-2": _legivel(misturar(c, b, 0.30), fundos),
+        "tinta-3": _legivel(misturar(c, b, 0.45), fundos),
         "acento": acento,
         "acento-contraste": _texto_sobre(acento, k, _PRETO),
         "acento-hover": misturar(acento, c, 0.20),
         "caramelo": o,
         "sol": oc,
-        "sol-texto": ajustar_contraste(oc, papel, 4.5),
-        "sol-fundo": misturar(k, o, 0.25),
+        "sol-texto": _legivel(oc, [papel, sol_fundo]),
+        "sol-fundo": sol_fundo,
         "sol-sobre-tinta": ajustar_contraste(b, c, 3),
-        "ceu": misturar(k, b, 0.10),
-        "campo": misturar(k, _PRETO, 0.30),
+        "ceu": fundos[3],
+        "campo": fundos[4],
     }
 
 
