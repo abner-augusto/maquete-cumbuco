@@ -29,13 +29,20 @@ PASSO = 30.0  # m, a resolução do Copernicus
 
 
 def baixar(url: str = URL, destino: Path = CACHE) -> Path:
-    """Baixa uma vez; grava em .part e renomeia, para um download cortado não virar cache."""
+    """Baixa uma vez; grava em .part e só renomeia com o tamanho que o servidor anunciou (o urllib
+    não acusa conexão fechada antes da hora), para um download cortado não virar cache."""
     if destino.exists():
         return destino
     destino.parent.mkdir(parents=True, exist_ok=True)
     parte = destino.with_suffix(".part")
-    with urllib.request.urlopen(url, timeout=600) as r, open(parte, "wb") as f:
-        shutil.copyfileobj(r, f)
+    with urllib.request.urlopen(url, timeout=600) as r:
+        esperado = r.headers.get("Content-Length")
+        with open(parte, "wb") as f:
+            shutil.copyfileobj(r, f)
+    recebido = parte.stat().st_size
+    if esperado is not None and recebido != int(esperado):
+        parte.unlink()
+        raise OSError(f"download de {url} cortado: {recebido} de {esperado} bytes")
     parte.replace(destino)
     return destino
 

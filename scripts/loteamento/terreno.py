@@ -151,6 +151,12 @@ def malha_entorno(dem: Grade, buraco: tuple[float, float, float, float], centro:
     return vertices, faces
 
 
+def raio_do_mar(raio: float, passo: float) -> float:
+    """O entorno só guarda células com os 4 cantos no raio: a terra acaba em escada até uma
+    diagonal de célula para dentro. O disco do mar para ali, para não sobrar água além da terra."""
+    return raio - passo * math.sqrt(2)
+
+
 def disco_mar(centro: tuple[float, float], raio: float, nivel: float, n: int = 96) -> tuple[list[list[float]], list[list[int]]]:
     """Plano da água: disco no raio do entorno; a terra acima do nível o esconde."""
     cx, cy = centro
@@ -192,7 +198,7 @@ def main() -> int:
     perto = compor_perto(perto_lev, longe, plato, cota, cfg)
     centro = dem.centro_dos_lotes()
     v, f = malha_entorno(longe, ext, centro, cfg.raio)
-    vm, fm = disco_mar(centro, cfg.raio, round(delta, 2))
+    vm, fm = disco_mar(centro, raio_do_mar(cfg.raio, longe.passo), round(delta, 2))
     DESTINO_PERTO.parent.mkdir(parents=True, exist_ok=True)
     DESTINO_PERTO.write_text(json.dumps(perto.para_json()), encoding="utf-8")
     DESTINO_ENTORNO.write_text(json.dumps({"objetos": [

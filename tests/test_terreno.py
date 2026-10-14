@@ -116,3 +116,16 @@ def test_plato_tem_folga_antes_do_talude():
     g = compor_perto(lev, dem, [QUADRADO], 22.0, cfg)
     assert g.z[30][36] == pytest.approx(22.0)  # (60, 0): 10 m fora da poligonal, ainda platô
     assert g.z[30][38] > 22.0  # (80, 0): já no talude
+
+
+def test_mar_nao_passa_da_borda_da_terra():
+    # revisão final: o disco no raio cheio aparecia como serrilhado azul além da escada das células
+    from scripts.loteamento.terreno import raio_do_mar
+
+    dem = _grade(lambda x, y: 10.0, passo=30.0, x0=-600.0, y0=-600.0, n=41)
+    v, f = malha_entorno(dem, buraco=(-90.0, -90.0, 90.0, 90.0), centro=(0.0, 0.0), raio=500.0)
+    celulas = {(math.floor(min(v[i][0] for i in t) / 30), math.floor(min(v[i][1] for i in t) / 30)) for t in f}
+    r = raio_do_mar(500.0, 30.0)
+    for k in range(360):
+        x, y = r * math.cos(math.radians(k)), r * math.sin(math.radians(k))
+        assert (math.floor(x / 30), math.floor(y / 30)) in celulas  # todo o contorno do mar tem terra (ou fundo) embaixo

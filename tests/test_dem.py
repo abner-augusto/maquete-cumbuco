@@ -59,3 +59,24 @@ def test_baixar_grava_por_arquivo_parcial(tmp_path):
     origem.write_bytes(b"y")
     baixar(origem.as_uri(), destino)  # já existe: não baixa de novo
     assert destino.read_bytes() == b"x" * 1000
+
+
+def test_baixar_recusa_download_cortado(tmp_path, monkeypatch):
+    # revisão final: o servidor que fecha cedo não levanta erro no urllib; o .tif truncado virava cache
+    import io
+    import urllib.request
+
+    class Curta(io.BytesIO):
+        headers = {"Content-Length": "1000"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    monkeypatch.setattr(urllib.request, "urlopen", lambda url, timeout=None: Curta(b"x" * 10))
+    destino = tmp_path / "t.tif"
+    with pytest.raises(OSError):
+        baixar("https://exemplo/t.tif", destino)
+    assert not destino.exists() and not destino.with_suffix(".part").exists()
