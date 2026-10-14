@@ -61,3 +61,29 @@ def tabela_sintetica():
 @pytest.fixture
 def iptu_sintetico():
     return {"Q01L01": "138321-3", "Q01L02": "138339-6"}
+
+
+@pytest.fixture
+def fonte_teste(tmp_path):
+    """TTF mínima: toda letra de A a Z, Ç, Õ e · é um retângulo 500×700 com avanço 600; espaço avança 300."""
+    from fontTools.fontBuilder import FontBuilder
+    from fontTools.pens.ttGlyphPen import TTGlyphPen
+
+    caneta = TTGlyphPen(None)
+    caneta.moveTo((0, 0)); caneta.lineTo((0, 700)); caneta.lineTo((500, 700)); caneta.lineTo((500, 0)); caneta.closePath()
+    caixa = caneta.glyph()
+    vazio = TTGlyphPen(None).glyph()
+    letras = [chr(c) for c in range(ord("A"), ord("Z") + 1)] + ["Ç", "Õ", "·"]
+    nomes = [f"g{ord(c)}" for c in letras]
+    fb = FontBuilder(1000, isTTF=True)
+    fb.setupGlyphOrder([".notdef", "space", *nomes])
+    fb.setupCharacterMap({32: "space", **{ord(c): n for c, n in zip(letras, nomes)}})
+    fb.setupGlyf({".notdef": vazio, "space": vazio, **{n: caixa for n in nomes}})
+    fb.setupHorizontalMetrics({".notdef": (500, 0), "space": (300, 0), **{n: (600, 0) for n in nomes}})
+    fb.setupHorizontalHeader(ascent=800, descent=-200)
+    fb.setupNameTable({"familyName": "Teste", "styleName": "Regular"})
+    fb.setupOS2(sCapHeight=700, sTypoAscender=800, sTypoDescender=-200)
+    fb.setupPost()
+    caminho = tmp_path / "teste.ttf"
+    fb.save(str(caminho))
+    return caminho
