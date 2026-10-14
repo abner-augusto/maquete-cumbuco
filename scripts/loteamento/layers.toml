@@ -1,0 +1,22 @@
+# Mapa papel → layer do PLANTA VENDA.dwg (07/10/2026).
+# RASCUNHO: aguarda conferência do Abner (gate da Task 4 do Plano 1).
+
+# 342 lotes residenciais: polígono fechado, número no atributo CÓDIGO do bloco
+# SMB_LOTES, quadra pelo atributo QUADRA do bloco SMB_QUADRA dentro do polígono da quadra.
+lotes = "AR-CNT-LOT"
+rotulo_lote = "AR-SMB-LOT"
+quadras = "AR-CNT-QDR"
+rotulo_quadra = "AR-SMB"
+# Vias internas como polígonos fechados; a borda delas é o meio-fio.
+meio_fio = "AR-CNT-VIA-INT"
+# Bloco BL_AREA (atributo AREA) dentro de cada lote: conferência extra da área.
+area_lote = "AR-TEXTO"
+
+# Lotes de uso misto (5): não têm bloco de número. Cada um é o polígono da layer
+# indicada que contém o texto indicado (MTEXT das layers ESP-TXT*).
+[uso_misto]
+QHL01 = { layer = "AR-CNT-QDR", texto = "ÁREA DE USO MISTO" }
+QML01 = { layer = "AR-CNT-QDR-MLF", texto = "LOTE MULTIFAMILIAR-01" }
+QML02 = { layer = "AR-CNT-QDR-MLF", texto = "LOTE MULTIFAMILIAR-02" }
+QML03 = { layer = "AR-CNT-QDR-MLF", texto = "LOTE MULTIFAMILIAR-03" }
+QML04 = { layer = "AR-CNT-QDR-MLF", texto = "LOTE MULTIFAMILIAR-04" }
