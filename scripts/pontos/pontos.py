@@ -22,7 +22,8 @@ import urllib.request
 
 from scripts.comum.ambiente import RAIZ
 from scripts.entorno.extrair import BASE, MALHA
-from scripts.entorno.osm import AGENTE, Projecao, overpass
+from scripts.loteamento.terreno import DESTINO_ENTORNO, Relevo
+from scripts.entorno.osm import AGENTE, Projecao, linha_osm, overpass, poligono_osm
 
 CURADORIA = RAIZ / "scripts" / "pontos" / "curadoria.json"
 DESTINO = RAIZ / "dados" / "pontos.json"
@@ -170,12 +171,41 @@ def separar_pendentes(pontos: list[dict]) -> tuple[list[dict], list[str]]:
     return [p for p in pontos if not p.get("pendente")], [f"{p['nome']}: {p['pendente']}" for p in pontos if p.get("pendente")]
 
 
-def coordenada_osm(p: dict) -> dict:
+def ponto_do_elemento(proj: Projecao, el: dict, em_terra=None) -> tuple[float, float]:
+    """(lon, lat) do pino: o nó; numa área, um ponto garantidamente dentro dela (o centro da caixa de
+    uma praia curva cai no mar), e com `em_terra(x, y)` o ponto da área em terra mais perto desse;
+    numa linha, o meio dela."""
+    if el["type"] == "node":
+        return el["lon"], el["lat"]
+    g = poligono_osm(proj, el)
+    if g is None:
+        from shapely.geometry import LineString
+
+        g = LineString(linha_osm(proj, el.get("geometry") or [m for mb in el.get("members", [])
+                                                              for m in (mb.get("geometry") or [])]))
+        pt = g.interpolate(0.5, normalized=True)
+    else:
+        pt = g.representative_point()
+        if em_terra is not None and not em_terra(pt.x, pt.y):
+            from shapely.geometry import Point
+
+            x0, y0, x1, y1 = g.bounds
+            passo = max(x1 - x0, y1 - y0) / 200
+            grade = [Point(x0 + i * passo, y0 + j * passo) for i in range(201) for j in range(201)]
+            ok = [q for q in grade if g.contains(q) and em_terra(q.x, q.y)]
+            if ok:
+                pt = min(ok, key=pt.distance)
+    return proj.lonlat(pt.x, pt.y)
+
+
+def coordenada_osm(p: dict, proj: Projecao, em_terra=None) -> dict:
     if p.get("osm"):
         tipo, ident = p["osm"].split("/")
-        el = overpass(f"[out:json];{tipo}({ident});out center;", CACHE / "osm" / f"{tipo}-{ident}.json")["elements"][0]
-        return {"lat": el.get("lat") or el["center"]["lat"], "lon": el.get("lon") or el["center"]["lon"],
-                "osm_type": tipo, "osm_id": int(ident)}
+        els = overpass(f"[out:json];{tipo}({ident});out geom;", CACHE / "osm" / f"{tipo}-{ident}-geom.json")["elements"]
+        if not els:
+            raise SystemExit(f"{p['nome']}: {p['osm']} não existe no OSM; corrija o \"osm\" da curadoria")
+        lon, lat = ponto_do_elemento(proj, els[0], em_terra)
+        return {"lat": lat, "lon": lon, "osm_type": tipo, "osm_id": int(ident)}
     caixa = 0.05
     rs = _get(NOMINATIM, {"q": p["nome"], "format": "jsonv2", "limit": 10, "bounded": 1,
                           "viewbox": f"{p['ref_lon'] - caixa},{p['ref_lat'] + caixa},{p['ref_lon'] + caixa},{p['ref_lat'] - caixa}"},
@@ -209,10 +239,14 @@ def main() -> int:
     centro = tuple(json.loads(BASE.read_text(encoding="utf-8"))["centro"])
     xy, grafo = grafo_carro(json.loads(MALHA.read_text(encoding="utf-8"))["elements"]
                             + json.loads((MALHA.parent / "osm-vias.json").read_text(encoding="utf-8"))["elements"], proj)
+    relevo = Relevo.carregar()
+    nivel = next(o for o in json.loads(DESTINO_ENTORNO.read_text(encoding="utf-8"))["objetos"]
+                 if o["nome"] == "Mar")["vertices"][0][2]
+    em_terra = lambda x, y: relevo.cota(x, y) > nivel + 0.5  # noqa: E731 — o pino não fica no mar
     pontos, candidatos = [], {}
     prontos, pendentes = separar_pendentes(cur["pontos"])
     for p in prontos:
-        c = coordenada_osm(p)
+        c = coordenada_osm(p, proj, em_terra)
         x, y = proj.xy(c["lon"], c["lat"])
         dist = math.dist((x, y), centro)
         cand = candidatos_commons(p["nome"], c["lat"], c["lon"])

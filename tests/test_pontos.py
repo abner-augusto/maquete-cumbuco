@@ -64,3 +64,29 @@ def test_minutos_usa_o_no_alcancavel_mais_perto_e_ponta_de_carro():
     xy, g = grafo_carro(elementos, P)
     # 6 min no grafo + 900 m de ponta a 25 km/h (2,16 min) + 1 de manobra = 9,16 → 10
     assert minutos(g, xy, (0, 0), (5000, 900)) == 10
+
+
+def test_ponto_do_elemento_fica_dentro_da_area_nao_no_centro_da_caixa():
+    # revisão final: o "out center" da praia do Icaraí caía no mar (centro da caixa de uma faixa curva)
+    from shapely.geometry import Point, Polygon
+
+    from scripts.pontos.pontos import ponto_do_elemento
+
+    ele = [(0, 0), (1000, 0), (1000, 50), (50, 50), (50, 1000), (0, 1000), (0, 0)]  # faixa em L
+    el = {"type": "way", "geometry": [{"lon": lon, "lat": lat} for lon, lat in (P.lonlat(x, y) for x, y in ele)]}
+    lon, lat = ponto_do_elemento(P, el)
+    assert Polygon(ele).contains(Point(P.xy(lon, lat)))
+    assert ponto_do_elemento(P, {"type": "node", "lon": -38.7, "lat": -3.66}) == (-38.7, -3.66)
+
+
+def test_ponto_do_elemento_em_terra():
+    # a faixa de praia do OSM é estreita e o Copernicus põe parte dela no mar: o pino precisa de terra
+    from shapely.geometry import Point, Polygon
+
+    from scripts.pontos.pontos import ponto_do_elemento
+
+    ele = [(0, 0), (1000, 0), (1000, 50), (50, 50), (50, 1000), (0, 1000), (0, 0)]
+    el = {"type": "way", "geometry": [{"lon": lon, "lat": lat} for lon, lat in (P.lonlat(x, y) for x, y in ele)]}
+    lon, lat = ponto_do_elemento(P, el, em_terra=lambda x, y: y > 500)  # só o braço vertical é terra
+    x, y = P.xy(lon, lat)
+    assert Polygon(ele).contains(Point(x, y)) and y > 500
