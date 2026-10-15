@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.loteamento.blender import BLENDER_PADRAO, SCRIPT, com_mapa, conferir_entorno, conferir_glb, juntar_cenas, nos_do_glb, rodar_blender
+from scripts.loteamento.blender import BLENDER_PADRAO, SCRIPT, com_tiles, conferir_entorno, conferir_glb, juntar_cenas, nos_do_glb, rodar_blender
 
 
 def _glb(caminho: Path, nomes: list[str]) -> None:
@@ -47,10 +47,6 @@ def test_regerar_nao_deixa_blend1_na_pasta_do_terreno(tmp_path):
 
 
 
-def test_conferir_entorno_acusa_peso():
-    assert conferir_entorno(["Entorno", "Mar", "ViasPrincipais", "Predios"], 8.4) == ["entorno.glb com 8.4 MB (alvo 8.0 MB)"]
-
-
 @pytest.mark.skipif(not BLENDER_PADRAO.exists(), reason="Blender 5.2 ausente")
 def test_contexto_entra_so_na_previa(tmp_path):
     lote = {"objetos": [{"nome": "Q01L01", "material": "lote_residencial",
@@ -65,23 +61,8 @@ def test_contexto_entra_so_na_previa(tmp_path):
     assert (tmp_path / "p-entorno.png").exists() and (tmp_path / "p.png").exists()
 
 
-def test_com_mapa_poe_textura_so_nos_nomes_pedidos():
-    dados = {"objetos": [{"nome": "Entorno", "material": "entorno"}, {"nome": "Mar", "material": "mar"}]}
-    mapa = {"arquivo": "C:/m.jpg", "ext": [0, 0, 10, 10], "px": [8, 8]}
-    novo = com_mapa(dados, mapa, {"Entorno"})
-    assert novo["objetos"][0]["textura"] == {"arquivo": "C:/m.jpg", "ext": [0, 0, 10, 10]}
-    assert novo["objetos"][0]["material"] == "chao" and "textura" not in novo["objetos"][1]
-    assert "textura" not in dados["objetos"][0]  # não altera a entrada
-
-
 def test_juntar_cenas():
     assert [o["nome"] for o in juntar_cenas({"objetos": [{"nome": "A"}]}, {"objetos": [{"nome": "B"}]})["objetos"]] == ["A", "B"]
-
-
-def test_conferir_entorno_exige_os_objetos_novos():
-    assert conferir_entorno(["Entorno", "Mar", "ViasPrincipais", "Predios"], 5.0) == []
-    assert conferir_entorno(["Entorno", "Mar"], 5.0) == ["objeto do entorno faltando no GLB: ViasPrincipais",
-                                                         "objeto do entorno faltando no GLB: Predios"]
 
 
 @pytest.mark.skipif(not BLENDER_PADRAO.exists(), reason="Blender 5.2 ausente")
@@ -89,7 +70,7 @@ def test_textura_vira_uv_e_imagem_no_glb(tmp_path):
     from PIL import Image
 
     Image.new("RGB", (8, 8), (200, 100, 50)).save(tmp_path / "m.jpg")
-    cena = {"objetos": [{"nome": "Entorno", "material": "chao", "vertices": [[0, 0, 0], [10, 0, 0], [0, 10, 0]],
+    cena = {"objetos": [{"nome": "Entorno_00", "material": "chao", "vertices": [[0, 0, 0], [10, 0, 0], [0, 10, 0]],
                          "faces": [[0, 1, 2]], "textura": {"arquivo": str(tmp_path / "m.jpg"), "ext": [0, 0, 10, 10]}},
                         {"nome": "Predios", "material": "predio", "vertices": [[0, 0, 0], [1, 0, 0], [0, 1, 1]],
                          "faces": [[0, 1, 2]], "suave": False}]}
@@ -100,3 +81,37 @@ def test_textura_vira_uv_e_imagem_no_glb(tmp_path):
     gltf = json.loads(dados[20:20 + tamanho])
     assert gltf.get("images") and gltf.get("textures")
     assert any("TEXCOORD_0" in p["attributes"] for m in gltf["meshes"] for p in m["primitives"])
+
+
+ENTORNO_OK = ["Entorno_00", "Entorno_01", "Entorno_10", "Entorno_11", "Mar", "ViasPrincipais", "Predios"]
+
+
+def test_com_tiles_poe_a_imagem_do_tile_pelo_sufixo():
+    dados = {"objetos": [{"nome": "Terreno_10", "material": "terreno"}, {"nome": "Q01L01", "material": "x"},
+                         {"nome": "Mar", "material": "mar"}]}
+    tiles = {"10": {"arquivo": "C:/m10.jpg", "ext": [0, 0, 10, 10], "janela": [0, 0, 9, 9], "px": [8, 8]}}
+    novo = com_tiles(dados, tiles, ("Terreno",))
+    assert novo["objetos"][0]["textura"] == {"arquivo": "C:/m10.jpg", "ext": [0, 0, 10, 10]}
+    assert novo["objetos"][0]["material"] == "chao"
+    assert "textura" not in novo["objetos"][1] and "textura" not in novo["objetos"][2]
+    assert "textura" not in dados["objetos"][0]
+
+
+def test_conferir_entorno_exige_os_quatro_pedacos_e_o_peso():
+    assert conferir_entorno(ENTORNO_OK, 5.0) == []
+    assert conferir_entorno(ENTORNO_OK, 8.4) == ["entorno.glb com 8.4 MB (alvo 8.0 MB)"]
+    assert conferir_entorno(["Entorno_00", "Mar", "ViasPrincipais", "Predios"], 5.0) == [
+        f"objeto do entorno faltando no GLB: Entorno_{k}" for k in ("01", "10", "11")]
+
+
+@pytest.mark.skipif(not BLENDER_PADRAO.exists(), reason="Blender 5.2 ausente")
+def test_lote_sai_com_pivo_no_centro(tmp_path):
+    cena = {"objetos": [{"nome": "Q01L01", "material": "lote_residencial", "suave": False, "origem": [5.0, 10.0, 21.4],
+                         "vertices": [[0, 0, 21.4], [10, 0, 21.4], [10, 20, 21.4], [0, 20, 21.4]],
+                         "faces": [[0, 1, 2], [0, 2, 3]]}]}
+    (tmp_path / "c.json").write_text(json.dumps(cena), encoding="utf-8")
+    rodar_blender(BLENDER_PADRAO, SCRIPT, str(tmp_path / "c.json"), str(tmp_path / "c.blend"), str(tmp_path / "c.glb"))
+    dados = (tmp_path / "c.glb").read_bytes()
+    gltf = json.loads(dados[20:20 + struct.unpack_from("<I", dados, 12)[0]])
+    no = next(n for n in gltf["nodes"] if n["name"] == "Q01L01")
+    assert no["translation"] == pytest.approx([5.0, 21.4, -10.0], abs=1e-4)

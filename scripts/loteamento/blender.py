@@ -40,13 +40,17 @@ def conferir_glb(nomes: list[str], ids: list[str]) -> list[str]:
 LIMITE_ENTORNO_MB = 8.0
 LIMITE_VEGETACAO_MB = 0.5
 SCRIPT_VEGETACAO = RAIZ / "scripts" / "blender" / "gerar_vegetacao.py"
-OBJETOS_ENTORNO = ("Entorno", "Mar", "ViasPrincipais", "Predios")
+OBJETOS_ENTORNO = ("Entorno_00", "Entorno_01", "Entorno_10", "Entorno_11", "Mar", "ViasPrincipais", "Predios")
 
 
-def com_mapa(dados: dict, mapa: dict, nomes: set[str]) -> dict:
-    """Cópia da cena com o chão pintado (material `chao`) nos objetos `nomes`."""
-    tex = {"arquivo": mapa["arquivo"], "ext": mapa["ext"]}
-    return {"objetos": [{**o, "material": "chao", "textura": tex} if o["nome"] in nomes else o
+def com_tiles(dados: dict, tiles: dict[str, dict], prefixos: tuple[str, ...]) -> dict:
+    """Cópia da cena com o chão pintado: `<prefixo>_<k>` recebe a imagem do tile k (material `chao`)."""
+    def textura(nome: str) -> dict | None:
+        pre, _, k = nome.rpartition("_")
+        t = tiles.get(k) if pre in prefixos else None
+        return {"arquivo": t["arquivo"], "ext": t["ext"]} if t else None
+
+    return {"objetos": [{**o, "material": "chao", "textura": t} if (t := textura(o["nome"])) else o
                         for o in dados["objetos"]]}
 
 
@@ -77,12 +81,12 @@ def main() -> int:
     blender = Path(ler_env(RAIZ / ".env").get("BLENDER", BLENDER_PADRAO))
     destino = terreno_dir() / PASTA_MAQUETE
     ler = lambda c: json.loads(c.read_text(encoding="utf-8"))  # noqa: E731
-    mapa = ler(MAPA_JSON)
+    tiles = ler(MAPA_JSON)["tiles"]
     cena_entorno = RAIZ / "cache" / "cena" / "entorno-completo.json"
-    cena_entorno.write_text(json.dumps(com_mapa(juntar_cenas(ler(ENTORNO_JSON), ler(DETALHE)), mapa, {"Entorno"})),
+    cena_entorno.write_text(json.dumps(com_tiles(juntar_cenas(ler(ENTORNO_JSON), ler(DETALHE)), tiles, ("Entorno",))),
                             encoding="utf-8")
     cena_lote = RAIZ / "cache" / "cena" / "loteamento-mapa.json"
-    cena_lote.write_text(json.dumps(com_mapa(ler(CENA_JSON), mapa, {"Terreno"})), encoding="utf-8")
+    cena_lote.write_text(json.dumps(com_tiles(ler(CENA_JSON), tiles, ("Terreno",))), encoding="utf-8")
     ent_glb = destino / "entorno.glb"
     ent = rodar_blender(blender, SCRIPT, str(cena_entorno), str(destino / "entorno.blend"), str(ent_glb))
     erros_ent = conferir_entorno(nos_do_glb(ent_glb), ent["glb_mb"])

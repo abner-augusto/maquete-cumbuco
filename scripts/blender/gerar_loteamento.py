@@ -33,6 +33,7 @@ MATERIAIS = {
     "via_principal_osm": ((0.47, 0.46, 0.47), 0.9),
     "entorno": ((0.86, 0.80, 0.68), 0.95),  # igual ao terreno: a costura não aparece
     "mar": ((0.18, 0.42, 0.55), 0.2),  # provisório: o front troca por shader
+    "juntas": ((0.72, 0.70, 0.66), 0.9),
     "lote_residencial": ((0.93, 0.89, 0.80), 0.8),
     "lote_uso_misto": ((0.85, 0.76, 0.62), 0.8),
 }
@@ -56,8 +57,8 @@ def material(nome: str) -> bpy.types.Material:
 
 
 def material_textura(arquivo: str) -> bpy.types.Material:
-    """Chão pintado: a imagem do mapa na cor base (o glTF leva a imagem embutida)."""
-    nome = "chao"
+    """Chão pintado: a imagem do tile na cor base (o glTF leva a imagem embutida). Um material por tile."""
+    nome = "chao_" + Path(arquivo).stem
     if nome in bpy.data.materials:
         return bpy.data.materials[nome]
     m = bpy.data.materials.new(nome)
@@ -76,15 +77,16 @@ def construir(dados: dict, nome: str = "Loteamento") -> bpy.types.Collection:
     bpy.context.scene.collection.children.link(col)
     for o in dados["objetos"]:
         me = bpy.data.meshes.new(o["nome"])
-        me.from_pydata(o["vertices"], [], o["faces"])
+        ox, oy, oz = o.get("origem", (0.0, 0.0, 0.0))  # pivô do objeto (centro do lote); malha relativa a ele
+        me.from_pydata([(x - ox, y - oy, z - oz) for x, y, z in o["vertices"]], [], o["faces"])
         me.validate()
         me.update()
         if "textura" in o:
             x0, y0, x1, y1 = o["textura"]["ext"]
             uv = me.uv_layers.new(name="UVMap")
             for loop in me.loops:
-                co = me.vertices[loop.vertex_index].co
-                uv.data[loop.index].uv = ((co.x - x0) / (x1 - x0), (co.y - y0) / (y1 - y0))
+                x, y = o["vertices"][loop.vertex_index][:2]  # coordenada absoluta: o tile é do mundo
+                uv.data[loop.index].uv = ((x - x0) / (x1 - x0), (y - y0) / (y1 - y0))
             me.materials.append(material_textura(o["textura"]["arquivo"]))
         else:
             me.materials.append(material(o["material"]))
@@ -92,6 +94,7 @@ def construir(dados: dict, nome: str = "Loteamento") -> bpy.types.Collection:
             # Normais suaves: o glTF compartilha o vértice entre triângulos (facetado duplica tudo).
             me.shade_smooth()
         ob = bpy.data.objects.new(o["nome"], me)
+        ob.location = (ox, oy, oz)
         col.objects.link(ob)
     return col
 
@@ -126,6 +129,12 @@ def _caixa(cos) -> tuple[tuple[float, float, float], float]:
     return centro, max(max(xs) - min(xs), max(ys) - min(ys))
 
 
+def _mundo(objetos) -> list:
+    """Vértices em coordenadas de mundo: com o pivô no lote, v.co é local."""
+    bpy.context.view_layer.update()  # em -b, matrix_world só reflete location depois do update
+    return [ob.matrix_world @ v.co for ob in objetos for v in ob.data.vertices]
+
+
 def previa(destino: Path, col: bpy.types.Collection, ctx: bpy.types.Collection | None = None) -> None:
     cena = bpy.context.scene
     try:
@@ -137,18 +146,18 @@ def previa(destino: Path, col: bpy.types.Collection, ctx: bpy.types.Collection |
     cena.render.resolution_x, cena.render.resolution_y = 1600, 1000
     sufixo = lambda s: destino.with_name(destino.stem + s + destino.suffix)  # noqa: E731
     if ctx is not None:
-        centro, raio = _caixa([v.co for ob in ctx.objects for v in ob.data.vertices])
+        centro, raio = _caixa(_mundo(ctx.objects))
         _vista(cena, centro, raio * 1.1, sufixo("-entorno"))
-    lotes = [v.co for ob in col.objects if ob.name.startswith("Q") for v in ob.data.vertices]
+    lotes = _mundo([ob for ob in col.objects if ob.name.startswith("Q")])
     if not lotes:
-        centro, raio = _caixa([v.co for ob in col.objects for v in ob.data.vertices])
+        centro, raio = _caixa(_mundo(col.objects))
         _vista(cena, centro, raio * 1.1, destino)
         return
     centro, raio = _caixa(lotes)
     _vista(cena, centro, raio * 1.1, destino)
     _vista(cena, centro, 160.0, sufixo("-perto"))
     if "Lagoa" in col.objects:
-        vs = [v.co for v in col.objects["Lagoa"].data.vertices]
+        vs = _mundo([col.objects["Lagoa"]])
         meio = (sum(c.x for c in vs) / len(vs), sum(c.y for c in vs) / len(vs), vs[0].z)
         _vista(cena, meio, 140.0, destino.with_name(destino.stem + "-lagoa" + destino.suffix))
 
