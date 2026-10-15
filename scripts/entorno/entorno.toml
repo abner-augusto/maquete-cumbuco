@@ -1,0 +1,7 @@
+# Entorno (Plano 4). Raios em metros, a partir do centro da caixa dos lotes.
+raio_vias = 4000            # vias e áreas do OSM (mapa pintado no relevo)
+raio_faixas = 1500          # vias principais em faixa 3D, perto do loteamento
+raio_predios = 1500         # prédios extrudados (Overture)
+raio_vegetacao = 2000       # instâncias de vegetação
+raio_malha_regional = 25000 # malha viária para os minutos de carro (Pecém, Fortaleza)
+mapa_px = 4096              # lado da imagem do chão (~2 m/px no recorte de 8 km)
