@@ -166,6 +166,37 @@ def disco_mar(centro: tuple[float, float], raio: float, nivel: float, n: int = 9
     return v, [[0, 1 + k, 1 + (k + 1) % n] for k in range(n)]
 
 
+DESTINO_LONGE = RAIZ / "cache" / "cena" / "longe.json"
+
+
+class Relevo:
+    """Cota do chão da cena: a grade perto onde ela existe (borda incluída), o Copernicus ajustado fora.
+    A borda do perto coincide com o longe (costura do 3c), então a troca não tem degrau."""
+
+    def __init__(self, perto: Grade, longe: Grade):
+        self.perto, self.longe = perto, longe
+        self._x1 = perto.x0 + perto.passo * (perto.nx - 1)
+        self._y1 = perto.y0 + perto.passo * (perto.ny - 1)
+
+    def cota(self, x: float, y: float) -> float:
+        p = self.perto
+        if p.x0 <= x <= self._x1 and p.y0 <= y <= self._y1:
+            return p.cota(x, y)
+        return self.longe.cota(x, y)
+
+    @classmethod
+    def carregar(cls) -> "Relevo":
+        ler = lambda c: Grade.de_json(json.loads(c.read_text(encoding="utf-8")))  # noqa: E731
+        return cls(ler(DESTINO_PERTO), ler(DESTINO_LONGE))
+
+
+def aneis_do_plato(msp, cfg: TerrenoCfg, lotes: list[dict], e0: float, n0: float) -> list[list[Ponto]]:
+    """Poligonal + todas as áreas da cena + lotes: o que fica plano (e fora do entorno)."""
+    camadas = [l for ls in CenaCfg.carregar(CFG_TOML).camadas.values() for l in ls]
+    return (aneis_da_layer(msp, cfg.poligonal, e0, n0) + aneis_da_layer(msp, camadas, e0, n0)
+            + [[tuple(p) for p in l["poligono"]] for l in lotes])
+
+
 DESTINO_PERTO = RAIZ / "cache" / "cena" / "terreno.json"
 DESTINO_ENTORNO = RAIZ / "cache" / "cena" / "entorno.json"
 
@@ -182,8 +213,7 @@ def main() -> int:
     poligonal = aneis_da_layer(msp, cfg.poligonal, e0, n0)
     # O platô cobre tudo o que está desenhado (vias de acesso, verdes e lotes fora da poligonal
     # também): nada da planta fica no talude, onde a grade de 10 m o cortaria.
-    camadas = [l for ls in CenaCfg.carregar(CFG_TOML).camadas.values() for l in ls]
-    plato = poligonal + aneis_da_layer(msp, camadas, e0, n0) + [[tuple(p) for p in l["poligono"]] for l in lotes]
+    plato = aneis_do_plato(msp, cfg, lotes, e0, n0)
     xs = [x for a in poligonal for x, _ in a]
     ys = [y for a in poligonal for _, y in a]
     folga = cfg.alcance + cfg.transicao + bruto.passo  # a borda do perto já é Copernicus puro
@@ -201,6 +231,7 @@ def main() -> int:
     vm, fm = disco_mar(centro, raio_do_mar(cfg.raio, longe.passo), round(delta, 2))
     DESTINO_PERTO.parent.mkdir(parents=True, exist_ok=True)
     DESTINO_PERTO.write_text(json.dumps(perto.para_json()), encoding="utf-8")
+    DESTINO_LONGE.write_text(json.dumps(longe.para_json()), encoding="utf-8")
     DESTINO_ENTORNO.write_text(json.dumps({"objetos": [
         {"nome": "Entorno", "material": "entorno", "vertices": v, "faces": f},
         {"nome": "Mar", "material": "mar", "vertices": vm, "faces": fm},

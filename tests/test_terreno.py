@@ -5,7 +5,7 @@ import pytest
 
 from scripts.loteamento.relevo import Grade
 from scripts.loteamento.terreno import (TerrenoCfg, ajustar_datum, amostrar_grade, compor_perto, cota_plato,
-                                        disco_mar, encaixar, malha_entorno, reamostrar, separar_mar)
+                                        Relevo, disco_mar, encaixar, malha_entorno, reamostrar, separar_mar)
 
 CFG = TerrenoCfg(poligonal=["POL"], talude=20.0, sigma=25.0, alcance=100.0, transicao=50.0, raio=4000.0,
                  mar_rebaixo=1.0, passo_perto=10.0)
@@ -129,3 +129,11 @@ def test_mar_nao_passa_da_borda_da_terra():
     for k in range(360):
         x, y = r * math.cos(math.radians(k)), r * math.sin(math.radians(k))
         assert (math.floor(x / 30), math.floor(y / 30)) in celulas  # todo o contorno do mar tem terra (ou fundo) embaixo
+
+
+def test_relevo_usa_o_perto_dentro_e_o_longe_fora():
+    perto = Grade(0.0, 0.0, 10.0, 11, 11, [[50.0] * 11 for _ in range(11)])
+    longe = _grade(lambda x, y: 7.0, passo=30.0, x0=-600.0, y0=-600.0, n=41)
+    r = Relevo(perto, longe)
+    assert r.cota(55.0, 55.0) == 50.0 and r.cota(100.0, 100.0) == 50.0  # borda é do perto
+    assert r.cota(130.0, 55.0) == 7.0
