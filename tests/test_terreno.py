@@ -137,3 +137,14 @@ def test_relevo_usa_o_perto_dentro_e_o_longe_fora():
     r = Relevo(perto, longe)
     assert r.cota(55.0, 55.0) == 50.0 and r.cota(100.0, 100.0) == 50.0  # borda é do perto
     assert r.cota(130.0, 55.0) == 7.0
+
+
+def test_relevo_segue_os_triangulos_da_malha_nao_o_bilinear():
+    # revisão final: faixas afundavam e árvores flutuavam — o bilinear difere dos 2 triângulos da célula
+    perto = Grade(0.0, 0.0, 10.0, 2, 2, [[0.0, 0.0], [0.0, 8.0]])  # z[j][i]: só o canto (10, 10) alto
+    longe = _grade(lambda x, y: 0.0, passo=30.0, x0=-600.0, y0=-600.0, n=41)
+    r = Relevo(perto, longe)
+    # malha: [a, a+1, a+nx+1] e [a, a+nx+1, a+nx] — diagonal de (0,0) a (10,10)
+    assert r.cota(7.5, 2.5) == pytest.approx(2.0)  # triângulo de baixo: 8 · ty
+    assert r.cota(2.5, 7.5) == pytest.approx(2.0)  # triângulo de cima: 8 · tx
+    assert r.cota(5.0, 5.0) == pytest.approx(4.0)  # na diagonal (o bilinear daria 2,0)

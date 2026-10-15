@@ -215,6 +215,20 @@ class Grade:
         z = self.z
         return (z[j][i] * (1 - tx) + z[j][i + 1] * tx) * (1 - ty) + (z[j + 1][i] * (1 - tx) + z[j + 1][i + 1] * tx) * ty
 
+    def cota_malha(self, x: float, y: float) -> float:
+        """Cota na superfície que a malha desenha: cada célula em dois triângulos pela diagonal de
+        (i, j) a (i+1, j+1) (faces [a, a+1, a+nx+1] e [a, a+nx+1, a+nx]). O bilinear de `cota` difere
+        disso em até |z00 − z10 + z11 − z01|/4 dentro da célula."""
+        fx = min(max((x - self.x0) / self.passo, 0.0), self.nx - 1.0)
+        fy = min(max((y - self.y0) / self.passo, 0.0), self.ny - 1.0)
+        i, j = min(int(fx), self.nx - 2), min(int(fy), self.ny - 2)
+        tx, ty = fx - i, fy - j
+        z = self.z
+        z00, z10, z01, z11 = z[j][i], z[j][i + 1], z[j + 1][i], z[j + 1][i + 1]
+        if tx >= ty:
+            return z00 + (z10 - z00) * tx + (z11 - z10) * ty
+        return z00 + (z11 - z01) * tx + (z01 - z00) * ty
+
     def para_json(self) -> dict:
         """NaN (fora do levantamento) vai como null: JSON padrão."""
         z = [[None if v is None or math.isnan(v) else v for v in linha] for linha in self.z]

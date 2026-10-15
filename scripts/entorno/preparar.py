@@ -25,8 +25,8 @@ MAPA_JPG = CACHE / "mapa.jpg"
 MAPA_JSON = CACHE / "mapa.json"
 DETALHE = RAIZ / "cache" / "cena" / "entorno-detalhe.json"
 AREA_MINIMA_PREDIO_M2 = 8.0  # abaixo disso, ruído das pegadas por ML
-OFFSET_FAIXA = 0.3  # m acima do relevo
-MAX_ARESTA_FAIXA = 5.0  # m: segue o relevo de perto
+OFFSET_FAIXA = 0.5  # m acima do relevo (0,3 deixava 0,9% da faixa sob o terreno)
+MAX_ARESTA_FAIXA = 2.5  # m entre seções: segue o relevo de perto
 
 # classe OSM -> (grupo, largura padrão em metros)
 VIAS_CLASSES = {
@@ -107,7 +107,7 @@ def faixa_3d(pontos: list, largura: float, relevo, offset: float, passo: float =
         dx, dy = b[0] - a[0], b[1] - a[1]
         n = math.hypot(dx, dy) or 1.0
         nx, ny = -dy / n * largura / 2, dx / n * largura / 2
-        secao.append([(x + nx, y + ny), (x - nx, y - ny)])
+        secao.append([(x + nx, y + ny), (x, y), (x - nx, y - ny)])  # o eixo também: o relevo dobra no meio
     prepara = fora.contains if fora is not None else (lambda p: False)
     for i in range(len(eixo) - 1):
         meio = Point((eixo[i][0] + eixo[i + 1][0]) / 2, (eixo[i][1] + eixo[i + 1][1]) / 2)
@@ -115,7 +115,9 @@ def faixa_3d(pontos: list, largura: float, relevo, offset: float, passo: float =
             continue
         base = len(vertices)
         vertices += drapear(secao[i] + secao[i + 1], relevo, offset)
-        faces += [[base, base + 1, base + 3], [base, base + 3, base + 2]]
+        for k in range(2):
+            a0, a1, c0, c1 = base + k, base + k + 1, base + 3 + k, base + 4 + k
+            faces += [[a0, a1, c1], [a0, c1, c0]]
     return vertices, faces
 
 

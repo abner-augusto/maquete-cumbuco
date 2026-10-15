@@ -44,8 +44,8 @@ def test_faixa_3d_pelo_eixo_segue_o_relevo():
     from scripts.entorno.preparar import faixa_3d
 
     v, f = faixa_3d([[0, 0], [100, 0]], 10.0, Rampa(), 0.3, passo=5.0)
-    assert len(f) == 2 * 20  # uma seção a cada 5 m
-    assert all(abs(y) == pytest.approx(5.0) for _, y, _ in v)
+    assert len(f) == 4 * 20  # uma seção a cada 5 m, com vértice no eixo (o relevo dobra no meio da faixa)
+    assert sorted({round(y, 6) for _, y, _ in v}) == [-5.0, 0.0, 5.0]
     assert all(z == pytest.approx(x / 10 + 0.3) for x, _, z in v)
 
 

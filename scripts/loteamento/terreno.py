@@ -181,8 +181,8 @@ class Relevo:
     def cota(self, x: float, y: float) -> float:
         p = self.perto
         if p.x0 <= x <= self._x1 and p.y0 <= y <= self._y1:
-            return p.cota(x, y)
-        return self.longe.cota(x, y)
+            return p.cota_malha(x, y)
+        return self.longe.cota_malha(x, y)  # a superfície desenhada, não o bilinear: nada afunda nem flutua
 
     @classmethod
     def carregar(cls) -> "Relevo":
