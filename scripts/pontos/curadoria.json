@@ -1,5 +1,5 @@
 {
- "_leia": "Curadoria dos 15 pontos aprovada pelo Abner em 14/10/2026: busca no Google Places (Nearby + Text Search, raio de 22 km a partir do centro dos lotes, até o Pecém), escolha equilibrando proximidade, avaliações e categoria. place_id e ref_lat/ref_lon são do Google, só para rastreio e para casar o ponto no OSM; não vão ao dados/pontos.json (coordenada publicada vem do OSM). Fotos: Wikimedia Commons com licença livre, aprovadas à parte (campo foto).",
+ "_leia": "Curadoria dos 15 pontos aprovada pelo Abner em 14/10/2026: busca no Google Places (Nearby + Text Search, raio de 22 km a partir do centro dos lotes, até o Pecém), escolha equilibrando proximidade, avaliações e categoria. place_id e ref_lat/ref_lon são do Google, só para rastreio e para casar o ponto no OSM; não vão ao dados/pontos.json (coordenada publicada vem do OSM). Fotos: Wikimedia Commons com licença livre, aprovadas à parte (campo foto). \"osm\" força o elemento quando o nome não casa no Nominatim (14/10/2026: Icaraí e Cumbuco pela praia natural=beach, Cauípe pela lagoa da Barra do Cauípe, RioMar pelo shop=mall). \"pendente\" deixa o ponto fora do site até decisão.",
  "busca": {
   "centro": {
    "lat": -3.662751,
@@ -15,7 +15,8 @@
    "google_place_id": "ChIJcXEMyozKwAcRlGVaxIugdyY",
    "google_nome": "Icaraí",
    "ref_lat": -3.677564,
-   "ref_lon": -38.688343
+   "ref_lon": -38.688343,
+   "osm": "relation/9248972"
   },
   {
    "nome": "Cumbuco Acqua Beach",
@@ -23,7 +24,8 @@
    "google_place_id": "ChIJk2AjyI3LwAcRSMoUllFQBMo",
    "google_nome": "Cumbuco Acqua Beach",
    "ref_lat": -3.634085,
-   "ref_lon": -38.711755
+   "ref_lon": -38.711755,
+   "pendente": "sem elemento no OSM (nem por nome, nem leisure=water_park a 3 km)"
   },
   {
    "nome": "Kitecabana",
@@ -31,7 +33,8 @@
    "google_place_id": "ChIJ6abSwX3LwAcRVMZn13B8FC0",
    "google_nome": "Kitecabana Lounge",
    "ref_lat": -3.628048,
-   "ref_lon": -38.724433
+   "ref_lon": -38.724433,
+   "pendente": "sem elemento no OSM (pontos de kite próximos: Blue Wind node/988314317, Kiteline node/975731790)"
   },
   {
    "nome": "Praia do Cumbuco",
@@ -39,7 +42,8 @@
    "google_place_id": "ChIJwSa12wfMwAcRQ_PMdCdLaOM",
    "google_nome": "Praia de Cumbuco - Main Beach",
    "ref_lat": -3.625687,
-   "ref_lon": -38.727347
+   "ref_lon": -38.727347,
+   "osm": "relation/9248967"
   },
   {
    "nome": "Lagoa do Banana",
@@ -95,7 +99,8 @@
    "google_place_id": "ChIJMSNIp6zPwAcRPlG3jdnw7Jo",
    "google_nome": "Lagoa do Cauípe Cumbuco",
    "ref_lat": -3.588943,
-   "ref_lon": -38.780015
+   "ref_lon": -38.780015,
+   "osm": "relation/9248969"
   },
   {
    "nome": "Shopping RioMar Kennedy",
@@ -103,7 +108,8 @@
    "google_place_id": "ChIJJXrsG4dJxwcRXyolQMKLavY",
    "google_nome": "Shopping RioMar Kennedy",
    "ref_lat": -3.726211,
-   "ref_lon": -38.567034
+   "ref_lon": -38.567034,
+   "osm": "relation/15771487"
   },
   {
    "nome": "Porto do Pecém",

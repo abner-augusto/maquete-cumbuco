@@ -52,6 +52,9 @@ def overpass(consulta: str, cache: Path, refazer: bool = False) -> dict:
             except (OSError, ValueError) as e:
                 erros.append(f"{url}: {e}")
                 continue
+            if "error" in dados.get("remark", ""):  # 200 com lista vazia e o erro só na observação
+                erros.append(f"{url}: {dados['remark']}")
+                continue
             cache.parent.mkdir(parents=True, exist_ok=True)
             cache.write_text(texto, encoding="utf-8")
             return dados
