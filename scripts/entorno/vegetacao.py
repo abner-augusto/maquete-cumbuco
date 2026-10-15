@@ -16,6 +16,7 @@ from shapely.prepared import prep
 
 from scripts.comum.ambiente import RAIZ
 from scripts.loteamento.cena import CFG_TOML, DXF, CenaCfg, aneis_da_layer
+from scripts.loteamento.placa import PlacaCfg
 from scripts.loteamento.terreno import DESTINO_ENTORNO, Relevo, TerrenoCfg, aneis_do_plato
 
 from .extrair import BASE, CACHE, EntornoCfg
@@ -37,6 +38,7 @@ ZONAS = [
     ("quintais", lambda t: t.get("landuse") == "residential", 500, {"coqueiro": 0.5, "cajueiro": 0.5}),
     ("campo", lambda t: t.get("landuse") in ("grass", "meadow", "farmland", "orchard"), 900, {"cajueiro": 1.0}),
 ]
+OFFSET_CANTEIRO = PlacaCfg.carregar(CFG_TOML).alturas["Verdes"]  # coqueiro no topo do verde da placa
 
 
 def pontos_zona(zona, m2: float, mistura: dict[str, float], sorte: random.Random) -> list[tuple[float, float, str]]:
@@ -128,7 +130,7 @@ def main() -> int:
         raise SystemExit("Nenhuma árvore nas zonas do OSM: áreas vazias no base.json? Rode o extrair com --refazer.")
     verdes = aneis_da_layer(msp, CenaCfg.carregar(CFG_TOML).camadas["Verdes"], e0, n0)
     inst = instancias(pts, relevo, nivel, sorte)
-    cant = instancias([(x, y, "coqueiro") for x, y in canteiros(verdes)], relevo, nivel, sorte, offset=0.08)
+    cant = instancias([(x, y, "coqueiro") for x, y in canteiros(verdes)], relevo, nivel, sorte, offset=OFFSET_CANTEIRO)
     inst["coqueiro"] = cant["coqueiro"] + inst["coqueiro"]  # os da Fase 1 primeiro: sempre aparecem
     DESTINO.write_text(json.dumps({
         "versao": 1,

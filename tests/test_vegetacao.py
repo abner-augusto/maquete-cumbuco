@@ -34,3 +34,11 @@ def test_instancias_com_cota_e_sem_mar():
     (x_dm, y_dm, z_cm, esc, rot), = [inst["coqueiro"][i:i + 5] for i in range(0, len(inst["coqueiro"]), 5)]
     assert (x_dm, y_dm, z_cm) == (50, 50, 1000) and 80 <= esc <= 120 and 0 <= rot < 360
     assert inst["arbusto"] == [] and inst["cajueiro"] == []
+
+
+def test_canteiros_ficam_no_topo_dos_verdes():
+    from scripts.comum.ambiente import RAIZ
+    from scripts.entorno.vegetacao import OFFSET_CANTEIRO
+    from scripts.loteamento.placa import PlacaCfg
+
+    assert OFFSET_CANTEIRO == PlacaCfg.carregar(RAIZ / "scripts" / "loteamento" / "cena.toml").alturas["Verdes"]

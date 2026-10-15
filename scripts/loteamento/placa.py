@@ -18,7 +18,7 @@ from .geometria import Ponto
 from .malha import aninhar, simplificar, triangular
 
 PRECISAO = 0.001  # m: a partição é arredondada a 1 mm, sem lascas numéricas
-ORDEM = ["Calcadas", "Verdes", "Institucional", "Fundo", "APP"]  # depois da lagoa e dos lotes, antes da pista
+ORDEM = ["Calcadas", "APP", "Verdes", "Institucional", "Fundo"]  # depois da lagoa e dos lotes, antes da pista; APP antes do verde que a envolve
 MATERIAL = {"Pista": "vias", "ChaoPlato": "terreno", "Calcadas": "calcadas", "Verdes": "verdes",
             "Institucional": "institucional", "Fundo": "fundo", "APP": "app", "Juntas": "juntas", "Lagoa": "agua"}
 

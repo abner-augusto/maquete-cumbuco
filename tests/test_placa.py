@@ -123,3 +123,9 @@ def test_montar_placa_materiais_origem_e_meio_fio():
     assert all(o["suave"] is False for o in objs.values())
     assert max(p[2] for p in objs["Calcadas"]["vertices"]) == pytest.approx(21.25)
     assert altura("Q09L09", CFG) == 0.40
+
+
+def test_app_ganha_do_verde_que_a_envolve():
+    # revisão: no DXF real o verde em volta da lagoa cobre a ilha de APP; a ilha virava verde
+    pecas = particionar(PLATO, {"Verdes": box(0, 0, 100, 100), "APP": box(40, 40, 50, 50)}, {}, None, CFG)
+    assert pecas["APP"].area == pytest.approx(100, rel=1e-3)

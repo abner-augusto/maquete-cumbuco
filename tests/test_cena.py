@@ -1,23 +1,28 @@
 import ezdxf
 import pytest
+from shapely.geometry import Polygon, box
 
 from scripts.loteamento.cena import CenaCfg, achar_lagoa, aneis_da_layer, montar
 from scripts.loteamento.geometria import area
 from scripts.loteamento.relevo import Grade
 
 E0, N0 = 500_000.0, 9_600_000.0
-CFG = CenaCfg(
-    camadas={"Vias": ["VIA"], "APP": ["APP"]},
-    lagoa_camadas=["APP"],
-    lagoa_texto="LAGOA AZUL",
-    offsets={"Vias": 0.06, "APP": 0.03, "lote": 0.15},
-    tolerancia=0.05,
-    max_aresta=6.0,
-)
+from scripts.loteamento.placa import PlacaCfg
+
+CFG = CenaCfg(camadas={"Vias": ["VIA"], "APP": ["APP"]}, lagoa_camadas=["APP"],
+              lagoa_texto="LAGOA AZUL", tolerancia=0.05)
+PLACA = PlacaCfg(alturas={"Pista": 0.0, "ChaoPlato": 0.0, "Calcadas": 0.25, "Verdes": 0.25,
+                          "Institucional": 0.25, "Fundo": 0.25, "APP": 0.25, "Juntas": 0.25,
+                          "lote": 0.40, "Lagoa": -0.30})
+JANELAS = {"00": (-10.0, -10.0, 400.0, 200.0)}
 
 
 def _ret(x, y, w, h):
     return [(E0 + x, N0 + y), (E0 + x + w, N0 + y), (E0 + x + w, N0 + y + h), (E0 + x, N0 + y + h)]
+
+
+def _local(x, y, w, h):
+    return [(x, y), (x + w, y), (x + w, y + h), (x, y + h)]
 
 
 @pytest.fixture
@@ -34,6 +39,12 @@ def msp():
 
 GRADE = Grade(-10.0, -10.0, 10.0, 40, 20, [[10.0] * 40 for _ in range(20)])
 LOTES = [{"id": "Q01L01", "tipo": "residencial", "poligono": [[0, 0], [10, 0], [10, 20], [0, 20]]}]
+PLATO = [_local(0, 0, 100, 100), _local(200, 0, 100, 100)]
+
+
+def _area_topo(o, z):
+    v = o["vertices"]
+    return sum(Polygon([v[i][:2] for i in f]).area for f in o["faces"] if all(abs(v[i][2] - z) < 1e-6 for i in f))
 
 
 def test_circulo_vira_anel(msp):
@@ -43,56 +54,48 @@ def test_circulo_vira_anel(msp):
 
 
 def test_lagoa_e_o_menor_poligono_com_o_texto(msp):
-    lagoa = achar_lagoa(msp, CFG, E0, N0)
-    assert round(area(lagoa)) == 1600
+    assert round(area(achar_lagoa(msp, CFG, E0, N0))) == 1600
 
 
-def test_montar_objetos_com_furos_e_lotes_nomeados(msp):
-    cena = montar(msp, GRADE, LOTES, CFG, E0, N0)
-    por_nome = {o["nome"]: o for o in cena["objetos"]}
-    assert {"Terreno", "Vias", "APP", "Lagoa", "Q01L01"} <= set(por_nome)
-    vias = por_nome["Vias"]
-    a = sum(area([vias["vertices"][i][:2] for i in f]) for f in vias["faces"])
-    assert a == pytest.approx(10000 - 314.16, rel=0.01)  # a ilha fica de fora
-    app = por_nome["APP"]
-    a_app = sum(area([app["vertices"][i][:2] for i in f]) for f in app["faces"])
-    assert a_app == pytest.approx(10000 - 1600, rel=0.01)  # a lagoa é furo da APP
+def test_montar_placa_lotes_e_terreno_em_janelas(msp):
+    por_nome = {o["nome"]: o for o in montar(msp, GRADE, LOTES, CFG, PLACA, PLATO, JANELAS, E0, N0)["objetos"]}
+    assert {"Pista", "APP", "Lagoa", "Q01L01", "Juntas", "ChaoPlato", "Terreno_00"} <= set(por_nome)
     assert por_nome["Q01L01"]["material"] == "lote_residencial"
-    assert all(v[2] == pytest.approx(10.15) for v in por_nome["Q01L01"]["vertices"])
-    assert all(v[2] == pytest.approx(10.0) for v in por_nome["Lagoa"]["vertices"])
+    assert por_nome["Q01L01"]["origem"] == pytest.approx([5.0, 10.0, 10.4])
+    assert max(p[2] for p in por_nome["Lagoa"]["vertices"]) == pytest.approx(9.7)
+    assert _area_topo(por_nome["Lagoa"], 9.7) == pytest.approx(1600, rel=0.01)
+    assert _area_topo(por_nome["ChaoPlato"], 10.0) == pytest.approx(314, rel=0.02)  # a ilha da rotatória
+
+
+def test_ilha_da_lagoa_e_app_e_o_resto_e_agua():
+    doc = ezdxf.new()
+    m = doc.modelspace()
+    m.add_lwpolyline(_ret(230, 30, 40, 40), close=True, dxfattribs={"layer": "APP"})  # a lagoa
+    m.add_lwpolyline(_ret(250, 50, 10, 10), close=True, dxfattribs={"layer": "APP"})  # ilha
+    m.add_text("LAGOA AZUL", dxfattribs={"layer": "TXT", "insert": (E0 + 238, N0 + 38)})
+    por_nome = {o["nome"]: o for o in montar(m, GRADE, LOTES, CFG, PLACA, PLATO, JANELAS, E0, N0)["objetos"]}
+    assert _area_topo(por_nome["APP"], 10.25) == pytest.approx(100, rel=0.01)
+    assert _area_topo(por_nome["Lagoa"], 9.7) == pytest.approx(1600 - 100, rel=0.01)
+
+
+def test_terreno_nao_entra_na_placa(msp):
+    por_nome = {o["nome"]: o for o in montar(msp, GRADE, LOTES, CFG, PLACA, PLATO, JANELAS, E0, N0)["objetos"]}
+    t = por_nome["Terreno_00"]
+    placa = box(0, 0, 100, 100).union(box(200, 0, 300, 100))
+    assert not any(placa.contains(Polygon([t["vertices"][i][:2] for i in f]).centroid) for f in t["faces"])
 
 
 def test_cfg_carrega_do_toml():
     from scripts.comum.ambiente import RAIZ
 
     cfg = CenaCfg.carregar(RAIZ / "scripts" / "loteamento" / "cena.toml")
-    assert "Vias" in cfg.camadas and cfg.offsets["lote"] > max(v for k, v in cfg.offsets.items() if k != "lote")
+    placa = PlacaCfg.carregar(RAIZ / "scripts" / "loteamento" / "cena.toml")
+    assert "Vias" in cfg.camadas
+    assert placa.alturas["lote"] > placa.alturas["Calcadas"] > placa.alturas["Pista"] > placa.alturas["Lagoa"]
 
 
-def test_lagoa_vira_furo_de_toda_area_que_a_contem(msp):
-    from dataclasses import replace
-
-    msp.add_lwpolyline(_ret(190, -10, 120, 120), close=True, dxfattribs={"layer": "VRD"})  # verde em volta
-    cfg = replace(CFG, camadas={**CFG.camadas, "Verdes": ["VRD"]}, offsets={**CFG.offsets, "Verdes": 0.08})
-    por_nome = {o["nome"]: o for o in montar(msp, GRADE, LOTES, cfg, E0, N0)["objetos"]}
-    v = por_nome["Verdes"]
-    a = sum(area([v["vertices"][i][:2] for i in f]) for f in v["faces"])
-    assert a == pytest.approx(120 * 120 - 1600, rel=0.01)
-
-
-def test_lagoa_que_e_a_propria_app_fica_so_agua():
-    # revisão final: no DXF real a APP_30 é só a lagoa (e uma ilha dentro); a lagoa virava área verde
-    doc = ezdxf.new()
-    m = doc.modelspace()
-    m.add_lwpolyline(_ret(230, 30, 40, 40), close=True, dxfattribs={"layer": "APP"})  # a lagoa
-    m.add_lwpolyline(_ret(250, 50, 10, 10), close=True, dxfattribs={"layer": "APP"})  # ilha
-    m.add_text("LAGOA AZUL", dxfattribs={"layer": "TXT", "insert": (E0 + 238, N0 + 38)})
-    g = Grade(-10.0, -10.0, 10.0, 40, 20, [[10.0 + (-10.0 + 10.0 * i) / 20 for i in range(40)] for _ in range(20)])
-    por_nome = {o["nome"]: o for o in montar(m, g, LOTES, CFG, E0, N0)["objetos"]}
-    app = por_nome["APP"]
-    assert sum(area([app["vertices"][i][:2] for i in f]) for f in app["faces"]) == pytest.approx(100, rel=0.01)
-    nivel = por_nome["Lagoa"]["vertices"][0][2]
-    margem = [g.cota(x, y) for x, y in [(230 + k, 30) for k in range(41)] + [(230 + k, 70) for k in range(41)]]
-    assert sum(z < nivel for z in margem) <= 0.1 * len(margem)  # a água não sobra acima da margem
-    dentro = [v for v in por_nome["Terreno"]["vertices"] if 230 < v[0] < 270 and 30 < v[1] < 70]
-    assert dentro and all(v[2] < nivel for v in dentro)  # o terreno não fura a água
+def test_plato_e_a_uniao_dos_aneis_nao_um_desenho_com_furos(msp):
+    # revisão: aneis_do_plato traz a poligonal, as áreas e os lotes; o lote dentro da poligonal virava furo
+    com_lote = PLATO + [[tuple(p) for p in LOTES[0]["poligono"]]]
+    por_nome = {o["nome"]: o for o in montar(msp, GRADE, LOTES, CFG, PLACA, com_lote, JANELAS, E0, N0)["objetos"]}
+    assert _area_topo(por_nome["Q01L01"], 10.4) == pytest.approx(9.7 * 19.7, rel=0.01)
