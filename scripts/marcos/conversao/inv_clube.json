@@ -1,0 +1,280 @@
+{
+ "file": "$TERRENO_DIR\\6-PROJETOS\\04-CLUBE\\DWG Abner\\clube 3d categorizado (do SKP).blend",
+ "units": {
+  "system": "METRIC",
+  "scale_length": 1.0,
+  "length_unit": "METERS"
+ },
+ "n_objects": 12,
+ "types": {
+  "MESH": 12
+ },
+ "modifiers": {},
+ "tris_total": 3259692,
+ "bbox_min": [
+  -1.7207196950912476,
+  -1129.73486328125,
+  -9.420000076293945
+ ],
+ "bbox_max": [
+  117.58484649658203,
+  97.64167022705078,
+  9.312100410461426
+ ],
+ "dims_m": [
+  119.30556619167328,
+  1227.3765335083008,
+  18.73210048675537
+ ],
+ "collections": {
+  "name": "Scene Collection",
+  "n_obj": 0,
+  "n_mesh": 0,
+  "tris": 0,
+  "hide_render": false,
+  "children": [
+   {
+    "name": "CLUBE",
+    "n_obj": 12,
+    "n_mesh": 12,
+    "tris": 3259692,
+    "hide_render": false,
+    "children": [],
+    "tris_total": 3259692,
+    "n_obj_total": 12
+   }
+  ],
+  "tris_total": 3259692,
+  "n_obj_total": 12
+ },
+ "materials": [
+  {
+   "name": "AGUA",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "EQUIPAMENTO",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "ESQUADRIA",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "GRADIL",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "LAJE",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "LINHAS",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "OUTROS",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "PAREDE",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "PILAR",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "PISO",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "VIDRO",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "VIGA",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  }
+ ],
+ "images": [],
+ "root_scales": [
+  [
+   1.0,
+   1.0,
+   1.0
+  ]
+ ],
+ "top_objects_by_tris": [
+  [
+   "CLUBE_EQUIPAMENTO",
+   2627035
+  ],
+  [
+   "CLUBE_PISO",
+   289846
+  ],
+  [
+   "CLUBE_OUTROS",
+   121244
+  ],
+  [
+   "CLUBE_ESQUADRIA",
+   116851
+  ],
+  [
+   "CLUBE_LAJE",
+   46701
+  ],
+  [
+   "CLUBE_GRADIL",
+   18974
+  ],
+  [
+   "CLUBE_VIGA",
+   17034
+  ],
+  [
+   "CLUBE_VIDRO",
+   11344
+  ],
+  [
+   "CLUBE_PAREDE",
+   8108
+  ],
+  [
+   "CLUBE_PILAR",
+   2068
+  ],
+  [
+   "CLUBE_AGUA",
+   487
+  ],
+  [
+   "CLUBE_LINHAS",
+   0
+  ]
+ ],
+ "object_names": {
+  "CLUBE_AGUA": [
+   "MESH",
+   487,
+   [
+    "CLUBE"
+   ],
+   null
+  ],
+  "CLUBE_EQUIPAMENTO": [
+   "MESH",
+   2627035,
+   [
+    "CLUBE"
+   ],
+   null
+  ],
+  "CLUBE_ESQUADRIA": [
+   "MESH",
+   116851,
+   [
+    "CLUBE"
+   ],
+   null
+  ],
+  "CLUBE_GRADIL": [
+   "MESH",
+   18974,
+   [
+    "CLUBE"
+   ],
+   null
+  ],
+  "CLUBE_LAJE": [
+   "MESH",
+   46701,
+   [
+    "CLUBE"
+   ],
+   null
+  ],
+  "CLUBE_LINHAS": [
+   "MESH",
+   0,
+   [
+    "CLUBE"
+   ],
+   null
+  ],
+  "CLUBE_OUTROS": [
+   "MESH",
+   121244,
+   [
+    "CLUBE"
+   ],
+   null
+  ],
+  "CLUBE_PAREDE": [
+   "MESH",
+   8108,
+   [
+    "CLUBE"
+   ],
+   null
+  ],
+  "CLUBE_PILAR": [
+   "MESH",
+   2068,
+   [
+    "CLUBE"
+   ],
+   null
+  ],
+  "CLUBE_PISO": [
+   "MESH",
+   289846,
+   [
+    "CLUBE"
+   ],
+   null
+  ],
+  "CLUBE_VIDRO": [
+   "MESH",
+   11344,
+   [
+    "CLUBE"
+   ],
+   null
+  ],
+  "CLUBE_VIGA": [
+   "MESH",
+   17034,
+   [
+    "CLUBE"
+   ],
+   null
+  ]
+ }
+}

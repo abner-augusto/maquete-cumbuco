@@ -1,0 +1,332 @@
+{
+ "file": "$TERRENO_DIR\\6-PROJETOS\\05-PORTARIA\\portaria e rotatoria 3d categorizado (do SKP).blend",
+ "units": {
+  "system": "METRIC",
+  "scale_length": 1.0,
+  "length_unit": "METERS"
+ },
+ "n_objects": 16,
+ "types": {
+  "MESH": 16
+ },
+ "modifiers": {},
+ "tris_total": 562455,
+ "bbox_min": [
+  -449.89410400390625,
+  -1078.21875,
+  -3.5999999046325684
+ ],
+ "bbox_max": [
+  228.1396026611328,
+  430.3432922363281,
+  7.501399993896484
+ ],
+ "dims_m": [
+  678.0337066650391,
+  1508.5620422363281,
+  11.101399898529053
+ ],
+ "collections": {
+  "name": "Scene Collection",
+  "n_obj": 0,
+  "n_mesh": 0,
+  "tris": 0,
+  "hide_render": false,
+  "children": [
+   {
+    "name": "PORTARIA",
+    "n_obj": 10,
+    "n_mesh": 10,
+    "tris": 547334,
+    "hide_render": false,
+    "children": [],
+    "tris_total": 547334,
+    "n_obj_total": 10
+   },
+   {
+    "name": "ROTATORIA",
+    "n_obj": 6,
+    "n_mesh": 6,
+    "tris": 15121,
+    "hide_render": false,
+    "children": [],
+    "tris_total": 15121,
+    "n_obj_total": 6
+   }
+  ],
+  "tris_total": 562455,
+  "n_obj_total": 16
+ },
+ "materials": [
+  {
+   "name": "AGUA",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "EQUIPAMENTO",
+   "users": 2,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "ESQUADRIA",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "LAJE",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "LINHAS",
+   "users": 2,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "OUTROS",
+   "users": 2,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "PAREDE",
+   "users": 2,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "PILAR",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "PISO",
+   "users": 2,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "VIDRO",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  },
+  {
+   "name": "VIGA",
+   "users": 1,
+   "images": [],
+   "blend_method": "HASHED"
+  }
+ ],
+ "images": [],
+ "root_scales": [
+  [
+   1.0,
+   1.0,
+   1.0
+  ]
+ ],
+ "top_objects_by_tris": [
+  [
+   "PORTARIA_EQUIPAMENTO",
+   155531
+  ],
+  [
+   "PORTARIA_PISO",
+   117430
+  ],
+  [
+   "PORTARIA_LAJE",
+   106324
+  ],
+  [
+   "PORTARIA_OUTROS",
+   101807
+  ],
+  [
+   "PORTARIA_VIGA",
+   63019
+  ],
+  [
+   "ROTATORIA_EQUIPAMENTO",
+   12484
+  ],
+  [
+   "PORTARIA_PAREDE",
+   1545
+  ],
+  [
+   "ROTATORIA_PISO",
+   1541
+  ],
+  [
+   "PORTARIA_ESQUADRIA",
+   1184
+  ],
+  [
+   "ROTATORIA_PAREDE",
+   528
+  ],
+  [
+   "PORTARIA_VIDRO",
+   430
+  ],
+  [
+   "ROTATORIA_AGUA",
+   424
+  ],
+  [
+   "ROTATORIA_OUTROS",
+   144
+  ],
+  [
+   "PORTARIA_PILAR",
+   64
+  ],
+  [
+   "PORTARIA_LINHAS",
+   0
+  ],
+  [
+   "ROTATORIA_LINHAS",
+   0
+  ]
+ ],
+ "object_names": {
+  "PORTARIA_EQUIPAMENTO": [
+   "MESH",
+   155531,
+   [
+    "PORTARIA"
+   ],
+   null
+  ],
+  "PORTARIA_ESQUADRIA": [
+   "MESH",
+   1184,
+   [
+    "PORTARIA"
+   ],
+   null
+  ],
+  "PORTARIA_LAJE": [
+   "MESH",
+   106324,
+   [
+    "PORTARIA"
+   ],
+   null
+  ],
+  "PORTARIA_LINHAS": [
+   "MESH",
+   0,
+   [
+    "PORTARIA"
+   ],
+   null
+  ],
+  "PORTARIA_OUTROS": [
+   "MESH",
+   101807,
+   [
+    "PORTARIA"
+   ],
+   null
+  ],
+  "PORTARIA_PAREDE": [
+   "MESH",
+   1545,
+   [
+    "PORTARIA"
+   ],
+   null
+  ],
+  "PORTARIA_PILAR": [
+   "MESH",
+   64,
+   [
+    "PORTARIA"
+   ],
+   null
+  ],
+  "PORTARIA_PISO": [
+   "MESH",
+   117430,
+   [
+    "PORTARIA"
+   ],
+   null
+  ],
+  "PORTARIA_VIDRO": [
+   "MESH",
+   430,
+   [
+    "PORTARIA"
+   ],
+   null
+  ],
+  "PORTARIA_VIGA": [
+   "MESH",
+   63019,
+   [
+    "PORTARIA"
+   ],
+   null
+  ],
+  "ROTATORIA_AGUA": [
+   "MESH",
+   424,
+   [
+    "ROTATORIA"
+   ],
+   null
+  ],
+  "ROTATORIA_EQUIPAMENTO": [
+   "MESH",
+   12484,
+   [
+    "ROTATORIA"
+   ],
+   null
+  ],
+  "ROTATORIA_LINHAS": [
+   "MESH",
+   0,
+   [
+    "ROTATORIA"
+   ],
+   null
+  ],
+  "ROTATORIA_OUTROS": [
+   "MESH",
+   144,
+   [
+    "ROTATORIA"
+   ],
+   null
+  ],
+  "ROTATORIA_PAREDE": [
+   "MESH",
+   528,
+   [
+    "ROTATORIA"
+   ],
+   null
+  ],
+  "ROTATORIA_PISO": [
+   "MESH",
+   1541,
+   [
+    "ROTATORIA"
+   ],
+   null
+  ]
+ }
+}
