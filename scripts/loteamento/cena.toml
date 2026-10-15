@@ -33,3 +33,20 @@ transicao = 100.0    # m do levantamento ao Copernicus
 raio = 4000.0        # m do entorno, a partir do centro dos lotes
 mar_rebaixo = 5.0    # m que o fundo do mar desce abaixo do plano da água (1 m brigava com ele de longe)
 passo_perto = 10.0   # m da grade do terreno perto (múltiplo do passo do Copernicus)
+
+[placa]   # a placa em volume (scripts/loteamento/placa.py); alturas relativas à cota do platô
+recuo_lote = 0.15   # m de cada lado: a junta entre lotes vizinhos tem o dobro
+fundo = -1.0        # m, base das paredes: meio-fio, margem da lagoa e saia da borda
+fresta_max = 2.0    # m², fresta entre peças encostada na via vira pista
+
+[placa.alturas]
+Pista = 0.0
+ChaoPlato = 0.0
+Calcadas = 0.25
+Verdes = 0.25
+Institucional = 0.25
+Fundo = 0.25
+APP = 0.25
+Juntas = 0.25
+lote = 0.40
+Lagoa = -0.30

@@ -39,6 +39,7 @@ class CenaCfg:
     def carregar(cls, caminho: Path) -> "CenaCfg":
         d = tomllib.loads(caminho.read_text(encoding="utf-8"))
         d.pop("terreno", None)  # é do terreno.py
+        d.pop("placa", None)  # é do placa.py
         return cls(**d)
 
 
