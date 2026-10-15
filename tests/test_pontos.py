@@ -90,3 +90,21 @@ def test_ponto_do_elemento_em_terra():
     lon, lat = ponto_do_elemento(P, el, em_terra=lambda x, y: y > 500)  # só o braço vertical é terra
     x, y = P.xy(lon, lat)
     assert Polygon(ele).contains(Point(x, y)) and y > 500
+
+
+def test_coordenada_lida_no_satelite_dispensa_o_osm():
+    from scripts.pontos.pontos import coordenada_osm
+
+    p = {"nome": "Parque", "ref_lat": -3.6340, "ref_lon": -38.7117,
+         "satelite": {"lat": -3.633971, "lon": -38.711931, "imagem": "Esri World Imagery z18", "data": "2026-10-15"}}
+    c = coordenada_osm(p, P)
+    assert (c["lat"], c["lon"], c["osm_type"], c["fonte"]) == (-3.633971, -38.711931, None, "satelite")
+
+
+def test_coordenada_do_satelite_longe_da_referencia_e_recusada():
+    from scripts.pontos.pontos import coordenada_osm
+
+    p = {"nome": "Parque", "ref_lat": -3.6340, "ref_lon": -38.7117,
+         "satelite": {"lat": -3.6640, "lon": -38.7117, "imagem": "Esri World Imagery z18", "data": "2026-10-15"}}
+    with pytest.raises(SystemExit, match="satelite"):
+        coordenada_osm(p, P)  # 3,3 km: digitação errada, não o lugar

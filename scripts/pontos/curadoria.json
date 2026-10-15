@@ -1,5 +1,5 @@
 {
- "_leia": "Curadoria dos 15 pontos aprovada pelo Abner em 14/10/2026: busca no Google Places (Nearby + Text Search, raio de 22 km a partir do centro dos lotes, até o Pecém), escolha equilibrando proximidade, avaliações e categoria. place_id e ref_lat/ref_lon são do Google, só para rastreio e para casar o ponto no OSM; não vão ao dados/pontos.json (coordenada publicada vem do OSM). Fotos: Wikimedia Commons com licença livre, aprovadas à parte (campo foto). \"osm\" força o elemento quando o nome não casa no Nominatim (14/10/2026: Icaraí e Cumbuco pela praia natural=beach, Cauípe pela lagoa da Barra do Cauípe, RioMar pelo shop=mall). \"pendente\" deixa o ponto fora do site até decisão.",
+ "_leia": "Curadoria dos 15 pontos aprovada pelo Abner em 14/10/2026: busca no Google Places (Nearby + Text Search, raio de 22 km a partir do centro dos lotes, até o Pecém), escolha equilibrando proximidade, avaliações e categoria. place_id e ref_lat/ref_lon são do Google, só para rastreio e para casar o ponto no OSM; não vão ao dados/pontos.json (coordenada publicada vem do OSM). Fotos: Wikimedia Commons com licença livre, aprovadas à parte (campo foto). \"osm\" força o elemento quando o nome não casa no Nominatim (14/10/2026: Icaraí e Cumbuco pela praia natural=beach, Cauípe pela lagoa da Barra do Cauípe, RioMar pelo shop=mall). \"pendente\" deixa o ponto fora do site até decisão. \"satelite\" é a coordenada marcada sobre imagem de satélite (Esri World Imagery) para lugar que não está no OSM, como no Manoa (15/10/2026: Cumbuco Acqua Beach e Kitecabana); o script recusa leitura a mais de 500 m da referência.",
  "busca": {
   "centro": {
    "lat": -3.662751,
@@ -25,7 +25,13 @@
    "google_nome": "Cumbuco Acqua Beach",
    "ref_lat": -3.634085,
    "ref_lon": -38.711755,
-   "pendente": "sem elemento no OSM (nem por nome, nem leisure=water_park a 3 km)"
+   "satelite": {
+    "lat": -3.633971,
+    "lon": -38.711931,
+    "imagem": "Esri World Imagery, z18",
+    "data": "2026-10-15",
+    "nota": "meio do parque aquático (piscinas coloridas e toboáguas) entre a avenida da praia e a faixa de areia"
+   }
   },
   {
    "nome": "Kitecabana",
@@ -34,7 +40,13 @@
    "google_nome": "Kitecabana Lounge",
    "ref_lat": -3.628048,
    "ref_lon": -38.724433,
-   "pendente": "sem elemento no OSM (pontos de kite próximos: Blue Wind node/988314317, Kiteline node/975731790)"
+   "satelite": {
+    "lat": -3.627392,
+    "lon": -38.723824,
+    "imagem": "Esri World Imagery, z19",
+    "data": "2026-10-15",
+    "nota": "lote de frente para o mar com piscina e coqueiral, ligado ao estacionamento da avenida onde o Google põe o endereço; conferir na revisão visual"
+   }
   },
   {
    "nome": "Praia do Cumbuco",

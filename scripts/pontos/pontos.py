@@ -1,4 +1,5 @@
-"""Pontos de interesse: coordenada do OSM (Nominatim, casado pela referência da curadoria),
+"""Pontos de interesse: coordenada do OSM (Nominatim, casado pela referência da curadoria; lugar
+ausente do OSM vai com a coordenada lida no satélite, campo "satelite" da curadoria),
 minutos de carro no grafo viário do OSM e fotos livres do Wikimedia Commons.
 
 Uso: uv run python -m scripts.pontos.pontos
@@ -198,14 +199,26 @@ def ponto_do_elemento(proj: Projecao, el: dict, em_terra=None) -> tuple[float, f
     return proj.lonlat(pt.x, pt.y)
 
 
+LIMITE_SATELITE_M = 500  # ponto marcado longe da referência do Google é digitação errada
+
+
 def coordenada_osm(p: dict, proj: Projecao, em_terra=None) -> dict:
+    """Coordenada do pino: do OSM, ou lida sobre a imagem de satélite quando o lugar não está no OSM
+    ("satelite" na curadoria, como os marcos do Manoa)."""
+    if p.get("satelite"):
+        s = p["satelite"]
+        d = distancia_m(p["ref_lat"], p["ref_lon"], s["lat"], s["lon"])
+        if d > LIMITE_SATELITE_M:
+            raise SystemExit(f"{p['nome']}: \"satelite\" a {d:.0f} m da referência (limite {LIMITE_SATELITE_M} m); "
+                             f"confira a leitura")
+        return {"lat": s["lat"], "lon": s["lon"], "osm_type": None, "osm_id": None, "fonte": "satelite"}
     if p.get("osm"):
         tipo, ident = p["osm"].split("/")
         els = overpass(f"[out:json];{tipo}({ident});out geom;", CACHE / "osm" / f"{tipo}-{ident}-geom.json")["elements"]
         if not els:
             raise SystemExit(f"{p['nome']}: {p['osm']} não existe no OSM; corrija o \"osm\" da curadoria")
         lon, lat = ponto_do_elemento(proj, els[0], em_terra)
-        return {"lat": lat, "lon": lon, "osm_type": tipo, "osm_id": int(ident)}
+        return {"lat": lat, "lon": lon, "osm_type": tipo, "osm_id": int(ident), "fonte": "osm"}
     caixa = 0.05
     rs = _get(NOMINATIM, {"q": p["nome"], "format": "jsonv2", "limit": 10, "bounded": 1,
                           "viewbox": f"{p['ref_lon'] - caixa},{p['ref_lat'] + caixa},{p['ref_lon'] + caixa},{p['ref_lat'] - caixa}"},
@@ -214,7 +227,7 @@ def coordenada_osm(p: dict, proj: Projecao, em_terra=None) -> dict:
     if r is None:
         raise SystemExit(f"{p['nome']}: sem elemento do OSM a até 2 km da referência; "
                          f"ponha \"osm\": \"node/…\" na curadoria")
-    return {"lat": float(r["lat"]), "lon": float(r["lon"]), "osm_type": r["osm_type"], "osm_id": r["osm_id"]}
+    return {"lat": float(r["lat"]), "lon": float(r["lon"]), "osm_type": r["osm_type"], "osm_id": r["osm_id"], "fonte": "osm"}
 
 
 def baixar_foto(p: dict, cand: list[dict]) -> dict:
@@ -258,11 +271,12 @@ def main() -> int:
             raise SystemExit(f"{p['nome']}: sem rota de carro no grafo")
         pontos.append({"nome": p["nome"], "categoria": p["categoria"], "lat": round(c["lat"], 6), "lon": round(c["lon"], 6),
                        "x": round(x, 1), "y": round(y, 1), "km": round(dist / 1000, 1), "minutos_carro": m,
-                       "faixa": faixa(dist), "osm": f"{c['osm_type']}/{c['osm_id']}", **foto})
+                       "faixa": faixa(dist), "fonte_coord": c["fonte"],
+                       "osm": f"{c['osm_type']}/{c['osm_id']}" if c["osm_type"] else None, **foto})
         print(f"{p['nome'][:30]:30s} {dist / 1000:5.1f} km {m:3d} min  {pontos[-1]['faixa']:8s} "
               f"{len(cand):2d} fotos livres  ref↔OSM {distancia_m(p['ref_lat'], p['ref_lon'], c['lat'], c['lon']):5.0f} m")
     DESTINO.write_text(json.dumps({"versao": 1, "origem": {"x": 0, "y": 0},
-                                   "fontes": "coordenadas © OpenStreetMap contributors (ODbL); fotos: Wikimedia Commons (autor e licença por ponto)",
+                                   "fontes": "coordenadas © OpenStreetMap contributors (ODbL), ou marcadas sobre imagem de satélite (Esri World Imagery) quando o lugar não está no OSM; fotos: Wikimedia Commons (autor e licença por ponto)",
                                    "pontos": pontos}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     (CACHE / "fotos-candidatas.html").write_text(galeria(candidatos), encoding="utf-8")
     print(f"{len(pontos)} pontos → {DESTINO.relative_to(RAIZ)}; galeria → cache/pontos/fotos-candidatas.html")
