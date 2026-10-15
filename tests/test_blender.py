@@ -115,3 +115,18 @@ def test_lote_sai_com_pivo_no_centro(tmp_path):
     gltf = json.loads(dados[20:20 + struct.unpack_from("<I", dados, 12)[0]])
     no = next(n for n in gltf["nodes"] if n["name"] == "Q01L01")
     assert no["translation"] == pytest.approx([5.0, 21.4, -10.0], abs=1e-4)
+
+
+@pytest.mark.skipif(not BLENDER_PADRAO.exists(), reason="Blender 5.2 ausente")
+def test_tile_sai_preso_na_borda(tmp_path):
+    # revisão final: com REPEAT, os níveis pequenos do mipmap misturavam a borda oposta do tile (costura de longe)
+    from PIL import Image
+
+    Image.new("RGB", (8, 8), (200, 100, 50)).save(tmp_path / "m.jpg")
+    cena = {"objetos": [{"nome": "Entorno_00", "material": "chao", "vertices": [[0, 0, 0], [10, 0, 0], [0, 10, 0]],
+                         "faces": [[0, 1, 2]], "textura": {"arquivo": str(tmp_path / "m.jpg"), "ext": [0, 0, 10, 10]}}]}
+    (tmp_path / "c.json").write_text(json.dumps(cena), encoding="utf-8")
+    rodar_blender(BLENDER_PADRAO, SCRIPT, str(tmp_path / "c.json"), str(tmp_path / "c.blend"), str(tmp_path / "c.glb"))
+    dados = (tmp_path / "c.glb").read_bytes()
+    gltf = json.loads(dados[20:20 + struct.unpack_from("<I", dados, 12)[0]])
+    assert all(s.get("wrapS") == 33071 and s.get("wrapT") == 33071 for s in gltf["samplers"])  # CLAMP_TO_EDGE

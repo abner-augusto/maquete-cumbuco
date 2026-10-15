@@ -129,3 +129,11 @@ def test_app_ganha_do_verde_que_a_envolve():
     # revisão: no DXF real o verde em volta da lagoa cobre a ilha de APP; a ilha virava verde
     pecas = particionar(PLATO, {"Verdes": box(0, 0, 100, 100), "APP": box(40, 40, 50, 50)}, {}, None, CFG)
     assert pecas["APP"].area == pytest.approx(100, rel=1e-3)
+
+
+def test_chao_do_plato_sobe_com_a_calcada():
+    # revisão final: a quadra central, a E.T.E. e o lote administrativo (sem lote nem verde) ficavam 25 cm abaixo
+    from scripts.comum.ambiente import RAIZ
+
+    alturas = PlacaCfg.carregar(RAIZ / "scripts" / "loteamento" / "cena.toml").alturas
+    assert alturas["ChaoPlato"] == alturas["Calcadas"]

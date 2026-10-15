@@ -30,7 +30,7 @@ fresta_max = 2.0    # m², fresta entre peças encostada na via vira pista
 
 [placa.alturas]
 Pista = 0.0
-ChaoPlato = 0.0
+ChaoPlato = 0.25   # quadras sem lote (clube, E.T.E., adm.) e ilhas: no nível da calçada, não afundadas
 Calcadas = 0.25
 Verdes = 0.25
 Institucional = 0.25

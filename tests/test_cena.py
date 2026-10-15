@@ -64,7 +64,7 @@ def test_montar_placa_lotes_e_terreno_em_janelas(msp):
     assert por_nome["Q01L01"]["origem"] == pytest.approx([5.0, 10.0, 10.4])
     assert max(p[2] for p in por_nome["Lagoa"]["vertices"]) == pytest.approx(9.7)
     assert _area_topo(por_nome["Lagoa"], 9.7) == pytest.approx(1600, rel=0.01)
-    assert _area_topo(por_nome["ChaoPlato"], 10.0) == pytest.approx(314, rel=0.02)  # a ilha da rotatória
+    assert _area_topo(por_nome["ChaoPlato"], 10.0) == pytest.approx(314, rel=0.02)  # a ilha da rotatória (PLACA do teste: 0,0)
 
 
 def test_ilha_da_lagoa_e_app_e_o_resto_e_agua():

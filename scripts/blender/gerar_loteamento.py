@@ -67,6 +67,7 @@ def material_textura(arquivo: str) -> bpy.types.Material:
     bsdf = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
     img = nt.nodes.new("ShaderNodeTexImage")
     img.image = bpy.data.images.load(arquivo, check_existing=True)
+    img.extension = "EXTEND"  # CLAMP_TO_EDGE no glTF: o mipmap não mistura a borda oposta do tile
     nt.links.new(img.outputs["Color"], bsdf.inputs["Base Color"])
     bsdf.inputs["Roughness"].default_value = 0.95
     return m
