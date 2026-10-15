@@ -11,6 +11,7 @@ from pathlib import Path
 
 import ezdxf
 import numpy as np
+from PIL import Image
 from shapely.geometry import LineString, Point, Polygon
 from shapely.ops import unary_union
 
@@ -158,7 +159,19 @@ def main() -> int:
             camadas.append((tipo, g))
     camadas += [("via_local", faixas(base["vias"], "via_local")), ("via_principal", faixas(base["vias"], "via_principal")),
                 ("solo", plato)]  # o platô fica liso: o loteamento é desenhado por cima
-    tiles = gerar_tiles(camadas, ext, longe["passo"], cfg.tile_px, cfg.tile_margem_px, CACHE)
+    pos = None
+    if cfg.masterplan:
+        from .masterplan import META, pintar
+
+        if not META.exists():
+            raise SystemExit("masterplan = true sem cache: rode uv run python -m scripts.entorno.masterplan")
+        meta = json.loads(META.read_text(encoding="utf-8"))
+        mp_img = Image.open(meta["arquivo"])
+        tcfg = TerrenoCfg.carregar(CFG_TOML)
+        mascara = Polygon(meta["gleba"]).buffer(0).difference(plato.buffer(tcfg.plato_folga + tcfg.talude))
+        pos = lambda img, ext_m: pintar(img, ext_m, mp_img, meta, mascara,  # noqa: E731
+                                        cfg.masterplan_saturacao, cfg.masterplan_opacidade)
+    tiles = gerar_tiles(camadas, ext, longe["passo"], cfg.tile_px, cfg.tile_margem_px, CACHE, pos)
     MAPA_JSON.write_text(json.dumps({"tiles": tiles}), encoding="utf-8")
 
     fora = plato.buffer(10)

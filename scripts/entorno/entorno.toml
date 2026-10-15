@@ -6,6 +6,6 @@ raio_vegetacao = 2000       # instâncias de vegetação
 raio_malha_regional = 25000 # malha viária para os minutos de carro (Pecém, Fortaleza)
 tile_px = 4096              # lado maior de cada um dos 4 tiles do chão (~1 m/px no recorte de 8 km)
 tile_margem_px = 2          # pixels a mais de borda: o filtro da GPU não abre costura entre tiles
-masterplan = false          # fases 2–10 pintadas em segundo plano (liga na Task 8 do Plano 3d)
+masterplan = true           # fases 2–10 pintadas em segundo plano (scripts/entorno/masterplan.py)
 masterplan_saturacao = 0.35
 masterplan_opacidade = 0.55
