@@ -115,6 +115,8 @@ def montar_base(proj: Projecao, centro: tuple[float, float], cfg: EntornoCfg,
                         "area_m2": round(local.area, 1), "poligonos": aneis(local)})
     if not vias:
         raise SystemExit("Nenhuma via no raio: o download do Overpass veio vazio? Rode com --refazer.")
+    if not areas:
+        raise SystemExit("Nenhuma área no raio: o download do Overpass veio vazio? Rode com --refazer.")
     if not predios:
         raise SystemExit("Nenhum prédio no raio: o download do Overture veio vazio? Rode com --refazer.")
     return {"centro": [round(centro[0], 2), round(centro[1], 2)], "raio_vias": cfg.raio_vias,

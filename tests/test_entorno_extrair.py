@@ -41,3 +41,9 @@ def test_montar_base_recusa_download_vazio():
         montar_base(P, (0.0, 0.0), CFG, {"elements": []}, AREAS, PREDIOS)
     with pytest.raises(SystemExit, match="Nenhum prédio"):
         montar_base(P, (0.0, 0.0), CFG, VIAS, AREAS, {"release": "x", "feicoes": []})
+
+
+def test_montar_base_recusa_areas_vazias():
+    # revisão final: áreas vazias davam mapa sem lagoas nem praia e zero árvores, sem erro
+    with pytest.raises(SystemExit, match="Nenhuma área"):
+        montar_base(P, (0.0, 0.0), CFG, VIAS, {"elements": []}, PREDIOS)

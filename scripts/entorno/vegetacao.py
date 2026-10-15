@@ -123,6 +123,8 @@ def main() -> int:
         novos = pontos_zona(zona, m2, mistura, sorte)
         por_zona[nome] = len(novos)
         pts += novos
+    if not pts:
+        raise SystemExit("Nenhuma árvore nas zonas do OSM: áreas vazias no base.json? Rode o extrair com --refazer.")
     verdes = aneis_da_layer(msp, CenaCfg.carregar(CFG_TOML).camadas["Verdes"], e0, n0)
     inst = instancias(pts, relevo, nivel, sorte)
     cant = instancias([(x, y, "coqueiro") for x, y in canteiros(verdes)], relevo, nivel, sorte, offset=0.08)
