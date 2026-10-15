@@ -5,7 +5,7 @@ from scripts.entorno.osm import Projecao
 
 P = Projecao(534600.0, 9595100.0)
 CFG = EntornoCfg(raio_vias=500.0, raio_faixas=300.0, raio_predios=300.0, raio_vegetacao=400.0,
-                 raio_malha_regional=5000.0, mapa_px=256)
+                 raio_malha_regional=5000.0, tile_px=256)
 
 
 def _geo(pts):

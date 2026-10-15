@@ -56,3 +56,25 @@ def test_faixa_3d_corta_dentro_do_plato():
     v, f = faixa_3d([[0, 0], [100, 0]], 10.0, Plano(1.0), 0.3, passo=5.0, fora=plato)
     centros = [sum(v[i][0] for i in t) / 3 for t in f]
     assert f and not any(42 < c < 58 for c in centros)
+
+
+def test_tiles_sem_costura_na_linha_de_corte(tmp_path):
+    from PIL import Image
+
+    from scripts.entorno.preparar import gerar_tiles
+
+    faixa = Polygon([(-100, -5), (100, -5), (100, 5), (-100, 5)])  # cruza a linha vertical x = 0
+    tiles = gerar_tiles([("via_principal", faixa)], (-120.0, -120.0, 120.0, 120.0), 30.0, 64, 2, tmp_path)
+    assert sorted(tiles) == ["00", "01", "10", "11"]
+
+    def cor(k, x, y):
+        t = tiles[k]
+        x0, y0, x1, y1 = t["ext"]
+        img = Image.open(t["arquivo"]).convert("RGB")
+        return img.getpixel((int((x - x0) / (x1 - x0) * img.width), int((y1 - y) / (y1 - y0) * img.height)))
+
+    # o mesmo ponto do mundo, na margem do vizinho, tem a mesma cor dos dois lados
+    for x in (-0.5, 0.5):
+        a, b = cor("01", x, 2.0), cor("11", x, 2.0)
+        assert sum(abs(p - q) for p, q in zip(a, b)) < 30
+    assert all(max(Image.open(t["arquivo"]).size) == 64 for t in tiles.values())

@@ -7,6 +7,7 @@ Uso: uv run python -m scripts.entorno.preparar
 import json
 import math
 import sys
+from pathlib import Path
 
 import ezdxf
 import numpy as np
@@ -20,8 +21,8 @@ from scripts.loteamento.terreno import DESTINO_LONGE, Relevo, TerrenoCfg, aneis_
 
 from .extrair import BASE, CACHE, EntornoCfg
 from .mapa import rasterizar
+from .tiles import Ext, com_margem, janelas
 
-MAPA_JPG = CACHE / "mapa.jpg"
 MAPA_JSON = CACHE / "mapa.json"
 DETALHE = RAIZ / "cache" / "cena" / "entorno-detalhe.json"
 AREA_MINIMA_PREDIO_M2 = 8.0  # abaixo disso, ruído das pegadas por ML
@@ -121,6 +122,20 @@ def faixa_3d(pontos: list, largura: float, relevo, offset: float, passo: float =
     return vertices, faces
 
 
+def gerar_tiles(camadas, ext: Ext, passo: float, px: int, margem_px: int, pasta: Path, pos=None) -> dict[str, dict]:
+    """Um JPEG por janela, com `margem_px` de borda; `pos(img, ext_m)` pinta por cima (o masterplan)."""
+    tiles = {}
+    for k, jan in janelas(ext, passo).items():
+        ext_m = com_margem(jan, px, margem_px)
+        img = rasterizar(camadas, ext_m, px)
+        if pos is not None:
+            img = pos(img, ext_m)
+        arquivo = pasta / f"mapa_{k}.jpg"
+        img.save(arquivo, quality=85)
+        tiles[k] = {"arquivo": str(arquivo), "ext": list(ext_m), "janela": list(jan), "px": list(img.size)}
+    return tiles
+
+
 def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8")
     cfg = EntornoCfg.carregar()
@@ -143,9 +158,8 @@ def main() -> int:
             camadas.append((tipo, g))
     camadas += [("via_local", faixas(base["vias"], "via_local")), ("via_principal", faixas(base["vias"], "via_principal")),
                 ("solo", plato)]  # o platô fica liso: o loteamento é desenhado por cima
-    img = rasterizar(camadas, ext, cfg.mapa_px)
-    img.save(MAPA_JPG, quality=85)
-    MAPA_JSON.write_text(json.dumps({"arquivo": str(MAPA_JPG), "ext": list(ext), "px": list(img.size)}), encoding="utf-8")
+    tiles = gerar_tiles(camadas, ext, longe["passo"], cfg.tile_px, cfg.tile_margem_px, CACHE)
+    MAPA_JSON.write_text(json.dumps({"tiles": tiles}), encoding="utf-8")
 
     fora = plato.buffer(10)
     circulo = Point(centro).buffer(cfg.raio_faixas, 128)
@@ -176,7 +190,7 @@ def main() -> int:
         {"nome": "ViasPrincipais", "material": "via_principal_osm", "vertices": vf, "faces": ff},
         {"nome": "Predios", "material": "predio", "vertices": vp, "faces": fp, "suave": False},
     ]}), encoding="utf-8")
-    print(f"mapa {img.size[0]}×{img.size[1]} px ({(ext[2] - ext[0]) / img.size[0]:.1f} m/px) · "
+    print(f"tiles {len(tiles)} × {cfg.tile_px} px ({(ext[2] - ext[0]) / 2 / cfg.tile_px:.2f} m/px) · "
           f"faixas {len(ff)} tri · prédios {n} ({len(fp)} tri) · cota média do relevo nos prédios "
           f"{np.mean([z for _, _, z in vp]) if vp else 0:.1f} m")
     return 0

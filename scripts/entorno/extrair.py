@@ -43,7 +43,11 @@ class EntornoCfg:
     raio_predios: float
     raio_vegetacao: float
     raio_malha_regional: float
-    mapa_px: int
+    tile_px: int
+    tile_margem_px: int = 2
+    masterplan: bool = True
+    masterplan_saturacao: float = 0.35
+    masterplan_opacidade: float = 0.55
 
     @classmethod
     def carregar(cls) -> "EntornoCfg":
