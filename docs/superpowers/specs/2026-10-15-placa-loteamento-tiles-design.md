@@ -61,7 +61,7 @@ O perfil escavado do acesso, considerado no brainstorming, sai do escopo: o furo
 
 ## 2. Chão em tiles
 
-- O recorte de 8 km (`mapa.json`, ext −4050…3990 × −3960…4050) é cortado em 2×2 por uma linha vertical e uma horizontal que caem em nós comuns às grades de 30 m (Copernicus) e de 10 m (perto), as mais próximas do centro: x = −30 e y = 30 nos dados atuais (o script calcula). Os tiles têm larguras levemente diferentes.
+- O recorte de 8 km (`mapa.json`, ext −4050…3990 × −3960…4050) é cortado em 2×2 por uma linha vertical e uma horizontal que caem em nós comuns às grades de 30 m (Copernicus) e de 10 m (perto), as mais próximas do centro: x = −30 e y = 60 nos dados atuais (o script calcula). Os tiles têm larguras levemente diferentes.
 - Um JPEG de 4096 px no lado maior por tile (`mapa_<ij>.jpg`, qualidade 85), rasterizado com 2 px a mais de borda; o UV mapeia só o miolo, então o filtro da GPU não abre costura.
 - Malhas: `Entorno_00…11` (grade de 30 m cortada nas linhas, sem partir triângulo) e `Terreno_00…11` (seção 1). Cada pedaço usa o material do seu tile.
 - Memória: 4 × 4096² ocupa o mesmo que uma de 8192² (~190 MB RGB sem mipmap). O ganho é que nenhuma textura passa do limite de 4096 de celular. Compressão (KTX2) ou tiles de 2048 no celular ficam para o Plano 5.
