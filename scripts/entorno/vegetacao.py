@@ -107,7 +107,8 @@ def main() -> int:
     plato = unary_union([Polygon(a).buffer(0) for a in aneis_do_plato(msp, TerrenoCfg.carregar(CFG_TOML), lotes, e0, n0)
                          if len(a) >= 3])
     relevo = Relevo.carregar()
-    nivel = json.loads(DESTINO_ENTORNO.read_text(encoding="utf-8"))["objetos"][1]["vertices"][0][2]
+    nivel = next(o for o in json.loads(DESTINO_ENTORNO.read_text(encoding="utf-8"))["objetos"]
+                 if o["nome"] == "Mar")["vertices"][0][2]
     poligono = lambda a: Polygon(a[0], a[1:]).buffer(0)  # noqa: E731
     livre = Point(base["centro"]).buffer(cfg.raio_vegetacao, 128).difference(unary_union([
         plato.buffer(5), faixas(base["vias"], "via_principal").buffer(2), faixas(base["vias"], "via_local").buffer(1),

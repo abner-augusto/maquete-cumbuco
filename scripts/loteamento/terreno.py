@@ -16,6 +16,7 @@ from scipy.ndimage import distance_transform_edt, gaussian_filter, label, map_co
 
 from scripts.comum.ambiente import RAIZ
 from scripts.entorno import dem
+from scripts.entorno.tiles import da_janela, ext_da_grade, janelas
 
 from .cena import CFG_TOML, DXF, CenaCfg, aneis_da_layer
 from .geometria import Ponto, centroide
@@ -123,9 +124,11 @@ def compor_perto(lev: Grade, dem: Grade, poligonal: list[list[Ponto]], cota: flo
 
 
 def malha_entorno(dem: Grade, buraco: tuple[float, float, float, float], centro: tuple[float, float],
-                  raio: float) -> tuple[list[list[float]], list[list[int]]]:
+                  raio: float, janela: tuple[float, float, float, float] | None = None
+                  ) -> tuple[list[list[float]], list[list[int]]]:
     """Grade do Copernicus em triângulos: células com os 4 cantos no raio e fora do `buraco`
-    (o terreno perto). O buraco cai em linhas da grade, então cada célula está toda dentro ou fora."""
+    (o terreno perto). O buraco cai em linhas da grade, então cada célula está toda dentro ou fora.
+    Com `janela`, só as células cujo centro cai nela (tiles.da_janela)."""
     bx0, by0, bx1, by1 = buraco
     z = dem.z
     indice: dict[tuple[int, int], int] = {}
@@ -142,6 +145,8 @@ def malha_entorno(dem: Grade, buraco: tuple[float, float, float, float], centro:
         for i in range(dem.nx - 1):
             xa, ya = dem.x0 + i * dem.passo, dem.y0 + j * dem.passo
             xb, yb = xa + dem.passo, ya + dem.passo
+            if janela is not None and not da_janela(janela, (xa + xb) / 2, (ya + yb) / 2):
+                continue
             if bx0 <= xa and xb <= bx1 and by0 <= ya and yb <= by1:
                 continue
             if any(math.hypot(x - centro[0], y - centro[1]) > raio for x in (xa, xb) for y in (ya, yb)):
@@ -227,17 +232,19 @@ def main() -> int:
     cota = cfg.plato_cota if cfg.plato_cota is not None else cota_plato(lev, lotes)
     perto = compor_perto(perto_lev, longe, plato, cota, cfg)
     centro = dem.centro_dos_lotes()
-    v, f = malha_entorno(longe, ext, centro, cfg.raio)
+    entorno = [{"nome": f"Entorno_{k}", "material": "entorno", "vertices": v, "faces": f}
+               for k, jan in janelas(ext_da_grade(longe), longe.passo).items()
+               for v, f in [malha_entorno(longe, ext, centro, cfg.raio, jan)]]
     vm, fm = disco_mar(centro, raio_do_mar(cfg.raio, longe.passo), round(delta, 2))
     DESTINO_PERTO.parent.mkdir(parents=True, exist_ok=True)
     DESTINO_PERTO.write_text(json.dumps(perto.para_json()), encoding="utf-8")
     DESTINO_LONGE.write_text(json.dumps(longe.para_json()), encoding="utf-8")
     DESTINO_ENTORNO.write_text(json.dumps({"objetos": [
-        {"nome": "Entorno", "material": "entorno", "vertices": v, "faces": f},
+        *entorno,
         {"nome": "Mar", "material": "mar", "vertices": vm, "faces": fm},
     ]}), encoding="utf-8")
     print(f"platô {cota:.1f} m · levantamento − Copernicus = {delta:+.2f} m (mar nessa cota) · "
-          f"perto {perto.nx}×{perto.ny} de {perto.passo:.0f} m · entorno {len(f)} triângulos")
+          f"perto {perto.nx}×{perto.ny} de {perto.passo:.0f} m · entorno {sum(len(o["faces"]) for o in entorno)} triângulos")
     return 0
 
 

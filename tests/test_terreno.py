@@ -148,3 +148,16 @@ def test_relevo_segue_os_triangulos_da_malha_nao_o_bilinear():
     assert r.cota(7.5, 2.5) == pytest.approx(2.0)  # triângulo de baixo: 8 · ty
     assert r.cota(2.5, 7.5) == pytest.approx(2.0)  # triângulo de cima: 8 · tx
     assert r.cota(5.0, 5.0) == pytest.approx(4.0)  # na diagonal (o bilinear daria 2,0)
+
+
+def test_entorno_em_janelas_reparte_as_celulas_sem_repetir():
+    from scripts.entorno.tiles import janelas
+
+    dem = Grade(0.0, 0.0, 30.0, 11, 11, [[1.0] * 11 for _ in range(11)])
+    buraco, centro, raio = (120.0, 120.0, 180.0, 180.0), (150.0, 150.0), 1e9
+    _, inteiro = malha_entorno(dem, buraco, centro, raio)
+    total = 0
+    for jan in janelas((0.0, 0.0, 300.0, 300.0), 30.0).values():
+        _, f = malha_entorno(dem, buraco, centro, raio, jan)
+        total += len(f)
+    assert total == len(inteiro)
