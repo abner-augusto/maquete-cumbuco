@@ -12,7 +12,7 @@ A spec cobre cinco subsistemas independentes. Cada um tem seu plano, que produz 
 | 3 | Loteamento no Blender (`2026-10-14-03-loteamento-blender.md`) | Relevo pelas curvas cotadas, cena em JSON, `loteamento.glb` e `.blend` em `6-PROJETOS/10-MAQUETE INTERATIVA/` com 347 lotes nomeados | 1 | — |
 | 3c | Relevo simplificado (`2026-10-14-03c-relevo-plato-entorno.md`) | Platô plano, morro pelo levantamento suavizado, Copernicus até 4 km; `entorno.glb` (`Entorno`, `Mar`) costurado ao terreno perto | 3 | — |
 | 3b | Marcos (estande, portaria, clube) | Volumes simplificados posicionados, galeria em `marcos.json` | 3 | — |
-| 4 | Entorno, vegetação e pontos | `scripts/entorno` derivado do Manoa (raio de 4 km; relevo e mar já vêm do 3c), vegetação instanciada, `pontos.json` com fotos e créditos, `marcos.json` → `entorno.glb` | 1 (origem local) | ⛔ lista de POIs e fotos |
+| 4 | Entorno, vegetação e pontos (`2026-10-14-04-entorno-vegetacao-pontos.md`) | `entorno.glb` com mapa do OSM pintado no relevo, vias principais em faixa 3D e prédios do Overture (até 1,5 km); `vegetacao.glb/.json` (coqueiro, cajueiro, arbusto); `dados/pontos.json` (coordenada do OSM, minutos de carro, fotos livres do Commons) | 1 (origem local), 3c | ⛔ fotos dos pontos |
 | 5 | Front e publicação | `frontend/` derivado do espelho: Cena, Folha, Ficha, marcos, pontos, marca; Playwright; orçamento de 15 MB; Worker estático e `iniciar.cmd` | 2 (tokens), 3, 4 | ⛔ proteção do nome antes de publicar |
 
 Ao fim do Plano 5: uma única sessão de revisão visual, e depois o ponteiro no `_index.md` de Cumbuco e a entrada no `log.md` do vault.
@@ -24,3 +24,5 @@ São fixados no Plano 1 e consumidos pelos demais:
 - **Id de lote:** `Q<quadra>L<lote>`, com quadra numérica de 2 dígitos (`Q07L04`) ou alfabética (`QHL01`, `QML03`) e lote de 2 dígitos. É o nome do objeto no Blender, a chave do `lotes.json` e o valor de `?lote=`.
 - **Origem local:** `dados/georref.json` → `{"crs": "EPSG:31984", "origem": {"E": <float>, "N": <float>}}`. Coordenada local = (E − E0, N − N0) em metros; no Three.js, x = leste, z = −norte, y = cota.
 - **`dados/lotes.json`:** schema na Task 7 do Plano 1.
+- **`dados/pontos.json`:** `{"versao": 1, "pontos": [{nome, categoria, lat, lon, x, y, km, minutos_carro, faixa ("proximo" até 3 km, "distante"), osm, foto, credito, licenca, licenca_url, fonte_foto}]}`; `foto` relativo a `dados/` ou `null` até a aprovação. Curadoria (fonte editada à mão) em `scripts/pontos/curadoria.json`.
+- **`vegetacao.json`:** campos `x_dm, y_dm, z_cm, escala_pct, rotacao_graus` por espécie (`coqueiro`, `cajueiro`, `arbusto`), embaralhados; malhas `VEG_<especie>` no `vegetacao.glb`, base em z = 0.

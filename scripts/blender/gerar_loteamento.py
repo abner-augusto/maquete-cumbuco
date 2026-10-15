@@ -29,6 +29,8 @@ MATERIAIS = {
     "fundo": ((0.60, 0.66, 0.48), 0.95),
     "app": ((0.44, 0.56, 0.38), 0.95),
     "agua": ((0.30, 0.55, 0.62), 0.15),
+    "predio": ((0.90, 0.88, 0.84), 0.85),
+    "via_principal_osm": ((0.47, 0.46, 0.47), 0.9),
     "entorno": ((0.86, 0.80, 0.68), 0.95),  # igual ao terreno: a costura não aparece
     "mar": ((0.18, 0.42, 0.55), 0.2),  # provisório: o front troca por shader
     "lote_residencial": ((0.93, 0.89, 0.80), 0.8),
@@ -53,6 +55,22 @@ def material(nome: str) -> bpy.types.Material:
     return m
 
 
+def material_textura(arquivo: str) -> bpy.types.Material:
+    """Chão pintado: a imagem do mapa na cor base (o glTF leva a imagem embutida)."""
+    nome = "chao"
+    if nome in bpy.data.materials:
+        return bpy.data.materials[nome]
+    m = bpy.data.materials.new(nome)
+    m.use_nodes = True
+    nt = m.node_tree
+    bsdf = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
+    img = nt.nodes.new("ShaderNodeTexImage")
+    img.image = bpy.data.images.load(arquivo, check_existing=True)
+    nt.links.new(img.outputs["Color"], bsdf.inputs["Base Color"])
+    bsdf.inputs["Roughness"].default_value = 0.95
+    return m
+
+
 def construir(dados: dict, nome: str = "Loteamento") -> bpy.types.Collection:
     col = bpy.data.collections.new(nome)
     bpy.context.scene.collection.children.link(col)
@@ -61,9 +79,18 @@ def construir(dados: dict, nome: str = "Loteamento") -> bpy.types.Collection:
         me.from_pydata(o["vertices"], [], o["faces"])
         me.validate()
         me.update()
-        me.materials.append(material(o["material"]))
-        # Normais suaves: o glTF compartilha o vértice entre triângulos (facetado duplica tudo).
-        me.shade_smooth()
+        if "textura" in o:
+            x0, y0, x1, y1 = o["textura"]["ext"]
+            uv = me.uv_layers.new(name="UVMap")
+            for loop in me.loops:
+                co = me.vertices[loop.vertex_index].co
+                uv.data[loop.index].uv = ((co.x - x0) / (x1 - x0), (co.y - y0) / (y1 - y0))
+            me.materials.append(material_textura(o["textura"]["arquivo"]))
+        else:
+            me.materials.append(material(o["material"]))
+        if o.get("suave", True):
+            # Normais suaves: o glTF compartilha o vértice entre triângulos (facetado duplica tudo).
+            me.shade_smooth()
         ob = bpy.data.objects.new(o["nome"], me)
         col.objects.link(ob)
     return col
@@ -105,7 +132,7 @@ def previa(destino: Path, col: bpy.types.Collection, ctx: bpy.types.Collection |
         cena.render.engine = "BLENDER_WORKBENCH"
     except TypeError:
         pass
-    cena.display.shading.color_type = "MATERIAL"
+    cena.display.shading.color_type = "TEXTURE"  # o chão pintado aparece; sem imagem, vale a cor do material
     cena.display.shading.light = "STUDIO"
     cena.render.resolution_x, cena.render.resolution_y = 1600, 1000
     sufixo = lambda s: destino.with_name(destino.stem + s + destino.suffix)  # noqa: E731
@@ -137,7 +164,7 @@ def main() -> None:
     for ob in col.objects:
         ob.select_set(True)
     bpy.ops.export_scene.gltf(filepath=str(GLB), export_format="GLB", use_selection=True,
-                              export_apply=True, export_yup=True, export_texcoords=False)
+                              export_apply=True, export_yup=True, export_texcoords=True)
     ctx = construir(json.loads(CONTEXTO.read_text(encoding="utf-8")), "Contexto") if CONTEXTO else None
     if PREVIA:
         previa(PREVIA, col, ctx)
