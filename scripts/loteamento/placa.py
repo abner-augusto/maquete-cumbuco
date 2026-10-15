@@ -101,7 +101,7 @@ def aneis_orientados(p: Polygon) -> tuple[list[Ponto], list[list[Ponto]]]:
     return list(p.exterior.coords)[:-1], [list(i.coords)[:-1] for i in p.interiors]
 
 
-def _ccw(a: Ponto, b: Ponto, c: Ponto) -> bool:
+def ccw(a: Ponto, b: Ponto, c: Ponto) -> bool:
     return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) > 0
 
 
@@ -114,7 +114,7 @@ def topo(g: BaseGeometry, z: float) -> tuple[list[list[float]], list[list[int]]]
         v, t = triangular(ext, furos)
         base = len(vs)
         vs += [[round(x, 3), round(y, 3), round(z, 3)] for x, y in v]
-        fs += [[base + a, base + b, base + c] if _ccw(v[a], v[b], v[c]) else [base + a, base + c, base + b]
+        fs += [[base + a, base + b, base + c] if ccw(v[a], v[b], v[c]) else [base + a, base + c, base + b]
                for a, b, c in t]
     return vs, fs
 

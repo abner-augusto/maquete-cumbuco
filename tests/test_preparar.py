@@ -78,3 +78,19 @@ def test_tiles_sem_costura_na_linha_de_corte(tmp_path):
         a, b = cor("01", x, 2.0), cor("11", x, 2.0)
         assert sum(abs(p - q) for p, q in zip(a, b)) < 30
     assert all(max(Image.open(t["arquivo"]).size) == 64 for t in tiles.values())
+
+
+@pytest.mark.parametrize("anel", [QUAD[0], QUAD[0][::-1]], ids=["anti-horario", "horario"])
+def test_extrudar_normais_para_fora_e_teto_para_cima(anel):
+    import numpy as np
+
+    v, f = extrudar([anel], Plano(5.0), 4.0)
+    a = np.array(v, dtype=float)
+    centro = np.array([5.0, 5.0])
+    for i, j, k in f:
+        n = np.cross(a[j] - a[i], a[k] - a[i])
+        if abs(n[2]) > 1e-9:
+            assert n[2] > 0  # teto
+        else:
+            meio = (a[i, :2] + a[j, :2] + a[k, :2]) / 3
+            assert np.dot(n[:2], meio - centro) > 0  # parede para fora

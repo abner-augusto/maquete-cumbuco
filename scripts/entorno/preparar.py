@@ -18,6 +18,7 @@ from shapely.ops import unary_union
 from scripts.comum.ambiente import RAIZ
 from scripts.loteamento.cena import CFG_TOML, DXF
 from scripts.loteamento.malha import drapear, triangular
+from scripts.loteamento.placa import ccw, aneis_orientados
 from scripts.loteamento.terreno import DESTINO_LONGE, Relevo, TerrenoCfg, aneis_do_plato
 
 from .extrair import BASE, CACHE, EntornoCfg
@@ -71,13 +72,13 @@ def altura_predio(p: dict, area: float) -> float:
 def extrudar(aneis: list, relevo, altura: float) -> tuple[list[list[float]], list[list[int]]]:
     """Caixa de teto plano: base na menor cota sob a pegada − 0,3 m (não flutua na encosta),
     teto na cota média + altura."""
-    externo = [tuple(p) for p in aneis[0][:-1]] if aneis[0][0] == aneis[0][-1] else [tuple(p) for p in aneis[0]]
-    furos = [[tuple(p) for p in (f[:-1] if f[0] == f[-1] else f)] for f in aneis[1:]]
+    # externo anti-horário e furos horários: a direita de cada lado é fora, a parede olha para fora
+    externo, furos = aneis_orientados(Polygon(aneis[0], aneis[1:]))
     cotas = [relevo.cota(x, y) for x, y in externo]
     base, topo = min(cotas) - 0.3, sum(cotas) / len(cotas) + altura
     vt, tt = triangular(externo, furos)
     vertices = [[round(x, 2), round(y, 2), round(topo, 2)] for x, y in vt]
-    faces = [list(t) for t in tt]
+    faces = [[a, b, c] if ccw(vt[a], vt[b], vt[c]) else [a, c, b] for a, b, c in tt]  # teto para cima
     for anel in [externo, *furos]:
         for a, b in zip(anel, anel[1:] + anel[:1]):
             i = len(vertices)
