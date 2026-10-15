@@ -8,7 +8,7 @@ Spec-mãe: `2026-10-14-maquete-cumbuco-design.md`. Relevo: `2026-10-14-relevo-pl
 O loteamento briga consigo mesmo na vista (z-fighting), não recebe luz nem sombra, e o chão em volta está borrado. Medido em `cache/cena/loteamento.json`:
 
 - Vias, calçadas, verdes e lotes são planos paralelos sobre o platô, de 21,02 a 21,25 m; via e calçada distam 4 cm. De longe, o buffer de profundidade do WebGL não separa as camadas.
-- O desenho se sobrepõe: vias × calçadas 1.325 m², vias × verdes 1.882 m². As layers `Institucional` e `Fundo` são o mesmo polígono (15.507 m²) na mesma cota.
+- O desenho se sobrepõe: vias × calçadas 1.325 m², vias × verdes 1.882 m² (`Institucional` e `Fundo` têm a mesma área, ~15.507 m², mas são polígonos distintos e não se sobrepõem).
 - No acesso norte o terreno atravessa a pista. A via já está no platô (todos os vértices de `Vias` a 21,12 m; `aneis_do_plato` inclui as camadas de via e a folga de 10 m faz o ombro), mas a grade de 10 m do terreno, que continua debaixo da placa, interpola nós altos do talude por cima da via estreita.
 - O mapa do chão é um JPEG de 4096 px para 8 km (≈2 m/px), e o masterplan das outras fases não aparece.
 
@@ -33,7 +33,7 @@ Dentro do platô, cada metro quadrado pertence a uma peça só. As peças saem e
 5. `Pista`: a layer de vias menos o que já foi ocupado, mais as frestas entre peças com menos de `fresta_max` m² (padrão 2 m²) que encostam na via
 6. `ChaoPlato`: o resto do platô (a folga além do desenho), no material do terreno
 
-Polígono presente em duas layers de papéis diferentes: decide o rótulo de `ESP-TXT-QUADRA` dentro dele ("ÁREA INSTITUCIONAL", "ÁREA FUNDO DE TERRAS"…). Sem rótulo, ou com rótulo que não casa, o script falha e lista os polígonos; não escolhe em silêncio.
+A prioridade resolve toda sobreposição; a partição é arredondada a 1 mm (`shapely.set_precision`) para não deixar lascas numéricas.
 
 ### Volume
 
@@ -43,18 +43,19 @@ Cotas a partir da cota do platô (`cena.toml`, nova seção `[placa]`):
 |---|---|---|
 | `Pista` | 0,00 | — |
 | `Calcadas`, `Verdes`, `Institucional`, `Fundo`, `APP` | +0,25 | meio-fio até a pista |
-| lote | +0,40 | recuo de 0,15 m por lado (junta de 0,30 m entre vizinhos), faces até +0,25 |
+| lote | +0,40 | recuo de 0,15 m por lado; a faixa recuada é a peça `Juntas` |
+| `Juntas` | +0,25 | — |
 | `Lagoa` | lâmina −0,30 | margem vertical até a peça vizinha |
 | `ChaoPlato` | 0,00 | — |
 
-- Topo de cada peça: triangulação com furos (`triangular` + `refinar`), plana. Faces verticais: só nas arestas que não são compartilhadas com peça de mesma altura.
-- `Saia`: face vertical no contorno externo da placa, do topo da peça da borda até 1 m abaixo da cota do platô.
+- Topo de cada peça: triangulação com furos (`triangular`), plana; sem refino (a placa é plana).
+- **Faces verticais, regra única:** cada peça ganha parede, do seu topo até −1,0 m, no trecho do contorno que não encosta em peça de topo igual ou mais alto. Isso dá o meio-fio (calçada contra pista), a margem da lagoa (pista ou verde contra a água) e a **saia** no contorno externo da placa (sem vizinho), que esconde qualquer fresta com o terreno.
 - Lotes continuam um objeto cada, com o mesmo nome. **Pivô novo:** a origem do objeto fica no centro da caixa do topo (o front enquadra o lote no clique pela origem).
 - O contrato de `lotes.json` não muda.
 
 ### Terreno com furo
 
-O terreno perto deixa de ser grade regular. Cada pedaço vira a caixa do tile menos o contorno da placa, triangulado com o furo e refinado a 10 m (`triangular`/`refinar`/`drapear`). Nos vértices do furo, a cota é a do platô (o relevo já está na cota do platô até `plato_folga`), e a borda do furo coincide com a da placa por construção. A lagoa deixa de escavar o terreno: ela é peça da placa.
+O terreno perto continua sendo a grade de 10 m, com os mesmos dois triângulos por célula, para a vegetação e os prédios seguirem assentados na superfície desenhada (`cota_malha`). Muda só isto: a célula toda dentro da placa sai; a célula que cruza o contorno vira o polígono "célula menos placa", triangulado, com as cotas de `cota_malha`. A borda do furo coincide com o contorno da placa por construção. Ali o relevo está no platô ou no começo do talude, abaixo do topo da placa até 1 m, e a saia cobre a diferença. A lagoa deixa de escavar o terreno: ela é peça da placa.
 
 O perfil escavado do acesso, considerado no brainstorming, sai do escopo: o furo resolve o morro na pista.
 
@@ -69,7 +70,7 @@ O perfil escavado do acesso, considerado no brainstorming, sai do escopo: o furo
 
 - **Fonte:** `2-LEVANTAMENTOS/PLANTAS_BASE/MASTER URBANO.pdf`, página 5 ("MASTERPLAN", vetor, plano b). O DWG R05 não serve: as layers `AR-*` só têm a Fase 1, a poligonal, APP e duas vias. O PNG do `MASTER.kmz` está a ~1,7 m/px.
 - **Rasterização:** PyMuPDF, recorte na caixa da poligonal, resolução de ≥ 1 px por 0,5 m.
-- **Registro:** semelhança (escala, rotação, translação) entre a poligonal desenhada no PDF (o caminho fechado de maior área com o contorno da gleba em `page.get_drawings()`) e a poligonal do DWG R05 no referencial da topografia (674 vértices, 3.493.048 m²). Ajuste por ICP de pontos amostrados nos dois contornos a cada 2 m. O script imprime escala, rotação e resíduo, e falha se o resíduo mediano passar de 2 m. Conferência cruzada com o `LatLonBox` do `MASTER.kmz`: os cantos devem cair a menos de 15 m.
+- **Registro:** semelhança (escala, rotação, translação) entre a poligonal desenhada no PDF (o caminho fechado de maior área com o contorno da gleba em `page.get_drawings()`) e a poligonal do DWG R05 no referencial da topografia (674 vértices, 3.493.048 m²). Chute inicial por centroide, escala pela raiz da razão de áreas e varredura de rotação de 1 em 1°; depois ICP de semelhança (Umeyama) sobre pontos amostrados nos dois contornos a cada 2 m. O script imprime escala, rotação e resíduo, e falha se o resíduo mediano passar de 2 m. A poligonal do DWG é a cópia de 674 vértices do R05 cuja caixa contém a `AR-CNT-POL` da planta de venda (o R05 tem cópias da poligonal em vários deslocamentos).
 - **Máscara:** só dentro da poligonal da gleba, fora do platô com folga + talude (o traçado antigo da Fase 1 no PDF não aparece encostado no real).
 - **Camada de segundo plano** (decisão do usuário: o foco é a Fase 1, já aprovada). A imagem registrada entra nos tiles por cima do OSM, mas apagada: dessaturada (`masterplan_saturacao`, padrão 0,35) e misturada ao chão (`masterplan_opacidade`, padrão 0,55), com as curvas de nível do PDF suavizadas. Lê-se como "o que vem depois", nunca compete com a placa da Fase 1. Os dois valores ficam no `entorno.toml`, e o masterplan inteiro desliga com `masterplan = false`.
 - **Ordem:** é a última tarefa do plano; se o registro não fechar, os tiles saem sem ele e nada mais depende disso.
@@ -78,15 +79,16 @@ O perfil escavado do acesso, considerado no brainstorming, sai do escopo: o furo
 ## Arquivos
 
 - Novos: `scripts/loteamento/placa.py` (partição e volume), `scripts/entorno/tiles.py` (corte e rasterização), `scripts/entorno/masterplan.py` (rasterização, registro, máscara).
-- Alterados: `cena.py` (usa a placa; terreno com furo), `cena.toml` (`[placa]`), `preparar.py` (tiles), `entorno.toml` (`tile_px = 4096`, no lugar de `mapa_px`), `blender.py` e `gerar_loteamento.py` (um material por tile, pivô dos lotes, `OBJETOS_ENTORNO`).
-- GLBs em `6-PROJETOS/10-MAQUETE INTERATIVA/`: `loteamento.glb` (lotes, peças da placa, `Saia`, `Terreno_*`) e `entorno.glb` (`Entorno_*`, `Mar`, `ViasPrincipais`, `Predios`), cada um ≤ 8 MB.
+- Novo também: `scripts/loteamento/chao.py` (terreno perto com furo, por tile).
+- Alterados: `cena.py` (usa a placa e o chão), `cena.toml` (`[placa]`), `preparar.py` (tiles), `entorno.toml` (`tile_px = 4096`, no lugar de `mapa_px`), `blender.py` e `gerar_loteamento.py` (um material por tile, pivô dos lotes, `OBJETOS_ENTORNO`).
+- GLBs em `6-PROJETOS/10-MAQUETE INTERATIVA/`: `loteamento.glb` (lotes, peças da placa, `Juntas`, `Terreno_*`) e `entorno.glb` (`Entorno_*`, `Mar`, `ViasPrincipais`, `Predios`), cada um ≤ 8 MB.
 - Plano-mestre: linha do 3d e contratos novos (nomes `Entorno_*`/`Terreno_*`, pivô dos lotes, referencial dos marcos).
 
 ## Testes
 
-- Partição: interseção entre quaisquer duas peças < 0,01 m²; soma das áreas = área da união (± 0,1%); polígono em duas layers sem rótulo falha.
-- Volume: cada lote fechado (toda aresta em duas faces), topo a +0,40, pivô no centro da caixa do topo; meio-fio só onde as alturas diferem.
-- Terreno: vértices da borda do furo = vértices do contorno da placa (± 1 cm); nenhum vértice do terreno dentro da placa.
+- Partição: interseção entre quaisquer duas peças < 0,01 m²; soma das áreas = área do platô (± 0,1%).
+- Volume: topo do lote a +0,40, pivô no centro da caixa do topo; parede só onde o vizinho é mais baixo ou não existe.
+- Terreno: nenhum triângulo do terreno dentro da placa; área do terreno = área da janela − área da placa nela (± 0,1%); fora das células cortadas, os triângulos são os da grade.
 - Tiles: linhas de corte em nós das duas grades; tiles cobrem o recorte sem fresta; nenhum triângulo partido; pixels da borda iguais entre vizinhos (com a margem de 2 px).
 - Masterplan: com um contorno sintético girado 5°, escalado 1,02 e deslocado (100, −50), o registro devolve a transformação; máscara vazia dentro do platô.
 - GLB: 347 lotes nomeados, objetos esperados nos dois GLBs, ≤ 8 MB cada.
