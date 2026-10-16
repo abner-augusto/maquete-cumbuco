@@ -8,7 +8,7 @@ import type { Dados, Lote, Vista } from '../dados';
 import type { Ponto } from '../pontos';
 import { Ceu } from './ceu';
 import { Entorno } from './entorno';
-import { vistaDeFrente } from './enquadramento';
+import { duracaoDoVoo, poseDoVoo, vistaDeFrente, type Pose } from './enquadramento';
 import { COR_AGUA, materialDaAgua, quadroDaAgua } from './agua';
 
 export type Tela = { x: number; y: number };
@@ -157,10 +157,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     const alvo = new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3());
     const rumo = porId.get(id)?.frente_rumo;
     if (rumo == null) return mirar(alvo, camera.aspect < 1 ? 140 : 100);
-    abertura = false;
-    controles.target.copy(alvo);
-    camera.position.copy(vistaDeFrente(alvo, rumo, camera.aspect < 1 ? 190 : 140, LOTE_ELEVACAO));
-    controles.update();
+    voar(vistaDeFrente(alvo, rumo, camera.aspect < 1 ? 190 : 140, LOTE_ELEVACAO), alvo);
   }
   function enquadrarMarco(id: string) {
     const m = o.dados.marcos.find(x => x.id === id);
@@ -168,11 +165,26 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   }
   /** Leva a câmera para perto do alvo, mantendo o rumo atual. */
   function mirar(alvo: THREE.Vector3, d: number) {
-    abertura = false;
     const rumo = camera.position.clone().sub(controles.target).setY(0).normalize();
-    controles.target.copy(alvo);
-    camera.position.copy(alvo).addScaledVector(rumo, d * 0.75).setY(alvo.y + d * 0.66);
-    controles.update();
+    voar(alvo.clone().addScaledVector(rumo, d * 0.75).setY(alvo.y + d * 0.66), alvo);
+  }
+  // Voo em curso: de onde a câmera estava até a pose pedida, pelo arco em volta do alvo.
+  let voo: { de: Pose; para: Pose; inicio: number; duracao: number } | null = null;
+  let desenhou = false;
+  /** Leva a câmera à pose: num voo suave, ou de uma vez com movimento reduzido ou antes do primeiro quadro. */
+  function voar(posicao: THREE.Vector3, alvo: THREE.Vector3) {
+    abertura = false;
+    if (movimentoReduzido.matches || !desenhou) {
+      voo = null;
+      controles.target.copy(alvo);
+      camera.position.copy(posicao);
+      controles.update();
+      return;
+    }
+    const de = { posicao: camera.position.clone(), alvo: controles.target.clone() };
+    const para = { posicao: posicao.clone(), alvo: alvo.clone() };
+    voo = { de, para, inicio: performance.now(), duracao: duracaoDoVoo(de, para) };
+    sujo = true;
   }
 
   // Realce: hover clareia; seleção pinta com o acento. Material próprio por estado, sem tocar o original.
@@ -231,7 +243,8 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   });
   el.addEventListener('pointercancel', e => { ponteiros.delete(e.pointerId); gesto = null; });
   let abertura = true;
-  controles.addEventListener('start', () => (abertura = false));
+  // Quem pega a cena no meio de um voo fica com ela onde está.
+  controles.addEventListener('start', () => { abertura = false; voo = null; });
   controles.addEventListener('change', () => (sujo = true));
   // O three refaz o contexto perdido (celular em segundo plano); a cena parada precisa redesenhar.
   el.addEventListener('webglcontextrestored', () => (sujo = true));
@@ -269,6 +282,15 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   let ultimosMarcos = '';
   renderer.setAnimationLoop(() => {
     if (!container) return;
+    const agora = performance.now();
+    if (voo) {
+      const t = (agora - voo.inicio) / voo.duracao;
+      const pose = poseDoVoo(voo.de, voo.para, Math.min(t, 1));
+      camera.position.copy(pose.posicao);
+      controles.target.copy(pose.alvo);
+      if (t >= 1) voo = null;
+      sujo = true;
+    }
     controles.update();
     if (pendente) {
       const e = pendente;
@@ -282,7 +304,6 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
       }
       el.style.cursor = id ? 'pointer' : '';
     }
-    const agora = performance.now();
     if (quadroDaAgua({ entorno: entornoAtivo(), reduzido: movimentoReduzido.matches, agora, ultimo: ultimaAgua })) {
       ultimaAgua = agora;
       agua.uniforms.uTempo.value = agora / 1000;
@@ -302,6 +323,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     }
     ceu.malha.position.copy(camera.position);
     renderer.render(cena, camera);
+    desenhou = true;
     const m = selecionado ? lotes.get(selecionado) : undefined;
     const tela = m ? projetar(m.getWorldPosition(new THREE.Vector3())) : null;
     const chave = tela ? `${Math.round(tela.x)},${Math.round(tela.y)}` : '';
