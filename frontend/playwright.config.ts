@@ -1,8 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// WebGL na placa de vídeo (ANGLE/D3D11): rápido e leve para a CPU. E2E_GPU=0 volta ao
-// SwiftShader (por software), para máquina sem GPU ou CI.
-const GPU = process.env.E2E_GPU !== '0';
+// WebGL na placa de vídeo (ANGLE/D3D11): rápido e leve para a CPU. E2E_GPU=0 (e o CI, sem GPU)
+// volta ao SwiftShader, por software.
+const GPU = (process.env.E2E_GPU ?? (process.env.CI ? '0' : '1')) !== '0';
 const WEBGL = GPU
   ? ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist']
   : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
