@@ -220,3 +220,27 @@ test('15. no entorno o mar tem ondas; com movimento reduzido fica parado', async
   await page.waitForTimeout(700);
   expect((await canvas.screenshot()).equals(c)).toBe(true);
 });
+
+test('16. no celular os pontos distantes ficam na borda, compactos, e os que se chocam somem', async ({ page }, info) => {
+  test.skip(info.project.name !== 'celular-retrato', 'a borda que não comporta as pílulas é a do celular');
+  await jaVisitou(page);
+  await page.goto('./');
+  await page.getByRole('button', { name: 'Entorno e pontos de referência' }).click();
+  await expect(page.getByRole('region', { name: 'Pontos de referência' })).toBeVisible({ timeout: 60_000 });
+  const setas = page.getByRole('button', { name: /fora do mapa$/ });
+  await expect(setas.first()).toBeVisible();
+  const caixas = [];
+  for (const s of await setas.all()) caixas.push((await s.boundingBox())!);
+  const vp = page.viewportSize()!;
+  for (const c of caixas) {
+    expect(c.width).toBeLessThanOrEqual(48);
+    expect(c.x + c.width / 2).toBeGreaterThanOrEqual(0);
+    expect(c.x + c.width / 2).toBeLessThanOrEqual(vp.width); // na borda: até meio para fora
+  }
+  for (let i = 0; i < caixas.length; i++)
+    for (let j = i + 1; j < caixas.length; j++) {
+      const [a, b] = [caixas[i]!, caixas[j]!];
+      const cobre = a.x < b.x + b.width - 1 && b.x < a.x + a.width - 1 && a.y < b.y + b.height - 1 && b.y < a.y + a.height - 1;
+      expect(cobre, `setas ${i} e ${j} se cobrem`).toBe(false);
+    }
+});
