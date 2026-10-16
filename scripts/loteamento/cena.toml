@@ -25,6 +25,7 @@ passo_perto = 10.0   # m da grade do terreno perto (múltiplo do passo do Copern
 
 [acesso]   # a avenida em rampa da rotatória à CE (scripts/loteamento/acesso.py)
 camada_via = "AR-CNT-VIA-011"     # a faixa de acesso do DWG (o anel comprido da camada)
+recuo_inicio = 6.0         # m: o acesso começa antes da faixa, onde o braço da rotatória ainda é reto (o fim dele é um corte inclinado)
 secao = [2.0, 7.0, 3.0, 7.0, 2.0] # calçada, pista, canteiro, pista, calçada: a da avenida até a portaria
 raio_boca = 15.0           # m, curva do lado de ângulo agudo com a CE; o outro lado leva o raio da mesma tangente
 patamar = 20.0             # m quase planos antes da CE, onde o carro converte

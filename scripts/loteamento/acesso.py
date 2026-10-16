@@ -35,6 +35,7 @@ MATERIAIS = {"AcessoPista": "vias", "AcessoCalcadas": "calcadas", "AcessoCanteir
 @dataclass(frozen=True)
 class AcessoCfg:
     camada_via: str          # layer do DWG com a faixa de acesso
+    recuo_inicio: float      # m antes do começo da faixa: o braço da rotatória termina num corte inclinado
     secao: list[float]       # larguras: calçada, pista, canteiro, pista, calçada
     raio_boca: float         # m, curva das bordas na CE
     patamar: float           # m quase planos antes da CE, onde a conversão acontece
@@ -113,10 +114,10 @@ def perfil_acesso(s_ini: float, s_fim: float, z0: float, z_fim: float, cfg: Aces
     return [(s_ini, z0), (s_rampa, z0), (s_pat, round(z_pat, 3)), (s_fim, z_fim)], rampa
 
 
-def eixo_da_faixa(faixa: Polygon, circulos: list[tuple[float, float, float]]
+def eixo_da_faixa(faixa: Polygon, circulos: list[tuple[float, float, float]], recuo: float = 0.0
                   ) -> tuple[tuple[float, float], tuple[float, float], float, float]:
     """Centro da rotatória (o círculo mais perto da faixa), direção do lado comprido da faixa, para longe
-    dele, e o começo e o fim da faixa no eixo."""
+    dele, e o começo (`recuo` m antes do ponto mais recuado da faixa) e o fim da faixa no eixo."""
     cx, cy, _ = min(circulos, key=lambda c: faixa.distance(Point(c[0], c[1])))
     r = np.array(faixa.minimum_rotated_rectangle.exterior.coords)[:4]
     lados = [r[1] - r[0], r[2] - r[1]]
@@ -125,7 +126,7 @@ def eixo_da_faixa(faixa: Polygon, circulos: list[tuple[float, float, float]]
     if np.dot(np.array(faixa.centroid.coords[0]) - (cx, cy), d) < 0:
         d = -d
     s = (np.array(faixa.exterior.coords) - (cx, cy)) @ d
-    return (cx, cy), (float(d[0]), float(d[1])), float(s.min()), float(s.max())
+    return (cx, cy), (float(d[0]), float(d[1])), float(s.min()) - recuo, float(s.max())
 
 
 def _mundo(a: Acesso, g: BaseGeometry) -> BaseGeometry:
@@ -287,9 +288,10 @@ def faixa_comprida(aneis: list[list]) -> Polygon:
 def sem_faixa(aneis: list[list], a: Acesso, cfg: AcessoCfg) -> list[list]:
     """Os anéis do platô menos o corredor reto do acesso: somem a faixa do DWG e as calçadas dela, e a
     língua da poligonal que vai até a CE perde o trecho do acesso. O acesso sai do platô e desce com o perfil.
-    Anel que o corredor não toca fica como está."""
-    h = sum(cfg.secao) / 2
-    reto = _mundo(a, box(a.s_ini, -h, a.s_fim + h, h)).buffer(1.0)
+    Anel que o corredor não toca fica como está. O corredor sobra 1 m para os lados, mas começa em s_ini:
+    recuar dali abria uma fresta entre o braço da rotatória e o acesso."""
+    h = sum(cfg.secao) / 2 + 1.0
+    reto = _mundo(a, box(a.s_ini, -h, a.s_fim + h, h))
     fica = []
     for anel in aneis:
         p = Polygon(anel).buffer(0) if len(anel) >= 3 else Polygon()
@@ -317,7 +319,7 @@ def eixo_do_acesso(msp, cfg: AcessoCfg, e0: float, n0: float) -> tuple[Acesso, B
     camadas = [l for ls in CenaCfg.carregar(CFG_TOML).camadas.values() for l in ls]
     circulos = [(e.dxf.center.x - e0, e.dxf.center.y - n0, e.dxf.radius)
                 for e in msp.query("CIRCLE") if e.dxf.layer in camadas]
-    c0, d, s_ini, _ = eixo_da_faixa(faixa, circulos)
+    c0, d, s_ini, _ = eixo_da_faixa(faixa, circulos, cfg.recuo_inicio)
     vias = json.loads(BASE_OSM.read_text(encoding="utf-8"))["vias"]
     larguras = {k: float(w) for k, (grupo, w) in VIAS_CLASSES.items() if grupo == "via_principal"}
     ce, s_fim = faixa_ce(vias, c0, d, ALCANCE_CE, larguras)

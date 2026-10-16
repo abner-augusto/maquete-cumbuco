@@ -7,7 +7,7 @@ from shapely.geometry import LineString, Point, Polygon, box
 from scripts.loteamento.acesso import AcessoCfg, Acesso, eixo_da_faixa, perfil_vertical, pecas_acesso, perfil_acesso
 from scripts.loteamento.placa import partes
 
-CFG = AcessoCfg(camada_via="VIA", secao=[2.0, 7.0, 3.0, 7.0, 2.0], raio_boca=15.0, patamar=20.0,
+CFG = AcessoCfg(camada_via="VIA", recuo_inicio=6.0, secao=[2.0, 7.0, 3.0, 7.0, 2.0], raio_boca=15.0, patamar=20.0,
                 patamar_inclinacao=0.02, curva_vertical=20.0, rampa_max=0.18, passo=2.0, folga_ce=5.0,
                 ilha_base=10.0, ilha_comprimento=15.0, ilha_recuo=3.0)
 
@@ -39,7 +39,15 @@ def test_eixo_da_faixa_sai_da_rotatoria():
     assert (s_ini, s_fim) == (pytest.approx(20.0), pytest.approx(150.0))
 
 
-A = Acesso(c0=(0.0, 0.0), d=(0.0, 1.0), s_ini=10.0, s_fim=100.0, pvis=[(10.0, 21.0), (100.0, 4.0)])
+def test_eixo_recua_o_comeco_para_dentro_do_braco():
+    # a faixa do DWG começa num corte inclinado e o braço da rotatória também: o acesso começa reto,
+    # `recuo` m antes do ponto mais recuado da faixa, onde o braço já é reto (sem triângulo vazio no canto)
+    faixa = Polygon([(26, -6), (150, -6), (150, 6), (20, 6)])
+    _, _, s_ini, s_fim = eixo_da_faixa(faixa, [(0.0, 0.0, 17.5)], recuo=6.0)
+    assert (s_ini, s_fim) == (pytest.approx(14.0), pytest.approx(150.0))
+
+
+A =Acesso(c0=(0.0, 0.0), d=(0.0, 1.0), s_ini=10.0, s_fim=100.0, pvis=[(10.0, 21.0), (100.0, 4.0)])
 CE = box(-300, 100, 300, 109)
 
 
@@ -115,6 +123,15 @@ def test_plato_perde_os_aneis_da_faixa():
     assert len(fica) == 2 and Polygon(fica[0]).equals(Polygon(lote))
     sobra = Polygon(fica[1])
     assert not sobra.contains(Point(0, 50)) and 3000 < sobra.area < 3100  # a língua some no corredor
+
+
+def test_plato_vai_ate_o_comeco_do_acesso():
+    from scripts.loteamento.acesso import sem_faixa
+
+    braco = [(-10.5, 0.0), (10.5, 0.0), (10.5, 30.0), (-10.5, 30.0)]  # o braço da rotatória segue pela faixa
+    fica = Polygon(sem_faixa([braco], A, CFG)[0])
+    assert fica.contains(Point(0, 9.8)) and fica.contains(Point(-10.0, 9.8))  # sem fresta antes de s_ini
+    assert fica.area == pytest.approx(21.0 * 10.0, abs=0.5)
 
 
 def test_ce_e_a_rodovia_que_o_eixo_cruza_primeiro():
