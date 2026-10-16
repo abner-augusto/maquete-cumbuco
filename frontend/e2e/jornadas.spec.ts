@@ -178,3 +178,26 @@ test('13. a falha ao carregar o entorno avisa sem bloquear o toque na cena', asy
   await page.mouse.click(tela!.x + tela!.width / 2, tela!.y + tela!.height / 2);
   await expect(ficha(page)).toBeVisible();
 });
+
+test('14. o toque num lote leva a câmera até ele; online a ficha oferece Compartilhar', async ({ page }) => {
+  await jaVisitou(page);
+  await page.goto('./?lote=Q07L04');
+  await expect(ficha(page).getByRole('button', { name: 'Compartilhar' })).toBeVisible();
+  await ficha(page).getByRole('button', { name: 'Fechar ficha' }).click();
+  const tela = (await page.getByRole('img', { name: /Maquete 3D/ }).boundingBox())!;
+  const cx = tela.x + tela.width / 2, cy = tela.y + tela.height / 2;
+  // Um lote fora do centro: procura num anel em volta do centro.
+  let id: string | null = null;
+  for (const [dx, dy] of [[60, 0], [-60, 0], [0, 50], [0, -50], [110, 0], [-110, 0], [60, 50], [-60, -50]] as const) {
+    await page.mouse.click(cx + dx, cy + dy);
+    const r = page.getByRole('region', { name: /Ficha do lote/ });
+    if (!(await r.count())) continue;
+    const rotulo = await r.getAttribute('aria-label');
+    if (rotulo !== 'Ficha do lote Q07 · L04') { id = rotulo; break; }
+  }
+  expect(id).not.toBeNull();
+  await expect(page).not.toHaveURL(/lote=Q07L04/);
+  await page.getByRole('region', { name: /Ficha do lote/ }).getByRole('button', { name: 'Fechar ficha' }).click();
+  await page.mouse.click(cx, cy);
+  await expect(page.getByRole('region', { name: /Ficha do lote/ })).toHaveAttribute('aria-label', id!);
+});

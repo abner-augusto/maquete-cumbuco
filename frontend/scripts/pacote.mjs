@@ -1,5 +1,5 @@
 // Pacote offline: o dist/ com o servidor PowerShell local e o iniciar.cmd. Roda depois do build.
-import { copyFile, cp, rm, writeFile } from 'node:fs/promises';
+import { copyFile, cp, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +12,9 @@ const PACOTE = path.join(FRONT, 'pacote');
 if (!existsSync(path.join(DIST, 'index.html'))) throw Error('dist/ ausente: rode npm run build antes');
 await rm(PACOTE, { recursive: true, force: true });
 await cp(DIST, PACOTE, { recursive: true });
+// Marca o index do pacote: a ficha esconde o "Compartilhar", que daria um link 127.0.0.1.
+const index = path.join(PACOTE, 'index.html');
+await writeFile(index, (await readFile(index, 'utf8')).replace('<head>', '<head><meta name="maquete-offline" content="1">'));
 for (const n of ['iniciar.cmd', 'servidor.ps1']) await copyFile(path.join(FRONT, 'offline', n), path.join(PACOTE, n));
 await writeFile(
   path.join(PACOTE, 'LEIA-ME.txt'),

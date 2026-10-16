@@ -32,3 +32,11 @@ test('o servidor segue de pé depois de uma requisição interrompida ou inváli
   expect((await fetch(`${baseURL}/a:b`)).status).toBe(404);
   expect((await fetch(`${baseURL}/`)).status).toBe(200);
 });
+
+test('no pacote offline a ficha não oferece Compartilhar (o link seria 127.0.0.1)', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('maquete:visitou', '1'));
+  await page.goto('/?lote=Q07L04');
+  const ficha = page.getByRole('region', { name: 'Ficha do lote Q07 · L04' });
+  await expect(ficha.getByRole('heading', { name: 'Quadra 07 · Lote 04' })).toBeVisible();
+  await expect(ficha.getByRole('button', { name: 'Compartilhar' })).toHaveCount(0);
+});

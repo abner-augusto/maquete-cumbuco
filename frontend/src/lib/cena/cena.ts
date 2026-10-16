@@ -8,6 +8,7 @@ import type { Dados, Lote, Vista } from '../dados';
 import type { Ponto } from '../pontos';
 import { Ceu } from './ceu';
 import { Entorno } from './entorno';
+import { vistaDeFrente } from './enquadramento';
 
 export type Tela = { x: number; y: number };
 export type Formato = 'retrato' | 'paisagem';
@@ -144,9 +145,18 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     camera.position.copy(centro).addScaledVector(direcao(azimute, elevacao), distanciaJusta() * distancia);
     controles.update();
   }
+  // Lote: de frente para a rua, em ângulo fixo e a uma distância que mostra os vizinhos.
+  const LOTE_ELEVACAO = 35;
   function enquadrar(id: string) {
     const m = lotes.get(id);
-    if (m) mirar(m.getWorldPosition(new THREE.Vector3()), camera.aspect < 1 ? 140 : 100);
+    if (!m) return;
+    const alvo = new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3());
+    const rumo = porId.get(id)?.frente_rumo;
+    if (rumo == null) return mirar(alvo, camera.aspect < 1 ? 140 : 100);
+    abertura = false;
+    controles.target.copy(alvo);
+    camera.position.copy(vistaDeFrente(alvo, rumo, camera.aspect < 1 ? 190 : 140, LOTE_ELEVACAO));
+    controles.update();
   }
   function enquadrarMarco(id: string) {
     const m = o.dados.marcos.find(x => x.id === id);

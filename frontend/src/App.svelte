@@ -85,7 +85,7 @@
       cena = await criarCena({
         base,
         dados: d,
-        aoEscolher: id => (id ? abrirFicha(id, false) : fecharFicha()),
+        aoEscolher: id => (id ? abrirFicha(id, true) : fecharFicha()),
         aoPassar: r => (hover = r),
         aoMoverEtiqueta: t => (etiqueta = t),
         aoGirar: g => (rumo = g),

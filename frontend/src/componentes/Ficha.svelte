@@ -6,6 +6,8 @@
 
   let { lote, config, precos, aoFechar }: { lote: Lote; config: Config; precos: boolean; aoFechar: () => void } = $props();
   let copiado = $state(false);
+  // No pacote offline o link seria 127.0.0.1, inútil para o cliente.
+  const offline = typeof document !== 'undefined' && !!document.querySelector('meta[name="maquete-offline"]');
   const temPreco = $derived(precos && lote.preco_total !== undefined);
   const STATUS = { disponivel: 'Disponível', reservado: 'Reservado', vendido: 'Vendido' } as const;
 
@@ -38,7 +40,7 @@
   </section>
 {/if}
 
-<button class="btn" onclick={compartilhar}><Icone nome="link" tamanho={18} />{copiado ? 'Link copiado' : 'Compartilhar'}</button>
+{#if !offline}<button class="btn" onclick={compartilhar}><Icone nome="link" tamanho={18} />{copiado ? 'Link copiado' : 'Compartilhar'}</button>{/if}
 
 <style>
   .barra { display: flex; align-items: center; justify-content: space-between; height: var(--toque); margin: 0 -12px 2px; }

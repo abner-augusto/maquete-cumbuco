@@ -1,5 +1,5 @@
 export interface Lote { id: string; quadra: string; lote: string; tipo: 'residencial' | 'uso_misto'; area_m2: number;
-  lados_m: number[]; frente_m: number | null; poligono: [number, number][]; inscricao_iptu?: string;
+  lados_m: number[]; frente_m: number | null; frente_rumo?: number | null; poligono: [number, number][]; inscricao_iptu?: string;
   preco_total?: number; preco_m2?: number; status?: 'disponivel' | 'reservado' | 'vendido' }
 export interface Config { mostrarPrecos: boolean; tabelaPrecos: { nome: string; referencia: string };
   vista: Partial<Record<'retrato' | 'paisagem', Vista>>; estande: { altura_m: number } }
