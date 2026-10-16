@@ -1,0 +1,8 @@
+node_modules/
+dist/
+pacote/
+test-results/
+playwright-report/
+public/*
+!public/_headers
+src/estilos/temas/

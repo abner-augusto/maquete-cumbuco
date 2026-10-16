@@ -1,0 +1,40 @@
+{
+  "name": "cidade-americas-maquete",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "assets": "node scripts/copiar-assets.mjs",
+    "dev": "npm run assets && vite",
+    "build": "npm run assets && vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "test:unidade": "vitest run",
+    "test": "playwright test",
+    "verificar": "node scripts/verificar-dist.mjs",
+    "pacote": "node scripts/pacote.mjs"
+  },
+  "dependencies": {
+    "@fontsource/cinzel": "5.2.8",
+    "@fontsource/jost": "5.2.8",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "4.2.1",
+    "@gltf-transform/extensions": "4.2.1",
+    "@gltf-transform/functions": "4.2.1",
+    "@playwright/test": "1.63.0",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "@tsconfig/svelte": "5.0.8",
+    "@types/node": "22.20.5",
+    "@types/three": "0.186.0",
+    "draco3dgltf": "1.5.7",
+    "meshoptimizer": "0.25.0",
+    "sharp": "0.34.5",
+    "svelte": "5.57.2",
+    "svelte-check": "4.7.6",
+    "typescript": "6.0.3",
+    "vite": "8.3.3",
+    "vitest": "4.0.8",
+    "wrangler": "4.45.0"
+  }
+}
