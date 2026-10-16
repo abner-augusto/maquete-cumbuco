@@ -1,13 +1,26 @@
-"""Driver dos scripts de Blender dos marcos. Uso: uv run python -m scripts.marcos.blender (Task 5)."""
+"""Driver dos scripts de Blender dos marcos.
+
+Uso: uv run python -m scripts.marcos.blender [--extrair]
+"""
 
 import json
+import sys
 from pathlib import Path
 
-from scripts.comum.ambiente import RAIZ
-from scripts.loteamento.blender import rodar_blender
+from PIL import Image
+
+from scripts.comum.ambiente import RAIZ, ler_env, terreno_dir
+from scripts.loteamento.blender import BLENDER_PADRAO, PASTA_MAQUETE, nos_do_glb, rodar_blender
+
+from .encaixe import DESTINO as MARCOS_JSON
+from .encaixe import MarcosCfg
 
 EXTRAIR = RAIZ / "scripts" / "blender" / "extrair_marcos.py"
 FONTE_JSON = RAIZ / "cache" / "cena" / "marcos-fonte.json"
+GERAR = RAIZ / "scripts" / "blender" / "gerar_marcos.py"
+PREVIA = RAIZ / "cache" / "cena" / "previa-marcos.png"
+LIMITE_MB = 6.0
+OBJETOS = ("Clube", "Portaria", "Rotatoria")
 
 
 def rodar_extracao(blender: Path, glbs: list[Path], destino: Path, prefixos: list[str]) -> dict:
@@ -19,11 +32,6 @@ def rodar_extracao(blender: Path, glbs: list[Path], destino: Path, prefixos: lis
 
 def extrair() -> int:
     """`uv run python -m scripts.marcos.blender --extrair`: caixas e chão dos GLBs fonte."""
-    from scripts.comum.ambiente import ler_env, terreno_dir
-    from scripts.loteamento.blender import BLENDER_PADRAO
-
-    from .encaixe import MarcosCfg
-
     c = MarcosCfg.carregar()
     pasta = terreno_dir() / c.pasta
     blender = Path(ler_env(RAIZ / ".env").get("BLENDER", BLENDER_PADRAO))
@@ -32,7 +40,45 @@ def extrair() -> int:
     return 0
 
 
-if __name__ == "__main__":
-    import sys
+def rodar_geracao(blender: Path, marcos: Path, glb: Path, previa: Path | None = None) -> dict:
+    return rodar_blender(blender, GERAR, str(marcos), str(glb), *([str(previa)] if previa else []))
 
-    sys.exit(extrair())
+
+def conferir_marcos(nomes: list[str], mb: float) -> list[str]:
+    erros = [f"objeto faltando no marcos.glb: {n}" for n in OBJETOS if n not in nomes]
+    if mb > LIMITE_MB:
+        erros.append(f"marcos.glb com {mb} MB (alvo {LIMITE_MB} MB)")
+    return erros
+
+
+def lado_a_lado(previa: Path, referencia: Path, destino: Path, altura: int = 900) -> None:
+    Image.MAX_IMAGE_PIXELS = None
+    a, b = Image.open(previa).convert("RGB"), Image.open(referencia).convert("RGB")
+    a = a.resize((round(a.width * altura / a.height), altura))
+    b = b.resize((round(b.width * altura / b.height), altura))
+    m = Image.new("RGB", (a.width + b.width, altura), "white")
+    m.paste(a, (0, 0))
+    m.paste(b, (a.width, 0))
+    m.save(destino, quality=85)
+
+
+def main() -> int:
+    sys.stdout.reconfigure(encoding="utf-8")
+    cfg = MarcosCfg.carregar()
+    blender = Path(ler_env(RAIZ / ".env").get("BLENDER", BLENDER_PADRAO))
+    pasta = terreno_dir() / cfg.pasta
+    dados = json.loads(MARCOS_JSON.read_text(encoding="utf-8"))
+    for m in dados["marcos"].values():
+        m["fonte"] = str(pasta / m["fonte"])
+    temp = RAIZ / "cache" / "cena" / "marcos-abs.json"
+    temp.write_text(json.dumps(dados), encoding="utf-8")
+    glb = terreno_dir() / PASTA_MAQUETE / "marcos.glb"
+    resumo = rodar_geracao(blender, temp, glb, PREVIA)
+    lado_a_lado(PREVIA, pasta / "maqueteclubeplanta.jpg", PREVIA.with_name("previa-marcos-lado-a-lado.jpg"))
+    erros = conferir_marcos(nos_do_glb(glb), resumo["glb_mb"])
+    print("marcos " + json.dumps(resumo, ensure_ascii=False), *erros, sep="\n")
+    return 1 if erros else 0
+
+
+if __name__ == "__main__":
+    sys.exit(extrair() if "--extrair" in sys.argv else main())
