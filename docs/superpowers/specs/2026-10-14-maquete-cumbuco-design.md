@@ -169,7 +169,7 @@ Instanciada como no Manoa, com 3 ou 4 espécies (coqueiro, cajueiro, arbusto de 
 ### 7.4 Export e arquivos
 
 - `loteamento.glb` e `entorno.glb` separados, com compressão meshopt. O entorno pode carregar depois do loteamento.
-- **Orçamento: menos de 15 MB no primeiro carregamento**, medido sobre o `dist/`.
+- **Orçamento: 15 MB por arquivo publicado** (teto do Cloudflare; decisão de 16/10/2026). Arquivo maior é quebrado em partes. O total do primeiro carregamento é medido e reportado.
 - Os `.blend` e GLBs gerados ficam na pasta do terreno, em `6-PROJETOS/10-MAQUETE INTERATIVA/`. Essas maquetes **vão para o Drive** pelo sync; scripts não (os `*.py` já estão excluídos do sync). Os GLBs publicados são copiados para o `frontend/public` no build.
 
 ## 8. Ordem de execução
@@ -193,7 +193,7 @@ O símbolo ⛔ marca um gate do Abner.
   - `?lote=` abre direto na Ficha;
   - a tabela de regras dos preços (§6) se cumpre nas três linhas;
   - o build roda pelo `iniciar.cmd` sem internet.
-- **Orçamento de peso:** um script mede o `dist/` e falha acima de 15 MB no primeiro carregamento.
+- **Orçamento de peso:** um script mede o `dist/`, falha com arquivo acima de 15 MB ou com o nome guardado em qualquer caminho ou conteúdo, e reporta o primeiro carregamento.
 - Aparência, gestos e leitura da cena: avaliados a olho na sessão final.
 
 ## 10. Riscos e pendências
