@@ -5,5 +5,10 @@
     "nome": "SET26",
     "referencia": "2026-09"
   },
-  "toleranciaArea": 0.005
+  "toleranciaArea": 0.005,
+  "vista": {
+    "paisagem": { "azimute": 200, "elevacao": 32, "distancia": 1.0 },
+    "retrato": { "azimute": 200, "elevacao": 40, "distancia": 1.25 }
+  },
+  "estande": { "altura_m": 4.5 }
 }
