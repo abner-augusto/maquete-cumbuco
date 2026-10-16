@@ -126,9 +126,9 @@ export class Ceu {
   }
 
   /** As cores e o sol que a água reflete: as próprias instâncias dos uniforms, sem cópia. */
-  coresAgua(): { zenite: THREE.Color; faixa: THREE.Color; horizonte: THREE.Color; sol: THREE.Vector3 } {
+  coresAgua(): { zenite: THREE.Color; faixa: THREE.Color; horizonte: THREE.Color; chao: THREE.Color; horizonteQuente: THREE.Color; sol: THREE.Vector3 } {
     const u = this.uniforms;
-    return { zenite: u.uZenite.value, faixa: u.uFaixa.value, horizonte: u.uHorizonte.value, sol: u.uSolDirecao.value };
+    return { zenite: u.uZenite.value, faixa: u.uFaixa.value, horizonte: u.uHorizonte.value, chao: u.uChao.value, horizonteQuente: u.uHorizonteQuente.value, sol: u.uSolDirecao.value };
   }
 
   /** Cor do solo abaixo do horizonte: a névoa do entorno usa a mesma, para a borda sumir no céu. */

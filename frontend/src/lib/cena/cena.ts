@@ -9,7 +9,7 @@ import type { Ponto } from '../pontos';
 import { Ceu } from './ceu';
 import { Entorno } from './entorno';
 import { duracaoDoVoo, poseDoVoo, vistaDeFrente, type Pose } from './enquadramento';
-import { COR_AGUA, materialDaAgua, quadroDaAgua } from './agua';
+import { COR_AGUA, alcanceDaAgua, desbotarDaAgua, materialDaAgua, quadroDaAgua } from './agua';
 
 export type Tela = { x: number; y: number };
 export type Formato = 'retrato' | 'paisagem';
@@ -116,7 +116,8 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   el.setAttribute('role', 'img');
   el.setAttribute('aria-label', 'Maquete 3D do loteamento; arraste para girar e pince para aproximar');
 
-  const camera = new THREE.PerspectiveCamera(40, 1, 1, 20000);
+  const FAR = 20000;
+  const camera = new THREE.PerspectiveCamera(40, 1, 1, FAR);
   const controles = new OrbitControls(camera, el);
   controles.enableDamping = true;
   controles.minDistance = 25;
@@ -347,6 +348,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   let carregandoEntorno: Promise<Entorno> | null = null;
   let pedidoEntorno = 0;
   let pontosEntorno: { p: Ponto; posicao: THREE.Vector3 }[] = [];
+  let alcanceAgua = 0;
   let ultimoEntorno = '';
   const nevoa = new THREE.Fog(0xffffff, 1000, 6000);
   const entornoAtivo = () => entorno?.grupo.visible === true;
@@ -357,6 +359,8 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
       if (entorno) entorno.grupo.visible = false;
       pontosEntorno = [];
       cena.fog = null;
+      camera.far = FAR;
+      camera.updateProjectionMatrix();
       controles.maxDistance = 2500;
       ultimoEntorno = '';
       o.aoMoverEntorno(null);
@@ -376,9 +380,20 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     if (pedido !== pedidoEntorno) return;
     if (!entorno.grupo.parent) {
       const mar = entorno.grupo.getObjectByName('Mar') as THREE.Mesh | undefined;
-      if (mar) { (mar.material as THREE.Material).dispose(); mar.material = agua; }
+      if (mar) {
+        (mar.material as THREE.Material).dispose();
+        mar.material = agua;
+        // O plano vai até o horizonte: o `far` da câmera acompanha a malha; o desbotar para o
+        // céu começa onde a terra do entorno acaba.
+        alcanceAgua = alcanceDaAgua(mar, centro);
+        let raioTerra = 0;
+        entorno.grupo.traverse(x => { if ((x as THREE.Mesh).isMesh && x.name.startsWith('Entorno_')) raioTerra = Math.max(raioTerra, alcanceDaAgua(x as THREE.Mesh, centro)); });
+        agua.uniforms.uDesbotar.value.copy(desbotarDaAgua(raioTerra || alcanceAgua));
+      }
       cena.add(entorno.grupo);
     }
+    camera.far = Math.max(FAR, alcanceAgua * 1.2);
+    camera.updateProjectionMatrix();
     entorno.grupo.visible = true;
     // A cota de cada ponto vem do terreno do entorno, uma vez.
     const e = entorno;

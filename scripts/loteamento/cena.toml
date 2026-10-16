@@ -24,7 +24,7 @@ mar_rebaixo = 5.0    # m que o fundo do mar desce abaixo do plano da água (1 m 
 passo_perto = 10.0   # m da grade do terreno perto (múltiplo do passo do Copernicus)
 praia_inclinacao = 0.05  # m/m da rampa dos dois lados da linha de costa do OSM (scripts/loteamento/costa.py)
 fundo_inclinacao = 0.1   # m/m do fundo do mar além da rampa, até o mar_rebaixo
-mar_alcance = 16000.0    # m do plano da água do lado do mar: visto rente, chega perto do horizonte
+mar_alcance = 340000.0   # m do plano da água do lado do mar: o horizonte geométrico da câmera mais alta (9 km → ~340 km), para o mar não acabar à vista
 
 [acesso]   # a avenida em rampa da rotatória à CE (scripts/loteamento/acesso.py)
 camada_via = "AR-CNT-VIA-011"     # a faixa de acesso do DWG (o anel comprido da camada)
