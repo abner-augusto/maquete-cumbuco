@@ -36,7 +36,7 @@ O piso dos modelos não pode ficar coplanar com a placa. Cada marco tem uma **pe
 
 | Marco | Pegada |
 |---|---|
-| Clube | a quadra central inteira (a peça `ChaoPlato` interior que contém o clube). Conferência: o piso do modelo cobre ≥ 90% dela; senão, falha. |
+| Clube | a quadra central inteira (a peça `ChaoPlato` interior que contém o clube). Conferência: a projeção das faces do modelo voltadas para cima, em qualquer altura, cobre ≥ 90% dela; senão, falha (só o chão perto de z = 0 dava 84%: prédios, piscina e decks ficam de fora). |
 | Portaria | envoltória convexa dos objetos de edificação (laje, parede, pilar, viga, esquadria, vidro, equipamento) + 1 m |
 | Rotatória | o círculo da ilha no DWG |
 

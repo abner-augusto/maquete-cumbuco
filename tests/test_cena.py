@@ -99,3 +99,11 @@ def test_plato_e_a_uniao_dos_aneis_nao_um_desenho_com_furos(msp):
     com_lote = PLATO + [[tuple(p) for p in LOTES[0]["poligono"]]]
     por_nome = {o["nome"]: o for o in montar(msp, GRADE, LOTES, CFG, PLACA, com_lote, JANELAS, E0, N0)["objetos"]}
     assert _area_topo(por_nome["Q01L01"], 10.4) == pytest.approx(9.7 * 19.7, rel=0.01)
+
+
+def test_pecas_da_placa_sem_malhas(msp):
+    from scripts.loteamento.cena import pecas_da_placa
+
+    pecas, plato = pecas_da_placa(msp, LOTES, CFG, PLACA, PLATO, E0, N0)
+    assert {"Q01L01", "Pista", "Lagoa"} <= set(pecas)
+    assert plato.area == pytest.approx(20000, rel=1e-3)

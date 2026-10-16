@@ -2,9 +2,11 @@ import math
 
 import numpy as np
 import pytest
+from shapely.geometry import Point, Polygon, box
 
 from scripts.entorno.masterplan import Semelhanca
-from scripts.marcos.encaixe import ancora, escolher_circulo, girar, icp_rigido
+from scripts.marcos.encaixe import (ancora, cobertura, escolher_circulo, girar, icp_rigido, pegada_de_triangulos,
+                                    pegada_portaria, quadra_do_clube)
 
 
 def test_girar_e_desgirar_em_torno_do_pivo():
@@ -45,3 +47,25 @@ def test_icp_rigido_corrige_um_erro_pequeno_e_ignora_sobra():
     assert math.degrees(achada.theta) == pytest.approx(2.0, abs=0.1)
     assert (achada.tx, achada.ty) == pytest.approx((3.0, -2.0), abs=0.1)
     assert residuo < 0.1
+
+
+def test_quadra_e_a_maior_parte_interior():
+    plato = box(0, 0, 100, 100)
+    chao = box(0, 0, 5, 100).union(box(40, 40, 60, 60)).union(box(70, 70, 75, 75))  # a 1ª toca a borda
+    assert quadra_do_clube(chao, plato).equals(box(40, 40, 60, 60))
+
+
+def test_sem_quadra_interior_falha_com_area():
+    with pytest.raises(SystemExit, match="quadra"):
+        quadra_do_clube(box(0, 0, 5, 100), box(0, 0, 100, 100))
+
+
+def test_pegada_portaria_e_envoltoria_com_margem():
+    g = pegada_portaria([[0, 0, 0, 10, 4, 3], [8, 2, 0, 12, 10, 3]], 1.0)
+    assert g.contains(Point(11.5, 9.5)) and g.contains(Point(-0.5, -0.5)) and not g.contains(Point(-2, 5))
+
+
+def test_pegada_e_cobertura_dos_triangulos():
+    tris = [[0, 0, 10, 0, 10, 10], [0, 0, 10, 10, 0, 10]]
+    assert pegada_de_triangulos(tris).area == pytest.approx(100)
+    assert cobertura(pegada_de_triangulos(tris), box(0, 0, 10, 20)) == pytest.approx(0.5)

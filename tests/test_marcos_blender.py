@@ -25,6 +25,7 @@ def test_extrai_caixas_e_chao(tmp_path):
     d = dados["p.glb"]
     assert d["objetos"]["PORTARIA_LAJE"] == pytest.approx([2, 2, 3, 4, 4, 3], abs=1e-4)
     assert len(d["chao"]["PORTARIA_PISO"]) == 2 and "PORTARIA_LAJE" not in d["chao"]  # laje a 3 m não é chão
+    assert len(d["topo"]["PORTARIA_LAJE"]) == 1 and len(d["topo"]["PORTARIA_PISO"]) == 2  # topo: qualquer altura
 
 
 @pytest.mark.skipif(not BLENDER_PADRAO.exists(), reason="Blender 5.2 ausente")

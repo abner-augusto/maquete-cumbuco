@@ -12,6 +12,7 @@ from pathlib import Path
 import ezdxf
 from ezdxf import path as ezpath
 from shapely.geometry import Polygon
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
 from scripts.comum.ambiente import RAIZ
@@ -67,11 +68,11 @@ def achar_lagoa(msp, cfg: CenaCfg, e0: float, n0: float) -> list[Ponto] | None:
     return min(candidatos, key=area) if candidatos else None
 
 
-def montar(msp, grade: Grade, lotes: list[dict], cfg: CenaCfg, placa_cfg: PlacaCfg,
-           plato_aneis: list[list[Ponto]], janelas_: dict[str, Ext], e0: float, n0: float) -> dict:
+def pecas_da_placa(msp, lotes: list[dict], cfg: CenaCfg, placa_cfg: PlacaCfg, plato_aneis: list[list[Ponto]],
+                   e0: float, n0: float) -> tuple[dict[str, BaseGeometry], BaseGeometry]:
+    """Peças da placa (sem malhas) e o platô; o encaixe dos marcos usa a quadra central daqui."""
     # união, não aninhamento: os anéis do platô (poligonal, áreas, lotes) se sobrepõem, nenhum é furo
     plato = unary_union([Polygon(a).buffer(0) for a in plato_aneis if len(a) >= 3])
-    cota = grade.cota_malha(*plato.representative_point().coords[0])  # o platô é plano
     lagoa = achar_lagoa(msp, cfg, e0, n0)
     papeis = {}
     for papel, layers in cfg.camadas.items():
@@ -85,7 +86,13 @@ def montar(msp, grade: Grade, lotes: list[dict], cfg: CenaCfg, placa_cfg: PlacaC
                  if a != lagoa and contem(lagoa, a[0]) and area(a) < area(lagoa)]
         agua = Polygon(simplificar(lagoa, cfg.tolerancia)).buffer(0).difference(unary_union(ilhas))
     lotes_g = {l["id"]: Polygon(l["poligono"]).buffer(0) for l in lotes}
-    pecas = particionar(plato, papeis, lotes_g, agua, placa_cfg)
+    return particionar(plato, papeis, lotes_g, agua, placa_cfg), plato
+
+
+def montar(msp, grade: Grade, lotes: list[dict], cfg: CenaCfg, placa_cfg: PlacaCfg,
+           plato_aneis: list[list[Ponto]], janelas_: dict[str, Ext], e0: float, n0: float) -> dict:
+    pecas, plato = pecas_da_placa(msp, lotes, cfg, placa_cfg, plato_aneis, e0, n0)
+    cota = grade.cota_malha(*plato.representative_point().coords[0])  # o platô é plano
     objetos = montar_placa(pecas, placa_cfg, cota, {l["id"]: f"lote_{l['tipo']}" for l in lotes})
     for k, jan in janelas_.items():
         v, f = malha_perto(grade, plato, jan)

@@ -4,15 +4,21 @@ transformação rígida; ICP com o chão da portaria a refina. Python puro: o Bl
 Uso: uv run python -m scripts.marcos.encaixe
 """
 
+import json
 import math
+import sys
 import tomllib
 from dataclasses import dataclass
 
+import ezdxf
 import numpy as np
 from scipy.spatial import cKDTree
+from shapely.geometry import MultiPoint, Point, Polygon
+from shapely.ops import unary_union
 
 from scripts.comum.ambiente import RAIZ
 from scripts.entorno.masterplan import Semelhanca, umeyama
+from scripts.loteamento.placa import partes
 
 CFG_TOML = RAIZ / "scripts" / "marcos" / "marcos.toml"
 
@@ -99,3 +105,131 @@ def icp_rigido(origem: np.ndarray, destino: np.ndarray, inicial: Semelhanca, ite
             break
     d, _ = arvore.query(t.aplicar(origem))
     return t, float(np.median(d[d <= corte])) if (d <= corte).any() else math.inf
+
+
+def quadra_do_clube(chao_plato, plato) -> Polygon:
+    """A maior parte do ChaoPlato que não toca a borda do platô: a quadra sem lote do meio."""
+    borda = plato.exterior if isinstance(plato, Polygon) else unary_union([p.exterior for p in partes(plato)])
+    interiores = [p for p in partes(chao_plato) if not p.buffer(0.01).intersects(borda)]
+    if not interiores:
+        raise SystemExit(f"quadra do clube: nenhuma parte interior do ChaoPlato (partes: "
+                         f"{[round(p.area) for p in partes(chao_plato)][:10]} m²)")
+    return max(interiores, key=lambda p: p.area)
+
+
+def pegada_de_triangulos(tris) -> object:
+    """União dos triângulos; o milímetro a mais fecha as frestas de arredondamento e depois sai."""
+    return unary_union([Polygon([(t[0], t[1]), (t[2], t[3]), (t[4], t[5])]).buffer(0.001, join_style="mitre")
+                        for t in tris]).buffer(-0.001, join_style="mitre")
+
+
+def pegada_portaria(caixas: list[list[float]], margem: float) -> Polygon:
+    pts = [(x, y) for x0, y0, _, x1, y1, _ in caixas for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))]
+    return MultiPoint(pts).convex_hull.buffer(margem, join_style="mitre")
+
+
+def cobertura(chao, quadra) -> float:
+    return chao.intersection(quadra).area / quadra.area
+
+
+def _centro(caixas) -> np.ndarray:
+    x0 = min(c[0] for c in caixas); y0 = min(c[1] for c in caixas)
+    x1 = max(c[3] for c in caixas); y1 = max(c[4] for c in caixas)
+    return np.array([(x0 + x1) / 2, (y0 + y1) / 2])
+
+
+def _borda(g, passo: float = 1.0) -> np.ndarray:
+    from scripts.entorno.masterplan import amostrar
+
+    return np.vstack([amostrar(np.array(anel.coords[:-1]), passo) for p in partes(g)
+                      for anel in [p.exterior, *p.interiors] if len(anel.coords) > 3])
+
+
+def _chao_clube(tris, pivo, giro, t: Semelhanca) -> object:
+    """Triângulos de chão do clube no referencial local: desfaz o giro e aplica a transformação."""
+    pts = np.asarray(tris, dtype=float).reshape(-1, 2)
+    pts = t.aplicar(girar(pts, pivo, -giro))
+    return pegada_de_triangulos(pts.reshape(-1, 6).tolist())
+
+
+def encaixar(fonte: dict, cfg: MarcosCfg, circulos, pecas: dict, plato, cota: float, alturas: dict,
+             vias_dwg) -> dict:
+    clube_d, port_d = fonte[cfg.clube], fonte[cfg.portaria]
+    cx = [c for n, c in clube_d["objetos"].items() if n.startswith("CLUBE_")]
+    ilha_cx = [c for n, c in port_d["objetos"].items() if n.startswith("ROTATORIA_")]
+    port_cx = [c for n, c in port_d["objetos"].items()
+               if n.startswith("PORTARIA_") and n.split("_", 1)[1].split(".")[0] in cfg.edificacao]
+    pivo = tuple(cfg.pivo_clube)
+    clube_c = girar(_centro(cx)[None], pivo, -cfg.giro_clube)[0]
+    ilha_c = _centro(ilha_cx)
+    raio_ilha = max(max(c[3] for c in ilha_cx) - min(c[0] for c in ilha_cx),
+                    max(c[4] for c in ilha_cx) - min(c[1] for c in ilha_cx)) / 2
+    quadra = quadra_do_clube(pecas["ChaoPlato"], plato)
+    qc = (quadra.centroid.x, quadra.centroid.y)
+    circ = escolher_circulo(circulos, raio_ilha, float(np.hypot(*(ilha_c - clube_c))), qc, cfg.tol_raio, cfg.tol_dist)
+    inicial = ancora(ilha_c, clube_c, circ[:2], qc)
+    chao_port = pegada_de_triangulos([t for n, ts in port_d["chao"].items() if n.startswith("PORTARIA_PISO") for t in ts])
+    destino = _borda(vias_dwg.intersection(Point(circ[:2]).buffer(cfg.raio_icp)))
+    t, residuo = icp_rigido(_borda(chao_port), destino, inicial, corte=cfg.corte_icp)
+    print(f"encaixe: âncora {math.degrees(inicial.theta):+.2f}° → ICP {math.degrees(t.theta):+.2f}°, "
+          f"({t.tx:.2f}; {t.ty:.2f}) m, resíduo mediano {residuo:.2f} m, círculo r={circ[2]} em {circ[:2]}")
+    if residuo > cfg.residuo_max:
+        raise SystemExit(f"encaixe: resíduo {residuo:.2f} m acima de {cfg.residuo_max} m")
+    clube_final = t.aplicar(clube_c[None])[0]
+    if not quadra.contains(Point(clube_final)):
+        raise SystemExit(f"encaixe: o clube caiu fora da quadra central ({clube_final.round(1)})")
+    # projeção de tudo que olha para cima, em qualquer altura: prédio, piscina e deck também cobrem a quadra
+    cob = cobertura(_chao_clube([tr for ts in clube_d["topo"].values() for tr in ts], pivo, cfg.giro_clube, t), quadra)
+    print(f"encaixe: projeção do clube cobre {cob:.0%} da quadra ({quadra.area:.0f} m²)")
+    if cob < cfg.cobertura_min:
+        raise SystemExit(f"encaixe: projeção do clube cobre {cob:.0%} da quadra (mínimo {cfg.cobertura_min:.0%})")
+    cantos = t.aplicar([[x, y] for c in port_cx for x, y in ((c[0], c[1]), (c[3], c[1]), (c[3], c[4]), (c[0], c[4]))])
+    port_peg = MultiPoint([tuple(p) for p in cantos]).convex_hull.buffer(cfg.margem_portaria, join_style="mitre")
+    ilha_peg = Point(circ[:2]).buffer(circ[2], 128)
+    tj = {"s": 1.0, "theta": t.theta, "tx": t.tx, "ty": t.ty}
+    anel = lambda g: [[round(x, 3), round(y, 3)] for x, y in g.exterior.coords[:-1]]  # noqa: E731
+    return {"cota": cota, "marcos": {
+        "Clube": {"fonte": cfg.clube, "prefixo": "CLUBE_", "giro": [*pivo, -cfg.giro_clube], "transf": tj,
+                  "z": round(cota + alturas["ChaoPlato"], 3), "pegada": anel(quadra)},
+        "Portaria": {"fonte": cfg.portaria, "prefixo": "PORTARIA_", "giro": None, "transf": tj,
+                     "z": round(cota, 3), "pegada": anel(port_peg)},
+        "Rotatoria": {"fonte": cfg.portaria, "prefixo": "ROTATORIA_", "giro": None, "transf": tj,
+                      "z": round(cota, 3), "pegada": anel(ilha_peg)},
+    }}
+
+
+DESTINO = RAIZ / "cache" / "cena" / "marcos.json"
+
+
+def main() -> int:
+    from scripts.loteamento.cena import CFG_TOML as CENA_TOML
+    from scripts.loteamento.cena import DXF, TERRENO_JSON, CenaCfg, aneis_da_layer, pecas_da_placa
+    from scripts.loteamento.placa import PlacaCfg
+    from scripts.loteamento.relevo import Grade
+    from scripts.loteamento.terreno import TerrenoCfg, aneis_do_plato
+
+    from .blender import FONTE_JSON
+
+    sys.stdout.reconfigure(encoding="utf-8")
+    cfg = MarcosCfg.carregar()
+    georref = json.loads((RAIZ / "dados" / "georref.json").read_text(encoding="utf-8"))
+    e0, n0 = georref["origem"]["E"], georref["origem"]["N"]
+    lotes = json.loads((RAIZ / "dados" / "lotes.json").read_text(encoding="utf-8"))["lotes"]
+    msp = ezdxf.readfile(DXF).modelspace()
+    ccfg, pcfg = CenaCfg.carregar(CENA_TOML), PlacaCfg.carregar(CENA_TOML)
+    pecas, plato = pecas_da_placa(msp, lotes, ccfg, pcfg, aneis_do_plato(msp, TerrenoCfg.carregar(CENA_TOML), lotes, e0, n0),
+                                  e0, n0)
+    grade = Grade.de_json(json.loads(TERRENO_JSON.read_text(encoding="utf-8")))
+    cota = grade.cota_malha(*plato.representative_point().coords[0])
+    layers = [l for ls in ccfg.camadas.values() for l in ls]
+    circulos = [(round(e.dxf.center.x - e0, 3), round(e.dxf.center.y - n0, 3), round(e.dxf.radius, 3))
+                for e in msp.query("CIRCLE") if e.dxf.layer in layers]
+    vias = unary_union([pecas[k] for k in ("Pista", "Calcadas") if k in pecas])
+    fonte = json.loads(FONTE_JSON.read_text(encoding="utf-8"))
+    DESTINO.write_text(json.dumps(encaixar(fonte, cfg, circulos, pecas, plato, cota, pcfg.alturas, vias)),
+                       encoding="utf-8")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
