@@ -23,8 +23,9 @@ LIMITE_MB = 6.0
 OBJETOS = ("Clube", "Portaria", "Rotatoria")
 
 
-def rodar_extracao(blender: Path, glbs: list[Path], destino: Path, prefixos: list[str]) -> dict:
-    resumo = rodar_blender(blender, EXTRAIR, str(destino), ",".join(prefixos), *[str(g) for g in glbs])
+def rodar_extracao(blender: Path, fontes: dict[Path, list[str]], destino: Path) -> dict:
+    """`fontes`: cada GLB com os prefixos que ele tem de ter."""
+    resumo = rodar_blender(blender, EXTRAIR, str(destino), *[f"{g}::{','.join(ps)}" for g, ps in fontes.items()])
     if "erro" in resumo:
         raise RuntimeError(resumo["erro"])
     return json.loads(destino.read_text(encoding="utf-8"))
@@ -35,13 +36,17 @@ def extrair() -> int:
     c = MarcosCfg.carregar()
     pasta = terreno_dir() / c.pasta
     blender = Path(ler_env(RAIZ / ".env").get("BLENDER", BLENDER_PADRAO))
-    d = rodar_extracao(blender, [pasta / c.clube, pasta / c.portaria], FONTE_JSON, ["CLUBE_", "PORTARIA_", "ROTATORIA_"])
+    d = rodar_extracao(blender, {pasta / c.clube: ["CLUBE_"], pasta / c.portaria: ["PORTARIA_", "ROTATORIA_"]},
+                       FONTE_JSON)
     print({k: (len(v["objetos"]), sum(len(t) for t in v["chao"].values())) for k, v in d.items()})
     return 0
 
 
 def rodar_geracao(blender: Path, marcos: Path, glb: Path, previa: Path | None = None) -> dict:
-    return rodar_blender(blender, GERAR, str(marcos), str(glb), *([str(previa)] if previa else []))
+    resumo = rodar_blender(blender, GERAR, str(marcos), str(glb), *([str(previa)] if previa else []))
+    if "erro" in resumo:
+        raise RuntimeError(resumo["erro"])
+    return resumo
 
 
 def conferir_marcos(nomes: list[str], mb: float) -> list[str]:

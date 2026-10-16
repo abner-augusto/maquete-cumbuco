@@ -95,7 +95,8 @@ def pegadas_dos_marcos() -> BaseGeometry | None:
         print("cena: sem marcos (cache/cena/marcos.json): placa sem furos")
         return None
     marcos = json.loads(MARCOS_JSON.read_text(encoding="utf-8"))["marcos"]
-    return unary_union([Polygon(m["pegada"]).buffer(0) for m in marcos.values()])
+    # o furo (chão de baixo do modelo dentro da pegada), não a pegada: onde o modelo não tem chão, a placa fica
+    return unary_union([Polygon(p[0], p[1:]).buffer(0) for m in marcos.values() for p in m["furo"]])
 
 
 def montar(msp, grade: Grade, lotes: list[dict], cfg: CenaCfg, placa_cfg: PlacaCfg,

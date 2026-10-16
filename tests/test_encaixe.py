@@ -5,8 +5,8 @@ import pytest
 from shapely.geometry import Point, Polygon, box
 
 from scripts.entorno.masterplan import Semelhanca
-from scripts.marcos.encaixe import (ancora, cobertura, escolher_circulo, girar, icp_rigido, pegada_de_triangulos,
-                                    pegada_portaria, quadra_do_clube)
+from scripts.marcos.encaixe import (ancora, cobertura, conferir_clube, escolher_circulo, furo, girar, icp_rigido,
+                                    pegada_de_triangulos, pegada_portaria, quadra_do_clube)
 
 
 def test_girar_e_desgirar_em_torno_do_pivo():
@@ -70,3 +70,19 @@ def test_pegada_e_cobertura_dos_triangulos():
     tris = [[0, 0, 10, 0, 10, 10], [0, 0, 10, 10, 0, 10]]
     assert pegada_de_triangulos(tris).area == pytest.approx(100)
     assert cobertura(pegada_de_triangulos(tris), box(0, 0, 10, 20)) == pytest.approx(0.5)
+
+
+def test_furo_so_dos_triangulos_inteiros_dentro_da_pegada():
+    pegada = box(0, 0, 10, 10)
+    tris = [[1, 2, 1, 8, 4, 8],  # dentro
+            [0, 0, 10, 0, 10, 10],  # na borda: entra (tolerância)
+            [8, 8, 12, 8, 12, 12]]  # cruza a borda: sai, como no Blender
+    g = furo(tris, pegada)
+    assert g.area == pytest.approx(9.0 + 50.0, abs=0.01)
+    assert not g.intersects(Point(11, 9))
+
+
+def test_clube_fora_da_quadra_falha_com_area_e_centro():
+    with pytest.raises(SystemExit, match=r"quadra central de 400 m² com centro \(10.0; 10.0\)"):
+        conferir_clube(np.array([50.0, 50.0]), box(0, 0, 20, 20))
+    conferir_clube(np.array([5.0, 5.0]), box(0, 0, 20, 20))

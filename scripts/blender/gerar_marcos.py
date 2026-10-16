@@ -3,7 +3,8 @@
     blender -b --factory-startup --python-exit-code 1 -P gerar_marcos.py -- marcos.json saida.glb [previa.png]
 
 Para cada marco: importa a fonte, fica com os objetos do prefixo, desfaz o giro (clube), aplica a
-transformação rígida e a cota, apaga as faces cujo centro está fora da pegada e junta tudo num objeto.
+transformação rígida e a cota, apaga as faces com algum vértice fora da pegada (a mesma regra do furo da
+placa em encaixe.py) e junta tudo num objeto.
 """
 
 import json
@@ -39,6 +40,11 @@ def girar(x, y, cx, cy, graus):
     return cx + dx * math.cos(a) - dy * math.sin(a), cy + dx * math.sin(a) + dy * math.cos(a)
 
 
+def falhar(msg: str) -> None:
+    print("RESUMO " + json.dumps({"erro": msg}))
+    sys.exit(0)
+
+
 def marco(nome: str, m: dict) -> bpy.types.Object:
     antes = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=m["fonte"])
@@ -47,6 +53,8 @@ def marco(nome: str, m: dict) -> bpy.types.Object:
         if o.type != "MESH" or not o.name.startswith(m["prefixo"]):
             bpy.data.objects.remove(o)
     obs = [o for o in bpy.data.objects if o not in antes]
+    if not obs:
+        falhar(f"nenhum objeto com prefixo {m['prefixo']} em {Path(m['fonte']).name} ({nome})")
     t = m["transf"]
     c, s = math.cos(t["theta"]), math.sin(t["theta"])
     for o in obs:
@@ -64,13 +72,16 @@ def marco(nome: str, m: dict) -> bpy.types.Object:
         o.data.update()
         bm = bmesh.new()
         bm.from_mesh(o.data)
-        cen = np.array([f.calc_center_median()[:2] for f in bm.faces]) if bm.faces else np.zeros((0, 2))
-        fora = ~dentro(cen[:, 0], cen[:, 1], m["pegada"]) if len(cen) else np.zeros(0, dtype=bool)
-        bmesh.ops.delete(bm, geom=[f for f, k in zip(bm.faces, fora) if k], context="FACES")
+        bm.verts.index_update()
+        xy = np.array([v.co[:2] for v in bm.verts]) if bm.verts else np.zeros((0, 2))
+        fora_v = ~dentro(xy[:, 0], xy[:, 1], m["pegada"]) if len(xy) else np.zeros(0, dtype=bool)
+        bmesh.ops.delete(bm, geom=[f for f in bm.faces if any(fora_v[v.index] for v in f.verts)], context="FACES")
         bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
         bm.to_mesh(o.data)
         bm.free()
     obs = [o for o in obs if len(o.data.polygons)]
+    if not obs:
+        falhar(f"{nome}: nenhuma face de {Path(m['fonte']).name} dentro da pegada")
     bpy.ops.object.select_all(action="DESELECT")
     for o in obs:
         o.select_set(True)

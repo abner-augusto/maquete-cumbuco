@@ -32,7 +32,7 @@ Antecedentes: GLBs convertidos e aprovados (`scripts/marcos/conversao/README.md`
 
 ## Sem briga com a placa
 
-O piso dos modelos não pode ficar coplanar com a placa. Cada marco tem uma **pegada**, e a placa perde a pegada (as paredes da regra única aparecem na borda do furo). Do modelo, ficam só as faces cujo centro está dentro da pegada.
+O piso dos modelos não pode ficar coplanar com a placa, e a placa não pode ter buraco para o vazio. Cada marco tem uma **pegada**. Do modelo, ficam só as faces com os três vértices dentro da pegada (+1 cm). A placa perde o **furo**: a projeção das faces voltadas para cima do modelo recortado que estão até 0,6 m acima da base dele, piscina inclusive (as paredes da regra única aparecem na borda do furo). Onde o modelo não tem chão baixo (sob lajes, entre prédios), a placa fica. Laje e cobertura não furam a placa.
 
 | Marco | Pegada |
 |---|---|

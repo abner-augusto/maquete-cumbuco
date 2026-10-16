@@ -131,3 +131,15 @@ def test_main_sem_marcos_avisa_e_segue(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(cena, "MARCOS_JSON", tmp_path / "nao-existe.json")
     assert cena.pegadas_dos_marcos() is None
     assert "sem marcos" in capsys.readouterr().out
+
+
+def test_pegadas_dos_marcos_le_o_furo_com_buracos(tmp_path, monkeypatch):
+    import json
+
+    from scripts.loteamento import cena
+
+    m = {"marcos": {"Clube": {"pegada": [[0, 0], [20, 0], [20, 20], [0, 20]],
+                              "furo": [[[[0, 0], [10, 0], [10, 10], [0, 10]], [[4, 4], [6, 4], [6, 6], [4, 6]]]]}}}
+    (tmp_path / "m.json").write_text(json.dumps(m), encoding="utf-8")
+    monkeypatch.setattr(cena, "MARCOS_JSON", tmp_path / "m.json")
+    assert cena.pegadas_dos_marcos().area == pytest.approx(96.0)  # o furo, não a pegada

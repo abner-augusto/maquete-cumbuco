@@ -12,8 +12,10 @@ from dataclasses import dataclass
 
 import ezdxf
 import numpy as np
+import shapely
 from scipy.spatial import cKDTree
 from shapely.geometry import MultiPoint, Point, Polygon
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
 from scripts.comum.ambiente import RAIZ
@@ -130,6 +132,29 @@ def pegada_portaria(tris, margem: float) -> Polygon:
     return MultiPoint(pts).convex_hull.buffer(margem, join_style="mitre")
 
 
+def furo(tris, pegada, tol: float = 0.01) -> BaseGeometry:
+    """O que a placa perde: os triângulos de baixo do modelo com os três vértices na pegada (+ `tol`), a mesma
+    regra com que gerar_marcos.py recorta o modelo. Sem buraco para o vazio, sem chão coplanar fora."""
+    a = np.asarray(tris, dtype=float).reshape(-1, 3, 2)
+    if not len(a):
+        return Polygon()
+    dentro = shapely.contains_xy(pegada.buffer(tol, join_style="mitre"), a[..., 0], a[..., 1]).all(1)
+    return pegada_de_triangulos(a[dentro].reshape(-1, 6).tolist())
+
+
+def conferir_clube(clube: np.ndarray, quadra: Polygon) -> None:
+    if not quadra.contains(Point(clube)):
+        c = quadra.centroid
+        raise SystemExit(f"encaixe: o clube ({clube[0]:.1f}; {clube[1]:.1f}) caiu fora da quadra central de "
+                         f"{quadra.area:.0f} m² com centro ({c.x:.1f}; {c.y:.1f})")
+
+
+def poligonos_json(g) -> list:
+    """[[exterior, *buracos], ...] com 3 casas."""
+    r = lambda anel: [[round(x, 3), round(y, 3)] for x, y in anel.coords[:-1]]  # noqa: E731
+    return [[r(p.exterior), *[r(i) for i in p.interiors]] for p in partes(g)]
+
+
 def cobertura(chao, quadra) -> float:
     return chao.intersection(quadra).area / quadra.area
 
@@ -168,6 +193,7 @@ def encaixar(fonte: dict, cfg: MarcosCfg, circulos, pecas: dict, plato, cota: fl
                     max(c[4] for c in ilha_cx) - min(c[1] for c in ilha_cx)) / 2
     quadra = quadra_do_clube(pecas["ChaoPlato"], plato)
     qc = (quadra.centroid.x, quadra.centroid.y)
+    print(f"encaixe: quadra central de {quadra.area:.0f} m² com centro ({qc[0]:.1f}; {qc[1]:.1f})")
     circ = escolher_circulo(circulos, raio_ilha, float(np.hypot(*(ilha_c - clube_c))), qc, cfg.tol_raio, cfg.tol_dist)
     inicial = ancora(ilha_c, clube_c, circ[:2], qc)
     chao_port = pegada_de_triangulos([t for n, ts in port_d["chao"].items() if n.startswith("PORTARIA_PISO") for t in ts])
@@ -177,9 +203,7 @@ def encaixar(fonte: dict, cfg: MarcosCfg, circulos, pecas: dict, plato, cota: fl
           f"({t.tx:.2f}; {t.ty:.2f}) m, resíduo mediano {residuo:.2f} m, círculo r={circ[2]} em {circ[:2]}")
     if residuo > cfg.residuo_max:
         raise SystemExit(f"encaixe: resíduo {residuo:.2f} m acima de {cfg.residuo_max} m")
-    clube_final = t.aplicar(clube_c[None])[0]
-    if not quadra.contains(Point(clube_final)):
-        raise SystemExit(f"encaixe: o clube caiu fora da quadra central ({clube_final.round(1)})")
+    conferir_clube(t.aplicar(clube_c[None])[0], quadra)
     # projeção de tudo que olha para cima, em qualquer altura: prédio, piscina e deck também cobrem a quadra
     cob = cobertura(_chao_clube([tr for ts in clube_d["topo"].values() for tr in ts], pivo, cfg.giro_clube, t), quadra)
     print(f"encaixe: projeção do clube cobre {cob:.0%} da quadra ({quadra.area:.0f} m²)")
@@ -189,14 +213,22 @@ def encaixar(fonte: dict, cfg: MarcosCfg, circulos, pecas: dict, plato, cota: fl
                                cfg.margem_portaria)
     ilha_peg = Point(circ[:2]).buffer(circ[2], 128)
     tj = {"s": 1.0, "theta": t.theta, "tx": t.tx, "ty": t.ty}
-    anel = lambda g: [[round(x, 3), round(y, 3)] for x, y in g.exterior.coords[:-1]]  # noqa: E731
+
+    def marco(fonte: str, d: dict, prefixo: str, giro: float, z: float, peg) -> dict:
+        pts = np.asarray([tr for n, ts in d["baixo"].items() if n.startswith(prefixo) for tr in ts],
+                         dtype=float).reshape(-1, 2)
+        f = furo(t.aplicar(girar(pts, pivo, -giro) if giro else pts).reshape(-1, 6), peg)
+        print(f"encaixe: {prefixo[:-1].lower()}: pegada {peg.area:.0f} m², furo na placa {f.area:.0f} m²")
+        # a pegada do JSON já leva a tolerância do furo: o Blender recorta com ela, sem folga
+        anel = peg.buffer(0.01, join_style="mitre").exterior.coords[:-1]
+        return {"fonte": fonte, "prefixo": prefixo, "giro": [*pivo, -giro] if giro else None, "transf": tj,
+                "z": round(z, 3), "pegada": [[round(x, 3), round(y, 3)] for x, y in anel],
+                "furo": poligonos_json(f)}
+
     return {"cota": cota, "marcos": {
-        "Clube": {"fonte": cfg.clube, "prefixo": "CLUBE_", "giro": [*pivo, -cfg.giro_clube], "transf": tj,
-                  "z": round(cota + alturas["ChaoPlato"], 3), "pegada": anel(quadra)},
-        "Portaria": {"fonte": cfg.portaria, "prefixo": "PORTARIA_", "giro": None, "transf": tj,
-                     "z": round(cota, 3), "pegada": anel(port_peg)},
-        "Rotatoria": {"fonte": cfg.portaria, "prefixo": "ROTATORIA_", "giro": None, "transf": tj,
-                      "z": round(cota, 3), "pegada": anel(ilha_peg)},
+        "Clube": marco(cfg.clube, clube_d, "CLUBE_", cfg.giro_clube, cota + alturas["ChaoPlato"], quadra),
+        "Portaria": marco(cfg.portaria, port_d, "PORTARIA_", 0.0, cota, port_peg),
+        "Rotatoria": marco(cfg.portaria, port_d, "ROTATORIA_", 0.0, cota, ilha_peg),
     }}
 
 

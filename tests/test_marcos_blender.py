@@ -30,18 +30,19 @@ LAJE = {"nome": "PORTARIA_LAJE", "material": "terreno", "vertices": [[2, 2, 3], 
 @pytest.mark.skipif(not BLENDER_PADRAO.exists(), reason="Blender 5.2 ausente")
 def test_extrai_caixas_e_chao(tmp_path):
     glb = _glb(tmp_path, "p", [PISO, LAJE])
-    dados = rodar_extracao(BLENDER_PADRAO, [glb], tmp_path / "fonte.json", ["PORTARIA_"])
+    dados = rodar_extracao(BLENDER_PADRAO, {glb: ["PORTARIA_"]}, tmp_path / "fonte.json")
     d = dados["p.glb"]
     assert d["objetos"]["PORTARIA_LAJE"] == pytest.approx([2, 2, 3, 4, 4, 3], abs=1e-4)
     assert len(d["chao"]["PORTARIA_PISO"]) == 2 and "PORTARIA_LAJE" not in d["chao"]  # laje a 3 m não é chão
     assert len(d["topo"]["PORTARIA_LAJE"]) == 1 and len(d["topo"]["PORTARIA_PISO"]) == 2  # topo: qualquer altura
+    assert "PORTARIA_PISO" in d["baixo"] and "PORTARIA_LAJE" not in d["baixo"]  # baixo: até 0,6 m, o que fura a placa
 
 
 @pytest.mark.skipif(not BLENDER_PADRAO.exists(), reason="Blender 5.2 ausente")
 def test_prefixo_ausente_falha_nomeando(tmp_path):
     glb = _glb(tmp_path, "p", [PISO])
-    with pytest.raises(RuntimeError, match="CLUBE_"):
-        rodar_extracao(BLENDER_PADRAO, [glb], tmp_path / "fonte.json", ["PORTARIA_", "CLUBE_"])
+    with pytest.raises(RuntimeError, match="CLUBE_.*p.glb"):
+        rodar_extracao(BLENDER_PADRAO, {glb: ["PORTARIA_", "CLUBE_"]}, tmp_path / "fonte.json")
 
 
 def test_conferir_marcos():
@@ -62,7 +63,26 @@ def test_gera_marco_recortado_e_no_lugar(tmp_path):
     resumo = rodar_geracao(BLENDER_PADRAO, tmp_path / "m.json", tmp_path / "m.glb", tmp_path / "m.png")
     assert nos_do_glb(tmp_path / "m.glb") == ["Portaria"]
     assert "KHR_draco_mesh_compression" in _json_do_glb(tmp_path / "m.glb").get("extensionsUsed", [])
-    # recorte pelo centro da face: fica a laje e o triângulo oeste do piso (centro x = 3,3), que vai até x = 10
-    assert resumo["Portaria"]["triangulos"] == 2
-    assert resumo["Portaria"]["x"] == pytest.approx([100.0, 110.0], abs=0.01)  # transladado
-    assert resumo["Portaria"]["z"] == pytest.approx([21.0, 24.0], abs=0.01)
+    # fica só a face com todos os vértices dentro: a laje; os dois triângulos do piso cruzam a borda
+    assert resumo["Portaria"]["triangulos"] == 1
+    assert resumo["Portaria"]["x"] == pytest.approx([102.0, 104.0], abs=0.01)  # transladado
+    assert resumo["Portaria"]["z"] == pytest.approx([24.0, 24.0], abs=0.01)  # a laje, 3 m acima da cota 21
+
+
+@pytest.mark.skipif(not BLENDER_PADRAO.exists(), reason="Blender 5.2 ausente")
+def test_prefixo_no_arquivo_errado_falha(tmp_path):
+    a = _glb(tmp_path, "a", [PISO])
+    b = _glb(tmp_path, "b", [dict(PISO, nome="CLUBE_PISO")])
+    with pytest.raises(RuntimeError, match="CLUBE_.*a.glb"):
+        rodar_extracao(BLENDER_PADRAO, {a: ["CLUBE_"], b: []}, tmp_path / "fonte.json")
+
+
+@pytest.mark.skipif(not BLENDER_PADRAO.exists(), reason="Blender 5.2 ausente")
+def test_geracao_sem_o_prefixo_falha_nomeando(tmp_path):
+    glb = _glb(tmp_path, "p", [PISO])
+    marcos = {"cota": 0.0, "marcos": {"Clube": {
+        "fonte": str(glb), "prefixo": "CLUBE_", "giro": None, "transf": {"s": 1.0, "theta": 0.0, "tx": 0.0, "ty": 0.0},
+        "z": 0.0, "pegada": [[0, 0], [10, 0], [10, 10], [0, 10]]}}}
+    (tmp_path / "m.json").write_text(json.dumps(marcos), encoding="utf-8")
+    with pytest.raises(RuntimeError, match="CLUBE_.*p.glb"):
+        rodar_geracao(BLENDER_PADRAO, tmp_path / "m.json", tmp_path / "m.glb")
