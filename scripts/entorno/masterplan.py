@@ -65,14 +65,14 @@ def amostrar(contorno: np.ndarray, passo: float) -> np.ndarray:
     return fechado[i] + seg[i] * f
 
 
-def umeyama(a: np.ndarray, b: np.ndarray) -> Semelhanca:
-    """Semelhança de mínimos quadrados a → b, sem espelho."""
+def umeyama(a: np.ndarray, b: np.ndarray, escala: bool = True) -> Semelhanca:
+    """Semelhança de mínimos quadrados a → b, sem espelho; com `escala=False`, rígida (s = 1)."""
     ma, mb = a.mean(0), b.mean(0)
     da, db = a - ma, b - mb
     u, d, vt = np.linalg.svd(db.T @ da / len(a))
     sinal = np.diag([1.0, np.sign(np.linalg.det(u @ vt))])
     r = u @ sinal @ vt
-    s = float(np.trace(np.diag(d) @ sinal) / (da ** 2).sum(1).mean())
+    s = float(np.trace(np.diag(d) @ sinal) / (da ** 2).sum(1).mean()) if escala else 1.0
     t = mb - s * r @ ma
     return Semelhanca(s, math.atan2(r[1, 0], r[0, 0]), float(t[0]), float(t[1]))
 

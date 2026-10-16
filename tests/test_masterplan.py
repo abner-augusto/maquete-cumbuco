@@ -102,3 +102,12 @@ def test_raster_e_vetor_no_mesmo_espaco_em_pagina_girada():
     u, v = int((cx - clip[0]) * 2.0), int((cy - clip[1]) * 2.0)
     r, g, b = img.getpixel((u, v))
     assert r > 200 and g < 60 and b < 60  # o centro do contorno é o vermelho do desenho
+
+
+def test_umeyama_rigido_mantem_escala_um():
+    from scripts.entorno.masterplan import umeyama
+
+    a = _estrela()
+    b = Semelhanca(2.0, 0.3, 5.0, 5.0).aplicar(a)
+    assert umeyama(a, b, escala=False).s == 1.0
+    assert umeyama(a, b).s == pytest.approx(2.0)

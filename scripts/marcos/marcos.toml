@@ -1,0 +1,15 @@
+# Marcos (Plano 3b). Fontes relativas a TERRENO_DIR; ORIGIN/PIVOT do prep_np.py da conversão.
+pasta = "6-PROJETOS/10-MAQUETE INTERATIVA"
+clube = "clube - sem mobiliario.glb"
+portaria = "portaria e rotatoria.glb"
+pivo_clube = [40.56, 45.98]
+giro_clube = 28.0          # graus que o clube recebeu a mais que a portaria; o encaixe desfaz
+edificacao = ["LAJE", "PAREDE", "PILAR", "VIGA", "ESQUADRIA", "VIDRO", "EQUIPAMENTO"]  # sufixos de PORTARIA_*
+margem_portaria = 1.0      # m em volta da envoltória da portaria
+raio_icp = 150.0           # m em volta da rotatória
+corte_icp = 5.0            # m: par mais longe que isto não entra no ICP
+residuo_max = 1.5          # m, mediana
+tol_raio = 3.0
+tol_dist = 10.0
+cobertura_min = 0.90       # piso do clube sobre a quadra
+kmz_estande = "6-PROJETOS/08-ESTANDE/2026-10-07 estande - implantacao georreferenciada.kmz"
