@@ -87,3 +87,26 @@ test('7. lote sem IPTU não mostra o campo', async ({ page }) => {
   await expect(page.getByRole('region', { name: /Ficha do lote/ })).toBeVisible();
   await expect(page.getByRole('region', { name: /Ficha do lote/ })).not.toContainText('Inscrição IPTU');
 });
+
+test('8. o estande abre a galeria com a planta e o "Como chegar" na coordenada do KMZ', async ({ page }) => {
+  const { marcos } = JSON.parse(readFileSync(new URL('../public/dados/marcos.json', import.meta.url), 'utf8'));
+  const estande = marcos.find((m: { id: string }) => m.id === 'estande');
+  await jaVisitou(page);
+  await page.goto('./');
+  await page.getByRole('button', { name: 'Estande de vendas: abrir galeria' }).click();
+  const galeria = page.getByRole('region', { name: 'Galeria: Estande de vendas' });
+  await expect(galeria.getByRole('link', { name: 'Como chegar' })).toHaveAttribute('href', new RegExp(`query=${estande.lat},${estande.lon}`));
+  await galeria.getByRole('button', { name: 'Ampliar a planta humanizada' }).click();
+  await expect(page.getByRole('dialog', { name: /Planta humanizada/ })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('9. o clube abre a galeria com todas as fotos do JSON', async ({ page }) => {
+  const { marcos } = JSON.parse(readFileSync(new URL('../public/dados/marcos.json', import.meta.url), 'utf8'));
+  const clube = marcos.find((m: { id: string }) => m.id === 'clube');
+  await jaVisitou(page);
+  await page.goto('./');
+  await page.getByRole('button', { name: 'Clube: abrir galeria' }).click();
+  await expect(page.getByRole('region', { name: 'Galeria: Clube' }).getByRole('button', { name: /Ampliar foto/ })).toHaveCount(clube.galeria.length);
+});

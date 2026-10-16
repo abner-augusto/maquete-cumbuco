@@ -13,6 +13,7 @@ export interface Cena {
   montar(el: HTMLElement): void;
   inicio(): void;
   enquadrar(id: string): void;              // lote
+  enquadrarMarco(id: string): void;
   selecionar(id: string | null): void;      // realce de seleção
   aproximar(fator: number): void;
   ceu(modo: 'claro' | 'escuro'): void;
@@ -25,6 +26,7 @@ export interface Opcoes {
   aoPassar(rotulo: { id: string; tela: Tela } | null): void; // hover no desktop
   aoMoverEtiqueta(tela: Tela | null): void;       // topo do lote selecionado
   aoGirar(graus: number): void;                   // rumo da câmera, para a bússola
+  aoMoverMarcos(telas: { id: string; tela: Tela | null }[]): void; // âncora do ícone de cada marco
 }
 
 const LOTE = /^Q(\d{2}|[A-Z])L\d{2}$/;
@@ -52,6 +54,21 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   ]);
   const cena = new THREE.Scene();
   cena.add(lot.scene, mar.scene);
+
+  // Estande: não tem modelo; o volume simplificado é a pegada do KMZ extrudada (spec §7.1).
+  const volumes = new THREE.Group();
+  for (const m of o.dados.marcos) {
+    if (m.objeto || !m.pegada) continue;
+    const forma = new THREE.Shape(m.pegada.map(([x, y]) => new THREE.Vector2(x, y)));
+    const g = new THREE.ExtrudeGeometry(forma, { depth: o.dados.config.estande.altura_m, bevelEnabled: false }).rotateX(-Math.PI / 2);
+    const volume = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0xe9e2d6, roughness: 0.9 }));
+    volume.position.y = m.z;
+    volume.name = `Marco_${m.id}`;
+    volumes.add(volume);
+  }
+  cena.add(volumes);
+  // Ícone flutuante: 12 m acima do ponto do marco.
+  const ancoras = o.dados.marcos.map(m => ({ id: m.id, p: new THREE.Vector3(m.x, m.z + 12, -m.y) }));
 
   const lotes = new Map<string, THREE.Mesh>();
   lot.scene.traverse(x => { if ((x as THREE.Mesh).isMesh && LOTE.test(x.name)) lotes.set(x.name, x as THREE.Mesh); });
@@ -106,11 +123,16 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   }
   function enquadrar(id: string) {
     const m = lotes.get(id);
-    if (!m) return;
+    if (m) mirar(m.getWorldPosition(new THREE.Vector3()), camera.aspect < 1 ? 140 : 100);
+  }
+  function enquadrarMarco(id: string) {
+    const m = o.dados.marcos.find(x => x.id === id);
+    if (m) mirar(new THREE.Vector3(m.x, m.z, -m.y), 160);
+  }
+  /** Leva a câmera para perto do alvo, mantendo o rumo atual. */
+  function mirar(alvo: THREE.Vector3, d: number) {
     abertura = false;
-    const alvo = m.getWorldPosition(new THREE.Vector3());
     const rumo = camera.position.clone().sub(controles.target).setY(0).normalize();
-    const d = camera.aspect < 1 ? 140 : 100;
     controles.target.copy(alvo);
     camera.position.copy(alvo).addScaledVector(rumo, d * 0.75).setY(alvo.y + d * 0.66);
     controles.update();
@@ -146,7 +168,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     const r = el.getBoundingClientRect();
     raio.setFromCamera(new THREE.Vector2(((x - r.left) / r.width) * 2 - 1, 1 - ((y - r.top) / r.height) * 2), camera);
     // Só o que está na frente vale: um marco ou o terreno à frente do lote bloqueia.
-    const acerto = raio.intersectObjects([...alvos, mar.scene], true)[0];
+    const acerto = raio.intersectObjects([...alvos, mar.scene, volumes], true)[0];
     return acerto && LOTE.test(acerto.object.name) ? acerto.object.name : null;
   }
 
@@ -192,8 +214,15 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     if (v.z > 1) return null;
     return { x: ((v.x + 1) / 2) * el.clientWidth, y: ((1 - v.y) / 2) * el.clientHeight };
   };
+  /** Como `projetar`, mas atrás da câmera devolve um ponto bem fora da tela na direção certa (a UI prende à borda). */
+  const projetarSempre = (p: THREE.Vector3): Tela => {
+    const v = p.clone().project(camera);
+    const k = v.z > 1 ? -1000 : 1;
+    return { x: ((v.x * k + 1) / 2) * el.clientWidth, y: ((1 - v.y * k) / 2) * el.clientHeight };
+  };
   let ultimaEtiqueta = '';
   let ultimoRumo = NaN;
+  let ultimosMarcos = '';
   renderer.setAnimationLoop(() => {
     if (!container) return;
     controles.update();
@@ -223,6 +252,9 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     const d = camera.position.clone().sub(controles.target);
     const rumo = Math.round((THREE.MathUtils.radToDeg(Math.atan2(d.x, -d.z)) + 360) % 360);
     if (rumo !== ultimoRumo) { ultimoRumo = rumo; o.aoGirar(rumo); }
+    const marcos = ancoras.map(a => ({ id: a.id, tela: projetarSempre(a.p) }));
+    const chaveMarcos = marcos.map(x => (x.tela ? `${Math.round(x.tela.x)},${Math.round(x.tela.y)}` : '-')).join(';');
+    if (chaveMarcos !== ultimosMarcos) { ultimosMarcos = chaveMarcos; o.aoMoverMarcos(marcos); }
   });
 
   const corDo = (tipo: Lote['tipo']) => {
@@ -235,6 +267,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     montar(e) { container = e; e.prepend(el); redimensionar.observe(e); sujo = true; },
     inicio() { abertura = true; inicio(); },
     enquadrar,
+    enquadrarMarco,
     selecionar(id) { selecionado = id; aplicarRealces(); },
     aproximar(f) {
       abertura = false;

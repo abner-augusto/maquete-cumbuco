@@ -11,7 +11,9 @@
   import Ficha from './componentes/Ficha.svelte';
   import Folha, { type Batente } from './componentes/Folha.svelte';
   import Legenda from './componentes/Legenda.svelte';
+  import Galeria from './componentes/Galeria.svelte';
   import Marca from './componentes/Marca.svelte';
+  import Marcos from './componentes/Marcos.svelte';
 
   type Fase = 'carregando' | 'pronto' | 'erro';
   type Conteudo = 'busca' | 'ficha' | 'boas-vindas' | 'marco' | 'entorno' | 'ponto';
@@ -34,11 +36,14 @@
   let hover = $state<{ id: string; tela: Tela } | null>(null);
   let rumo = $state(0);
   let precos = $state(false);
+  let marcoAberto = $state<string | null>(null);
+  let telasMarcos = $state<{ id: string; tela: Tela | null }[]>([]);
 
   // ---- dados derivados ----
   const porId = $derived(new Map((dados?.lotes ?? []).map(l => [l.id, l])));
   const loteAberto = $derived(selecionado ? porId.get(selecionado) ?? null : null);
   const loteHover = $derived(hover ? porId.get(hover.id) ?? null : null);
+  const marco = $derived(marcoAberto ? dados?.marcos.find(m => m.id === marcoAberto) ?? null : null);
   const resultados = $derived(dados ? buscar(dados.lotes, consulta) : []);
   const temStatus = $derived((dados?.lotes ?? []).some(l => l.status));
   const espiarPx = $derived(conteudo === 'boas-vindas' ? 404 : 320);
@@ -46,7 +51,9 @@
   const rotuloFolha = $derived(
     conteudo === 'ficha' && loteAberto
       ? `Ficha do lote ${rotuloCurto(loteAberto)}`
-      : conteudo === 'boas-vindas'
+      : conteudo === 'marco' && marco
+        ? `Galeria: ${marco.nome}`
+        : conteudo === 'boas-vindas'
         ? 'Como explorar'
         : 'Busca de lote',
   );
@@ -66,6 +73,7 @@
         aoPassar: r => (hover = r),
         aoMoverEtiqueta: t => (etiqueta = t),
         aoGirar: g => (rumo = g),
+        aoMoverMarcos: t => (telasMarcos = t),
       });
     } catch (e) {
       console.error(e);
@@ -126,6 +134,21 @@
     atualizarUrl(null);
   }
 
+  function abrirMarco(id: string) {
+    if (conteudo === 'boas-vindas') primeiraVisita.concluir();
+    if (conteudo === 'ficha') fecharFicha();
+    marcoAberto = id;
+    conteudo = 'marco';
+    batente = (palco?.clientWidth ?? 0) >= 900 ? 'cheia' : 'espiar';
+    cena?.enquadrarMarco(id);
+  }
+
+  function fecharMarco() {
+    marcoAberto = null;
+    conteudo = 'busca';
+    batente = 'some';
+  }
+
   function concluirBoasVindas() {
     primeiraVisita.concluir();
     if (conteudo === 'boas-vindas') {
@@ -165,6 +188,8 @@
   {:else if fase === 'erro'}
     <p class="carregando" role="alert">Não foi possível abrir a maquete. Recarregue a página.</p>
   {:else if dados && cena}
+    <!-- Antes do chrome no DOM: os ícones ficam atrás da marca, dos controles e da folha. -->
+    <Marcos marcos={dados.marcos} telas={telasMarcos} aoEscolher={abrirMarco} />
     <Marca escuro={cor === 'escuro'} />
 
     <Controles
@@ -197,6 +222,8 @@
       {#snippet corpo()}
         {#if conteudo === 'ficha' && loteAberto}
           <Ficha lote={loteAberto as Lote} config={dados!.config} {precos} aoFechar={fecharFicha} />
+        {:else if conteudo === 'marco' && marco}
+          <Galeria {marco} aoFechar={fecharMarco} />
         {:else if conteudo === 'boas-vindas'}
           <BoasVindas escuro={cor === 'escuro'} />
         {:else}
