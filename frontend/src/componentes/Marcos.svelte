@@ -3,25 +3,28 @@
   import type { Marco } from '../lib/dados';
   import Icone from './Icone.svelte';
 
-  // Um botão por marco, sempre na tela: fora do quadro, fica preso à borda a 12 px.
+  // Um botão por marco, sempre clicável: fora do quadro, fica preso à borda da camada a 12 px. A camada
+  // desvia da marca, dos controles, da legenda e da folha, para o botão preso nunca ficar sob o chrome.
   let { marcos, telas, aoEscolher }: { marcos: Marco[]; telas: { id: string; tela: Tela | null }[]; aoEscolher: (id: string) => void } = $props();
 
   const MARGEM = 12;
   let largura = $state(0);
   let altura = $state(0);
+  let camada: HTMLDivElement | undefined = $state();
   const porId = $derived(new Map(marcos.map(m => [m.id, m])));
 
   /** Posição presa ao retângulo da camada; a âncora do botão vira para dentro quando encosta na borda. */
   function lugar(t: Tela) {
-    const x = Math.min(Math.max(t.x, MARGEM), largura - MARGEM);
-    const y = Math.min(Math.max(t.y, MARGEM), altura - MARGEM);
+    // A tela vem no referencial da cena inteira; a camada começa abaixo da marca.
+    const x = Math.min(Math.max(t.x - (camada?.offsetLeft ?? 0), MARGEM), largura - MARGEM);
+    const y = Math.min(Math.max(t.y - (camada?.offsetTop ?? 0), MARGEM), altura - MARGEM);
     const ax = x <= MARGEM ? '0%' : x >= largura - MARGEM ? '-100%' : '-50%';
     const ay = y <= MARGEM ? '0%' : y >= altura - MARGEM ? '-100%' : '-50%';
     return { x, y, transform: `translate(${ax}, ${ay})` };
   }
 </script>
 
-<div class="marcos" bind:clientWidth={largura} bind:clientHeight={altura}>
+<div class="marcos" bind:this={camada} bind:clientWidth={largura} bind:clientHeight={altura}>
   {#if largura && altura}
     {#each telas as { id, tela } (id)}
       {@const m = porId.get(id)}
@@ -36,7 +39,13 @@
 </div>
 
 <style>
-  .marcos { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .marcos {
+    position: absolute; pointer-events: none; overflow: hidden;
+    top: 80px; left: 0; right: 68px; bottom: calc(var(--folha-h) + 104px);
+  }
+  @container maquete (min-width: 900px) {
+    .marcos { top: 88px; bottom: 112px; }
+  }
   .marco {
     position: absolute; pointer-events: auto;
     display: inline-flex; align-items: center; gap: 6px;

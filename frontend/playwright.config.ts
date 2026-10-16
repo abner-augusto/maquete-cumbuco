@@ -18,13 +18,24 @@ export default defineConfig({
   projects: [
     // Densidade 1: com a do Pixel 7 (2,6), o WebGL por software desenha 4× mais pixels e trava no
     // modo entorno. O layout depende do viewport, não da densidade.
-    { name: 'celular-retrato', use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, browserName: 'chromium' } },
-    { name: 'tablet-paisagem', use: { browserName: 'chromium', viewport: { width: 1180, height: 820 }, hasTouch: true } },
+    { name: 'celular-retrato', testIgnore: /offline\.spec\.ts/, use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, browserName: 'chromium' } },
+    { name: 'tablet-paisagem', testIgnore: /offline\.spec\.ts/, use: { browserName: 'chromium', viewport: { width: 1180, height: 820 }, hasTouch: true } },
+    // O pacote offline, servido pelo próprio servidor PowerShell, com a rede de fora cortada no teste.
+    { name: 'offline', testMatch: /offline\.spec\.ts/, use: { browserName: 'chromium', baseURL: 'http://127.0.0.1:8138', viewport: { width: 1180, height: 820 } } },
   ],
-  webServer: {
-    command: 'npm run build && npm run preview',
-    url: 'http://127.0.0.1:4173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-  },
+  // Os servidores sobem em ordem: o pacote copia o dist/ que o primeiro acabou de gerar.
+  webServer: [
+    {
+      command: 'npm run build && npm run preview',
+      url: 'http://127.0.0.1:4173',
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+    },
+    {
+      command: 'npm run pacote && powershell -NoProfile -ExecutionPolicy Bypass -File pacote/servidor.ps1 -Porta 8138 -SemNavegador',
+      url: 'http://127.0.0.1:8138/',
+      reuseExistingServer: false,
+      timeout: 240_000,
+    },
+  ],
 });
