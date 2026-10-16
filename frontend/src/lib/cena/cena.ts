@@ -219,6 +219,8 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   let abertura = true;
   controles.addEventListener('start', () => (abertura = false));
   controles.addEventListener('change', () => (sujo = true));
+  // O three refaz o contexto perdido (celular em segundo plano); a cena parada precisa redesenhar.
+  el.addEventListener('webglcontextrestored', () => (sujo = true));
 
   let container: HTMLElement | null = null;
   const redimensionar = new ResizeObserver(() => {

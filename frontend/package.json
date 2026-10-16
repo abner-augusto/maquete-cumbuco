@@ -5,7 +5,7 @@
   "scripts": {
     "assets": "node scripts/copiar-assets.mjs",
     "dev": "npm run assets && vite",
-    "build": "npm run assets && vite build",
+    "build": "npm run assets && vite build && npm run verificar",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test:unidade": "vitest run",

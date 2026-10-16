@@ -326,8 +326,9 @@
   }
   .cena { position: absolute; inset: 0; touch-action: none; }
   .cena :global(canvas) { display: block; width: 100%; height: 100%; outline: none; }
+  /* Só avisa: o toque passa para a cena embaixo. */
   .carregando {
-    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0;
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0; pointer-events: none;
     padding: 10px 16px; border-radius: var(--raio-2); background: var(--tema-papel); color: var(--tema-tinta-2);
     border: 1px solid var(--tema-filete); font-size: 14px;
   }

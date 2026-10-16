@@ -124,3 +124,57 @@ test('10. o entorno lista os pontos do JSON e abre a ficha do ponto', async ({ p
   await expect(ficha).toContainText(`${primeiro.minutos_carro} min`);
   await expect(ficha.getByRole('link', { name: 'Abrir no Google Maps' })).toHaveAttribute('href', /google\.com\/maps/);
 });
+
+test('11. fechar, limpar, voltar e a alça da folha têm alvo de 44 px', async ({ page }, info) => {
+  test.skip(info.project.name !== 'celular-retrato', 'alvo de toque: medido no celular');
+  const alvo = async (l: ReturnType<Page['getByRole']>) => {
+    const b = (await l.boundingBox())!;
+    expect(Math.min(b.width, b.height), await l.getAttribute('aria-label') ?? '').toBeGreaterThanOrEqual(44);
+  };
+  await jaVisitou(page);
+  await page.goto('./?lote=Q07L04');
+  await alvo(ficha(page).getByRole('button', { name: 'Fechar ficha' }));
+  await alvo(ficha(page).locator('.alca'));
+  await ficha(page).getByRole('button', { name: 'Fechar ficha' }).click();
+  await page.getByRole('button', { name: 'Buscar lote' }).click();
+  await page.getByRole('textbox', { name: 'Quadra e lote' }).fill('7');
+  await alvo(page.getByRole('button', { name: 'Limpar busca' }));
+  await page.getByRole('button', { name: 'Buscar lote' }).click();
+  await page.getByRole('button', { name: 'Clube: abrir galeria' }).click();
+  await alvo(page.getByRole('button', { name: 'Fechar galeria' }));
+  await page.getByRole('button', { name: 'Fechar galeria' }).click();
+  await page.getByRole('button', { name: 'Entorno e pontos de referência' }).click();
+  await page.getByRole('region', { name: 'Pontos de referência' }).getByRole('listitem').first().getByRole('button').first().click();
+  await alvo(page.getByRole('button', { name: 'Pontos de referência', exact: true }));
+});
+
+test('12. a cena volta a desenhar depois que o WebGL perde e recupera o contexto', async ({ page }) => {
+  const sharp = (await import('sharp')).default;
+  const desenhada = async () => {
+    const { channels } = await sharp(await page.locator('canvas').screenshot()).stats();
+    return Math.max(...channels.map(c => c.stdev));
+  };
+  await jaVisitou(page);
+  await page.goto('./');
+  await expect.poll(desenhada).toBeGreaterThan(5);
+  await page.evaluate(async () => {
+    const ext = document.querySelector('canvas')!.getContext('webgl2')!.getExtension('WEBGL_lose_context')!;
+    ext.loseContext();
+    await new Promise(ok => setTimeout(ok, 300));
+    ext.restoreContext();
+  });
+  await page.waitForTimeout(1000);
+  expect(await desenhada()).toBeGreaterThan(5);
+});
+
+test('13. a falha ao carregar o entorno avisa sem bloquear o toque na cena', async ({ page }) => {
+  await jaVisitou(page);
+  await page.route('**/modelos/entorno.glb', r => r.abort());
+  await page.goto('./?lote=Q07L04');
+  await ficha(page).getByRole('button', { name: 'Fechar ficha' }).click();
+  await page.getByRole('button', { name: 'Entorno e pontos de referência' }).click();
+  await expect(page.getByRole('status')).toContainText('Não foi possível carregar o entorno');
+  const tela = await page.getByRole('img', { name: /Maquete 3D/ }).boundingBox();
+  await page.mouse.click(tela!.x + tela!.width / 2, tela!.y + tela!.height / 2);
+  await expect(ficha(page)).toBeVisible();
+});
