@@ -22,7 +22,7 @@ from scripts.entorno.tiles import da_janela, ext_da_grade, janelas
 
 from .acesso import Acesso, AcessoCfg, com_perfil, corredor, eixo_do_acesso, perfil_vertical, sem_faixa
 from .cena import CFG_TOML, DXF, CenaCfg, aneis_da_layer
-from .costa import agua_do_osm, costa_suave, linhas_de_costa, mar_da_costa
+from .costa import agua_do_osm, costa_suave, linhas_de_costa, malha_mar, mar_da_costa
 from .geometria import Ponto, centroide
 from .relevo import DESTINO as RELEVO_JSON
 from .relevo import Grade, mascara
@@ -42,6 +42,7 @@ class TerrenoCfg:
     plato_folga: float = 0.0  # m de platô além das áreas, antes do talude
     praia_inclinacao: float = 0.05
     fundo_inclinacao: float = 0.1
+    mar_alcance: float = 16000.0
 
     @classmethod
     def carregar(cls, caminho: Path) -> "TerrenoCfg":
@@ -256,7 +257,8 @@ def main() -> int:
     com_mar = separar_mar(bruto, 0.0, cfg.mar_rebaixo)
     centro = dem.centro_dos_lotes()
     costa = linhas_de_costa(e0, n0)
-    mar = mar_da_costa(costa, centro, 2 * cfg.raio) if costa else None  # o arco do disco fica fora do entorno
+    # o arco do disco fica bem fora do entorno; o plano da água vai até lá do lado do mar
+    mar = mar_da_costa(costa, centro, cfg.mar_alcance) if costa else None
     agua = agua_do_osm(e0, n0)
     if mar is not None:
         com_mar = costa_suave(com_mar, mar, 0.0, cfg.praia_inclinacao, cfg.fundo_inclinacao, cfg.mar_rebaixo, agua=agua)
@@ -276,7 +278,10 @@ def main() -> int:
     entorno = [{"nome": f"Entorno_{k}", "material": "entorno", "vertices": v, "faces": f}
                for k, jan in janelas(ext_da_grade(longe), longe.passo).items()
                for v, f in [malha_entorno(longe, ext, centro, cfg.raio, jan)]]
-    vm, fm = disco_mar(centro, raio_do_mar(cfg.raio, longe.passo), round(delta, 2))
+    if mar is not None:
+        vm, fm = malha_mar(centro, raio_do_mar(cfg.raio, longe.passo), mar, cfg.mar_alcance, round(delta, 2))
+    else:
+        vm, fm = disco_mar(centro, raio_do_mar(cfg.raio, longe.passo), round(delta, 2))
     DESTINO_PERTO.parent.mkdir(parents=True, exist_ok=True)
     DESTINO_PERTO.write_text(json.dumps(perto.para_json()), encoding="utf-8")
     DESTINO_LONGE.write_text(json.dumps(longe.para_json()), encoding="utf-8")

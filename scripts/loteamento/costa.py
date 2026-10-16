@@ -105,3 +105,25 @@ def costa_suave(g: Grade, mar: BaseGeometry, nivel: float, praia: float, fundo: 
     z_terra = (1 - w) * rampa + w * np.maximum(z0, nivel + 0.2)
     z = np.where(no_mar, z_mar, z_terra)
     return Grade(g.x0, g.y0, g.passo, g.nx, g.ny, np.round(z, 2).tolist())
+
+
+def malha_mar(centro: tuple[float, float], raio: float, mar: BaseGeometry, alcance: float,
+              nivel: float) -> tuple[list[list[float]], list[list[int]]]:
+    """Plano da água: o disco do entorno (sob a terra, para rios e foz no nível do mar) mais o mar
+    aberto até `alcance`, só do lado do mar. Visto rente, o mar chega perto do horizonte em vez de
+    acabar na borda do entorno; do lado da terra não sobra água além do entorno."""
+    from .malha import triangular
+
+    g = Point(centro).buffer(raio, 96).union(mar.intersection(Point(centro).buffer(alcance, 96)))
+    vertices: list[list[float]] = []
+    faces: list[list[int]] = []
+    for parte in getattr(g, "geoms", [g]):
+        parte = shapely.geometry.polygon.orient(parte, 1.0)  # externo anti-horário: face para cima
+        verts, tris = triangular(list(parte.exterior.coords)[:-1], [list(i.coords)[:-1] for i in parte.interiors])
+        base = len(vertices)
+        vertices += [[round(x, 2), round(y, 2), nivel] for x, y in verts]
+        for a, b, c in tris:
+            (xa, ya), (xb, yb), (xc, yc) = verts[a], verts[b], verts[c]
+            ccw = (xb - xa) * (yc - ya) - (yb - ya) * (xc - xa) > 0
+            faces.append([base + a, base + b, base + c] if ccw else [base + a, base + c, base + b])
+    return vertices, faces

@@ -78,3 +78,18 @@ def test_margem_da_lagoa_da_foz_segue_o_poligono_do_osm():
     zs = amostrar_grade(g, np.array([p.x for p in borda]), np.array([p.y for p in borda]))
     assert np.abs(zs).max() < 0.3
     assert g.cota(20, 60) < -1.0
+
+
+def test_malha_do_mar_vai_ao_horizonte_so_do_lado_do_mar():
+    from shapely.geometry import Polygon as P
+    from scripts.loteamento.costa import malha_mar
+    mar = mar_da_costa([LineString([(-400, 100), (400, 100)])], (0.0, 0.0), 20000.0)
+    v, f = malha_mar((0.0, 0.0), 3900.0, mar, 16000.0, nivel=-1.3)
+    assert {z for _, _, z in v} == {-1.3}
+    tris = [P([v[i][:2] for i in t]) for t in f]
+    cobre = lambda x, y: any(t.buffer(0.01).contains(Point(x, y)) for t in tris)  # noqa: E731
+    assert cobre(0, -12000)       # mar aberto, longe: até perto do horizonte
+    assert cobre(0, 3000)         # dentro do entorno, sob a terra (rios e foz no nível do mar)
+    assert not cobre(0, 6000)     # terra além do entorno: sem água
+    # todos os triângulos com a face para cima
+    assert all((v[b][0] - v[a][0]) * (v[c][1] - v[a][1]) - (v[b][1] - v[a][1]) * (v[c][0] - v[a][0]) > 0 for a, b, c in f)
