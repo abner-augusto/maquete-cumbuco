@@ -22,7 +22,7 @@ from scripts.entorno.tiles import da_janela, ext_da_grade, janelas
 
 from .acesso import Acesso, AcessoCfg, com_perfil, corredor, eixo_do_acesso, perfil_vertical, sem_faixa
 from .cena import CFG_TOML, DXF, CenaCfg, aneis_da_layer
-from .costa import costa_suave, linhas_de_costa, mar_da_costa
+from .costa import agua_do_osm, costa_suave, linhas_de_costa, mar_da_costa
 from .geometria import Ponto, centroide
 from .relevo import DESTINO as RELEVO_JSON
 from .relevo import Grade, mascara
@@ -256,9 +256,10 @@ def main() -> int:
     com_mar = separar_mar(bruto, 0.0, cfg.mar_rebaixo)
     centro = dem.centro_dos_lotes()
     costa = linhas_de_costa(e0, n0)
-    if costa:
-        mar = mar_da_costa(costa, centro, 2 * cfg.raio)  # o arco do disco fica fora do entorno
-        com_mar = costa_suave(com_mar, mar, 0.0, cfg.praia_inclinacao, cfg.fundo_inclinacao, cfg.mar_rebaixo)
+    mar = mar_da_costa(costa, centro, 2 * cfg.raio) if costa else None  # o arco do disco fica fora do entorno
+    agua = agua_do_osm(e0, n0)
+    if mar is not None:
+        com_mar = costa_suave(com_mar, mar, 0.0, cfg.praia_inclinacao, cfg.fundo_inclinacao, cfg.mar_rebaixo, agua=agua)
     else:
         print("sem cache/entorno/osm-areas.json: costa em escada do Copernicus (rode scripts.entorno.extrair)")
     delta = ajustar_datum(perto_lev, com_mar, fora)
@@ -266,6 +267,9 @@ def main() -> int:
                   (np.array(com_mar.z, dtype=float) + delta).round(2).tolist())
     cota = cfg.plato_cota if cfg.plato_cota is not None else cota_plato(lev, lotes)
     perto = compor_perto(perto_lev, longe, plato, cota, cfg, livre=livre)
+    if mar is not None:  # o levantamento chega à boca da barra: a costa dele também segue a linha
+        perto = costa_suave(perto, mar, delta, cfg.praia_inclinacao, cfg.fundo_inclinacao, cfg.mar_rebaixo,
+                            celula=longe.passo, agua=agua)
     acesso = com_perfil(acesso, perto, cota, acfg)
     perto = aplicar_acesso(perto, acesso, acfg, corredor(acesso, acfg), cfg.talude)
     acesso.salvar()

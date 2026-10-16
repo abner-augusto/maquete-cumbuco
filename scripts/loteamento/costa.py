@@ -20,6 +20,20 @@ from .relevo import Grade
 OSM_AREAS = RAIZ / "cache" / "entorno" / "osm-areas.json"
 
 
+def agua_do_osm(e0: float, n0: float) -> BaseGeometry | None:
+    """Rios e lagoas do cache do entorno (as áreas `agua` do OSM), em coordenadas locais."""
+    import json
+
+    from scripts.entorno.osm import Projecao, poligono_osm, tipo_area
+
+    if not OSM_AREAS.exists():
+        return None
+    proj = Projecao(e0, n0)
+    partes = [poligono_osm(proj, e) for e in json.loads(OSM_AREAS.read_text(encoding="utf-8"))["elements"]
+              if tipo_area(e.get("tags", {})) == "agua"]
+    return unary_union([p for p in partes if p is not None])
+
+
 def linhas_de_costa(e0: float, n0: float) -> list[LineString]:
     """`natural=coastline` do cache do entorno, em coordenadas locais; vazio sem o cache."""
     import json
@@ -64,19 +78,25 @@ def mar_da_costa(linhas: list[LineString], centro: tuple[float, float], raio: fl
     return unary_union([pd for pd, v in zip(pedacos, voto) if v > 0])
 
 
-def costa_suave(g: Grade, mar: BaseGeometry, nivel: float, praia: float, fundo: float, rebaixo: float) -> Grade:
+def costa_suave(g: Grade, mar: BaseGeometry, nivel: float, praia: float, fundo: float, rebaixo: float,
+                celula: float | None = None, agua: BaseGeometry | None = None) -> Grade:
     """Cota de `g` com a costa de `mar`: rampa de `praia` (m/m) dos dois lados até 1,5 célula da
-    linha; além disso o fundo desce a `fundo` até `nivel − rebaixo` e a terra fica com o menor
-    entre o relevo e a rampa. Água que já estava abaixo do nível terra adentro (rio, boca) fica."""
+    linha; além disso o fundo desce a `fundo` até `nivel − rebaixo` e a terra volta ao relevo até
+    4,5 células (a duna além disso fica como está). Abaixo do nível terra adentro só fica o que
+    está em `agua` (rios e lagoas do OSM): o resto é a costa em escada do Copernicus e vira terra. `celula` (m) mede as faixas; uma grade fina que encosta numa grossa
+    usa a célula da grossa, e as duas coincidem perto da costa (sem dente na emenda)."""
     gx, gy = np.meshgrid(g.x0 + g.passo * np.arange(g.nx), g.y0 + g.passo * np.arange(g.ny))
     z0 = np.array(g.z, dtype=float)
     no_mar = shapely.contains_xy(mar, gx, gy)
     linha = mar.boundary
     d = shapely.distance(linha, shapely.points(gx, gy))
-    perto = 1.5 * g.passo
+    celula = celula or g.passo
+    perto = 1.5 * celula
     rampa = nivel + d * praia
     z_mar = nivel - np.minimum(np.minimum(d, perto) * praia + np.maximum(d - perto, 0.0) * fundo, rebaixo)
-    z_terra = np.where(d < perto, rampa, np.minimum(z0, rampa))
-    rio = (z0 < nivel) & (d >= 2 * g.passo)
+    # De 1,5 a 4,5 células, da rampa ao relevo (acima da água): sem degrau e sem aplainar a duna.
+    w = np.clip((d - perto) / (2 * perto), 0.0, 1.0)
+    z_terra = (1 - w) * rampa + w * np.maximum(z0, nivel + 0.2)
+    rio = (z0 < nivel) & shapely.contains_xy(agua, gx, gy) if agua is not None else np.zeros_like(no_mar)
     z = np.where(no_mar, z_mar, np.where(rio, z0, z_terra))
     return Grade(g.x0, g.y0, g.passo, g.nx, g.ny, np.round(z, 2).tolist())
