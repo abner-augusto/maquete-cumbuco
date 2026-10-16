@@ -48,6 +48,12 @@ class EntornoCfg:
     masterplan: bool = True
     masterplan_saturacao: float = 0.35
     masterplan_opacidade: float = 0.55
+    raio_predios_orla: float = 0.0  # na faixa da orla, prédios até este raio (0: só raio_predios)
+    orla_m: float = 0.0             # largura da faixa da orla, a partir da linha de costa do OSM
+
+    @property
+    def raio_download_predios(self) -> float:
+        return max(self.raio_predios, self.raio_predios_orla)
 
     @classmethod
     def carregar(cls) -> "EntornoCfg":
@@ -75,11 +81,32 @@ def baixar_overture(bbox: tuple[float, float, float, float], cache, refazer: boo
     return dados
 
 
+def quebra_mares(proj: Projecao, osm: dict, centro: tuple[float, float], raio: float,
+                 largura: float = 8.0) -> list:
+    """Quebra-mares e espigões do OSM no raio, como polígonos (anéis): o que vem como linha
+    ganha `largura` de pedra; way fechado e multipolygon ficam como estão."""
+    circulo = Point(centro).buffer(raio, 128)
+    partes = []
+    for e in osm["elements"]:
+        g = poligono_osm(proj, e)
+        if g is None and e["type"] == "way" and len(e.get("geometry") or []) >= 2:
+            g = LineString(linha_osm(proj, e["geometry"])).buffer(largura / 2, cap_style="flat", join_style="mitre")
+        if g is not None and not g.is_empty:
+            partes.append(g.intersection(circulo))
+    return aneis(unary_union(partes)) if partes else []
+
+
 def montar_base(proj: Projecao, centro: tuple[float, float], cfg: EntornoCfg,
                 osm_vias: dict, osm_areas: dict, overture: dict) -> dict:
     """Recorta e converte; falha alto se um download veio vazio (Overpass às vezes devolve 0)."""
     cvias = Point(centro).buffer(cfg.raio_vias, 128)
     cpredios = Point(centro).buffer(cfg.raio_predios, 128)
+    if cfg.raio_predios_orla > cfg.raio_predios and cfg.orla_m > 0:
+        costa = unary_union([LineString(linha_osm(proj, e["geometry"])) for e in osm_areas["elements"]
+                             if e.get("tags", {}).get("natural") == "coastline" and len(e.get("geometry") or []) > 1])
+        if not costa.is_empty:
+            orla = costa.buffer(cfg.orla_m).intersection(Point(centro).buffer(cfg.raio_predios_orla, 128))
+            cpredios = cpredios.union(orla)
     vias = []
     for e in osm_vias["elements"]:
         tags = e.get("tags", {})
@@ -146,16 +173,21 @@ def main() -> int:
         ");out geom;", CACHE / "osm-areas.json", refazer)
     overpass("[out:json][timeout:180];way[highway~\"^(motorway|trunk|primary|secondary|tertiary|unclassified)(_link)?$\"]"
              f"(around:{cfg.raio_malha_regional:.0f},{lat0},{lon0});out geom;", MALHA, refazer)
-    (lo0, la0), (lo1, la1) = (proj.lonlat(centro[0] - cfg.raio_predios, centro[1] - cfg.raio_predios),
-                              proj.lonlat(centro[0] + cfg.raio_predios, centro[1] + cfg.raio_predios))
-    overture = baixar_overture((lo0, la0, lo1, la1), CACHE / "overture-predios.json", refazer)
+    r = cfg.raio_download_predios
+    (lo0, la0), (lo1, la1) = (proj.lonlat(centro[0] - r, centro[1] - r), proj.lonlat(centro[0] + r, centro[1] + r))
+    # o raio entra no nome: ampliar a faixa baixa de novo sem precisar do --refazer
+    overture = baixar_overture((lo0, la0, lo1, la1), CACHE / f"overture-predios-{r:.0f}.json", refazer)
     base = montar_base(proj, centro, cfg, osm_vias, osm_areas, overture)
+    osm_qm = overpass(f"[out:json][timeout:120];wr[man_made~\"^(breakwater|groyne)$\"]{cerca};out geom;",
+                      CACHE / "osm-quebra-mar.json", refazer)
+    base["quebra_mares"] = quebra_mares(proj, osm_qm, centro, cfg.raio_vias)
     base["fontes"]["osm_timestamp"] = osm_vias.get("osm3s", {}).get("timestamp_osm_base")
     base["gerado_em"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     BASE.write_text(json.dumps(base, ensure_ascii=False), encoding="utf-8")
     print(f"vias {len(base['vias'])} {dict(Counter(v['classe'] for v in base['vias']).most_common(6))}")
     print(f"áreas {len(base['areas'])} {dict(Counter(a['tipo'] for a in base['areas']).most_common(6))}")
-    print(f"prédios {len(base['predios'])} (Overture {base['fontes']['overture_release']})")
+    print(f"prédios {len(base['predios'])} (Overture {base['fontes']['overture_release']}) · "
+          f"quebra-mares {len(base['quebra_mares'])}")
     return 0
 
 

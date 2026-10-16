@@ -20,7 +20,7 @@ from scripts.loteamento.cena import CFG_TOML, DXF
 from scripts.loteamento.malha import drapear, triangular
 from scripts.loteamento.placa import ccw, aneis_orientados
 from scripts.loteamento.acesso import Acesso, AcessoCfg, corredor, sem_faixa
-from scripts.loteamento.terreno import DESTINO_LONGE, Relevo, TerrenoCfg, aneis_do_plato
+from scripts.loteamento.terreno import DESTINO_ENTORNO, DESTINO_LONGE, Relevo, TerrenoCfg, aneis_do_plato
 
 from .extrair import BASE, CACHE, EntornoCfg
 from .mapa import rasterizar
@@ -29,8 +29,10 @@ from .tiles import Ext, com_margem, janelas
 MAPA_JSON = CACHE / "mapa.json"
 DETALHE = RAIZ / "cache" / "cena" / "entorno-detalhe.json"
 AREA_MINIMA_PREDIO_M2 = 8.0  # abaixo disso, ruído das pegadas por ML
+AREA_MINIMA_PREDIO_LONGE_M2 = 30.0  # na faixa da orla, além do raio_predios: some de longe
 OFFSET_FAIXA = 0.5  # m acima do relevo (0,3 deixava 0,9% da faixa sob o terreno)
 MAX_ARESTA_FAIXA = 2.5  # m entre seções: segue o relevo de perto
+ALTURA_QUEBRA_MAR = 1.5  # m acima do plano da água
 
 # classe OSM -> (grupo, largura padrão em metros)
 VIAS_CLASSES = {
@@ -70,13 +72,24 @@ def altura_predio(p: dict, area: float) -> float:
     return 8.0  # galpões, atacado, shopping
 
 
-def extrudar(aneis: list, relevo, altura: float) -> tuple[list[list[float]], list[list[int]]]:
+def pegada_longe(g: Polygon, tolerancia: float = 1.0) -> Polygon:
+    """Pegada de prédio distante (faixa da orla, a 2–4 km da câmera): o retângulo mínimo quando a
+    forma já é quase isso; senão, a forma simplificada a `tolerancia` m. Corta os triângulos do GLB."""
+    r = g.minimum_rotated_rectangle
+    return r if r.area and g.area / r.area > 0.85 else g.simplify(tolerancia)
+
+
+def extrudar(aneis: list, relevo, altura: float,
+             cotas: tuple[float, float] | None = None) -> tuple[list[list[float]], list[list[int]]]:
     """Caixa de teto plano: base na menor cota sob a pegada − 0,3 m (não flutua na encosta),
-    teto na cota média + altura."""
+    teto na cota média + altura. Com `cotas` (base, teto), o relevo não entra (quebra-mar)."""
     # externo anti-horário e furos horários: a direita de cada lado é fora, a parede olha para fora
     externo, furos = aneis_orientados(Polygon(aneis[0], aneis[1:]))
-    cotas = [relevo.cota(x, y) for x, y in externo]
-    base, topo = min(cotas) - 0.3, sum(cotas) / len(cotas) + altura
+    if cotas is not None:
+        base, topo = cotas
+    else:
+        zs = [relevo.cota(x, y) for x, y in externo]
+        base, topo = min(zs) - 0.3, sum(zs) / len(zs) + altura
     vt, tt = triangular(externo, furos)
     vertices = [[round(x, 2), round(y, 2), round(topo, 2)] for x, y in vt]
     faces = [[a, b, c] if ccw(vt[a], vt[b], vt[c]) else [a, c, b] for a, b, c in tt]  # teto para cima
@@ -197,8 +210,13 @@ def main() -> int:
             ff += [[a + len(vf), b + len(vf), c + len(vf)] for a, b, c in f]
             vf += v
     vp, fp, n = [], [], 0
+    perto_predios = Point(centro).buffer(cfg.raio_predios, 128)
     for p in base["predios"]:
         g = unary_union([_poligono(q) for q in p["poligonos"]]).buffer(0).simplify(0.2)
+        if not perto_predios.contains(g.centroid):
+            if g.area < AREA_MINIMA_PREDIO_LONGE_M2:
+                continue
+            g = unary_union([pegada_longe(q) for q in getattr(g, "geoms", [g])])
         if g.area < AREA_MINIMA_PREDIO_M2 or g.intersects(fora):
             continue
         for parte in getattr(g, "geoms", [g]):
@@ -207,12 +225,24 @@ def main() -> int:
             fp += [[a + len(vp), b + len(vp), c + len(vp)] for a, b, c in f]
             vp += v
         n += 1
-    DETALHE.write_text(json.dumps({"objetos": [
+    # Quebra-mares: do fundo do mar a 1,5 m acima da água, em pedra.
+    nivel = next(o for o in json.loads(DESTINO_ENTORNO.read_text(encoding="utf-8"))["objetos"]
+                 if o["nome"] == "Mar")["vertices"][0][2]
+    vq, fq = [], []
+    for aneis_q in base.get("quebra_mares", []):
+        v, f = extrudar([[tuple(p) for p in a] for a in aneis_q], None, 0.0,
+                        cotas=(round(nivel - TerrenoCfg.carregar(CFG_TOML).mar_rebaixo, 2), round(nivel + ALTURA_QUEBRA_MAR, 2)))
+        fq += [[a + len(vq), b + len(vq), c + len(vq)] for a, b, c in f]
+        vq += v
+    objetos = [
         {"nome": "ViasPrincipais", "material": "via_principal_osm", "vertices": vf, "faces": ff},
         {"nome": "Predios", "material": "predio", "vertices": vp, "faces": fp, "suave": False},
-    ]}), encoding="utf-8")
+    ]
+    if fq:
+        objetos.append({"nome": "QuebraMares", "material": "pedra", "vertices": vq, "faces": fq, "suave": False})
+    DETALHE.write_text(json.dumps({"objetos": objetos}), encoding="utf-8")
     print(f"tiles {len(tiles)} × {cfg.tile_px} px ({(ext[2] - ext[0]) / 2 / cfg.tile_px:.2f} m/px) · "
-          f"faixas {len(ff)} tri · prédios {n} ({len(fp)} tri) · cota média do relevo nos prédios "
+          f"faixas {len(ff)} tri · prédios {n} ({len(fp)} tri) · quebra-mares {len(fq)} tri · cota média do relevo nos prédios "
           f"{np.mean([z for _, _, z in vp]) if vp else 0:.1f} m")
     return 0
 

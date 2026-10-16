@@ -99,7 +99,7 @@ def test_com_tiles_poe_a_imagem_do_tile_pelo_sufixo():
 
 def test_conferir_entorno_exige_os_quatro_pedacos_e_o_peso():
     assert conferir_entorno(ENTORNO_OK, 5.0) == []
-    assert conferir_entorno(ENTORNO_OK, 8.4) == ["entorno.glb com 8.4 MB (alvo 8.0 MB)"]
+    assert conferir_entorno(ENTORNO_OK, 11.4) == ["entorno.glb com 11.4 MB (alvo 11.0 MB)"]
     assert conferir_entorno(["Entorno_00", "Mar", "ViasPrincipais", "Predios"], 5.0) == [
         f"objeto do entorno faltando no GLB: Entorno_{k}" for k in ("01", "10", "11")]
 

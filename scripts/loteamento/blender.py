@@ -37,7 +37,7 @@ def conferir_glb(nomes: list[str], ids: list[str]) -> list[str]:
     return erros
 
 
-LIMITE_ENTORNO_MB = 8.0
+LIMITE_ENTORNO_MB = 11.0  # bruto, antes do meshopt do front (servido: ~4 MB); a faixa da orla pôs 5 mil prédios
 LIMITE_VEGETACAO_MB = 0.5
 SCRIPT_VEGETACAO = RAIZ / "scripts" / "blender" / "gerar_vegetacao.py"
 OBJETOS_ENTORNO = ("Entorno_00", "Entorno_01", "Entorno_10", "Entorno_11", "Mar", "ViasPrincipais", "Predios")

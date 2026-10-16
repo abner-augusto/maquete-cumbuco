@@ -94,3 +94,18 @@ def test_extrudar_normais_para_fora_e_teto_para_cima(anel):
         else:
             meio = (a[i, :2] + a[j, :2] + a[k, :2]) / 3
             assert np.dot(n[:2], meio - centro) > 0  # parede para fora
+
+
+def test_extrudar_com_cotas_fixas_ignora_o_relevo():
+    # Quebra-mar: do fundo do mar até um pouco acima da água, onde o relevo não diz nada.
+    v, _ = extrudar([[(0, 0), (10, 0), (10, 4), (0, 4)]], None, 0.0, cotas=(-3.0, 1.5))
+    assert {z for _, _, z in v} == {-3.0, 1.5}
+
+
+def test_pegada_longe_vira_retangulo_quando_quase_retangular():
+    from scripts.entorno.preparar import pegada_longe
+    quase = Polygon([(0, 0), (10, 0), (10.3, 3), (10, 6), (0, 6)])
+    r = pegada_longe(quase)
+    assert len(r.exterior.coords) == 5 and r.area == pytest.approx(quase.area, rel=0.08)
+    l = Polygon([(0, 0), (20, 0), (20, 4), (4, 4), (4, 20), (0, 20)])  # em L: fica a forma
+    assert pegada_longe(l).area == pytest.approx(l.area, rel=0.02)

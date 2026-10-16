@@ -30,6 +30,7 @@ MATERIAIS = {
     "app": ((0.44, 0.56, 0.38), 0.95),
     "agua": ((0.30, 0.55, 0.62), 0.15),
     "predio": ((0.90, 0.88, 0.84), 0.85),
+    "pedra": ((0.56, 0.53, 0.49), 0.95),  # quebra-mares do Icaraí
     "via_principal_osm": ((0.47, 0.46, 0.47), 0.9),
     "entorno": ((0.86, 0.80, 0.68), 0.95),  # igual ao terreno: a costura não aparece
     "mar": ((0.18, 0.42, 0.55), 0.2),  # provisório: o front troca por shader

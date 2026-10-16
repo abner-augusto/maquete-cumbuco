@@ -2,6 +2,8 @@
 raio_vias = 4000            # vias e áreas do OSM (mapa pintado no relevo)
 raio_faixas = 1500          # vias principais em faixa 3D, perto do loteamento
 raio_predios = 1500         # prédios extrudados (Overture)
+raio_predios_orla = 4000    # na faixa da orla (Icaraí e Cumbuco), prédios até aqui
+orla_m = 1200               # largura da faixa da orla, da linha de costa do OSM para dentro
 raio_vegetacao = 2000       # instâncias de vegetação
 raio_malha_regional = 25000 # malha viária para os minutos de carro (Pecém, Fortaleza)
 tile_px = 4096              # lado maior de cada um dos 4 tiles do chão (~1 m/px no recorte de 8 km)

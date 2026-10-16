@@ -47,3 +47,33 @@ def test_montar_base_recusa_areas_vazias():
     # revisão final: áreas vazias davam mapa sem lagoas nem praia e zero árvores, sem erro
     with pytest.raises(SystemExit, match="Nenhuma área"):
         montar_base(P, (0.0, 0.0), CFG, VIAS, {"elements": []}, PREDIOS)
+
+
+def _predio(id_, x, y):
+    return {"id": id_, "geometria": {"type": "Polygon", "coordinates": [[list(P.lonlat(a, b)) for a, b in _quad(x, y, 10)]]},
+            "fonte": "x", "altura": None, "niveis": None, "classe": None, "nome": None}
+
+
+def test_montar_base_estende_os_predios_na_faixa_da_orla():
+    from dataclasses import replace
+    cfg = replace(CFG, raio_predios_orla=450.0, orla_m=100.0)
+    costa = {"type": "way", "id": 9, "tags": {"natural": "coastline"}, "geometry": _geo([(-900, 400), (900, 400)])}
+    areas = {"elements": AREAS["elements"] + [costa]}
+    predios = {"release": "x", "feicoes": [_predio("perto", 20, 20), _predio("orla", 0, 350),
+                                            _predio("interior", 0, -420), _predio("longe_orla", 0, 600)]}
+    b = montar_base(P, (0.0, 0.0), cfg, VIAS, areas, predios)
+    assert sorted(p["id"] for p in b["predios"]) == ["orla", "perto"]
+
+
+def test_quebra_mares_linha_vira_faixa_e_poligono_fica():
+    from scripts.entorno.extrair import quebra_mares
+    osm = {"elements": [
+        {"type": "way", "id": 1, "tags": {"man_made": "breakwater"}, "geometry": _geo([(100, 0), (100, 60)])},
+        {"type": "way", "id": 2, "tags": {"man_made": "groyne"}, "geometry": _geo(_quad(200, 0, 20))},
+        {"type": "way", "id": 3, "tags": {"man_made": "breakwater"}, "geometry": _geo([(5000, 0), (5000, 60)])},
+    ]}
+    from shapely.geometry import Polygon
+    qs = quebra_mares(P, osm, (0.0, 0.0), 1000.0, largura=8.0)
+    assert len(qs) == 2
+    areas = sorted(Polygon(q[0], q[1:]).area for q in qs)  # cada item: anéis de um polígono
+    assert areas == pytest.approx([400, 8 * 60], rel=0.02)  # o quadrado e a linha com 8 m de largura
