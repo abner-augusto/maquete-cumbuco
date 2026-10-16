@@ -5,6 +5,7 @@ import pytest
 from shapely.geometry import LineString, Point, Polygon, box
 
 from scripts.loteamento.acesso import AcessoCfg, Acesso, eixo_da_faixa, perfil_vertical, pecas_acesso, perfil_acesso
+from scripts.loteamento.placa import partes
 
 CFG = AcessoCfg(camada_via="VIA", secao=[2.0, 7.0, 3.0, 7.0, 2.0], raio_boca=15.0, patamar=20.0,
                 patamar_inclinacao=0.02, curva_vertical=20.0, rampa_max=0.18, passo=2.0, folga_ce=5.0,
@@ -127,3 +128,36 @@ def test_ce_e_a_rodovia_que_o_eixo_cruza_primeiro():
     assert s == pytest.approx(100.0) and faixa.contains(Point(250, 104.5)) and not faixa.contains(Point(0, 200))
     livre, _ = faixa_ce(vias, (0.0, 0.0), (0.0, 1.0), 600.0, {"secondary": 9.0}, folga=5.0)
     assert livre.contains(Point(0, 96)) and not livre.contains(Point(0, 94))
+
+
+def _ce_obliqua(graus=38.0):
+    # borda da CE passando por (0, 100), girada `graus` em relação à perpendicular do eixo
+    from shapely import affinity
+
+    return affinity.rotate(box(-400, 100, 400, 109), graus, origin=(0, 100))
+
+
+def test_boca_obliqua_abre_igual_dos_dois_lados():
+    from shapely.geometry import LineString as L
+    from shapely import affinity
+
+    ce = _ce_obliqua()
+    p = pecas_acesso(A, ce, CFG)
+    tudo = p["AcessoPista"].union(p["AcessoCalcadas"])
+    borda = affinity.rotate(L([(-400, 100), (400, 100)]), 38.0, origin=(0, 100))
+    contato = tudo.intersection(borda.buffer(0.05))
+    lados = [contato.intersection(box(0, -1e3, 1e3, 1e3)), contato.intersection(box(-1e3, -1e3, 0, 1e3))]
+    largos = [g.length if g.length else math.dist(*[c[:2] for c in g.envelope.exterior.coords[:2]]) for g in lados]
+    ext = [max(abs(x) for x, _ in g.envelope.exterior.coords) for g in lados]
+    assert ext[0] == pytest.approx(ext[1], rel=0.15)  # a boca abre o mesmo tanto ao longo da CE nos dois lados
+    assert min(ext) > 10.5 / math.cos(math.radians(38)) + 10  # e abre de verdade além da avenida
+
+
+def test_calcada_acompanha_a_curva_e_termina_afinando_na_ce():
+    ce = _ce_obliqua()
+    p = pecas_acesso(A, ce, CFG)
+    calc = p["AcessoCalcadas"]
+    assert not calc.intersects(ce.buffer(-0.01))
+    toque = calc.intersection(ce.buffer(0.05))
+    assert toque.area < 2.0  # só a ponta afinada encosta na CE, sem dente correndo ao longo dela
+    assert len(partes(calc)) == 2  # uma calçada de cada lado, sem pedaço solto

@@ -139,24 +139,63 @@ def _local(a: Acesso, g: BaseGeometry) -> BaseGeometry:
     return affinity.affine_transform(p, [dx, dy, -dy, dx, 0.0, 0.0])
 
 
+def _borda_ce(ce_l: BaseGeometry, s_fim: float) -> tuple[np.ndarray, np.ndarray]:
+    """Um ponto e a direção da borda da CE onde o eixo chega (perto da boca a CE é reta)."""
+    anel = min((q.exterior for q in partes(ce_l)), key=lambda r: r.distance(Point(s_fim, 0.0)))
+    k = anel.project(Point(s_fim, 0.0))
+    p1, p2 = (np.array(anel.interpolate(k + dk).coords[0]) for dk in (-5.0, 5.0))
+    e = (p2 - p1) / np.hypot(*(p2 - p1))
+    q = np.array(anel.interpolate(k).coords[0])
+    return q + e * (-q[1] / e[1]), e  # o ponto em t = 0
+
+
 def pecas_acesso(a: Acesso, ce: BaseGeometry, cfg: AcessoCfg) -> dict[str, BaseGeometry]:
-    """Pista, calçadas e canteiro (com a ilha) do acesso, no referencial do mundo. `ce`: a faixa da CE."""
+    """Pista, calçadas e canteiro (com a ilha) do acesso, no referencial do mundo. `ce`: a faixa da CE.
+
+    Em cada lado, a borda da avenida concorda com a borda da CE por um arco tangente às duas. A CE cruza
+    na diagonal: o lado do ângulo agudo (a conversão mais fechada) leva `raio_boca`; o outro, o raio que
+    dá a mesma tangente, e a boca abre o mesmo tanto ao longo da CE. A calçada é a faixa de `w` m ao longo
+    da borda e do arco; o arco de dentro (raio + w) corta a borda da CE antes, e a calçada termina afinando."""
     h = sum(cfg.secao) / 2
     w, c = cfg.secao[0], cfg.secao[2] / 2
-    R = cfg.raio_boca
-    ce_l = _local(a, ce).intersection(box(a.s_ini, -h - 3 * R, a.s_fim + 3 * R, h + 3 * R))
-    corredor = box(a.s_ini, -h, a.s_fim + 1.0, h)
-    janela = box(a.s_ini, -h - R - 1, a.s_fim + 1.0, h + R + 1)
-    fechado = corredor.union(ce_l).buffer(R, quad_segs=16).buffer(-R, quad_segs=16)
-    total = fechado.difference(ce_l).intersection(janela)
-    total = max(partes(total), key=lambda p: p.area)  # sem lascas soltas na borda da CE
-    # calçada: a faixa de `w` ao longo da borda externa (lados e curvas), não ao longo da CE nem da rotatória
-    borda = total.exterior.difference(ce_l.buffer(0.05)).difference(box(a.s_ini - 1, -h - 1, a.s_ini + 0.05, h + 1))
-    calcadas = total.intersection(borda.buffer(w, cap_style="flat", join_style="mitre"))
-    s_base = a.s_fim - cfg.ilha_recuo
-    s_ponta = s_base - cfg.ilha_comprimento
+    ce_l = _local(a, ce).intersection(box(a.s_ini, -h - 200, a.s_fim + 200, h + 200))
+    P, e = _borda_ce(ce_l, a.s_fim)
+    nn = np.array([-e[1], e[0]])
+    nn = nn if nn[0] < 0 else -nn  # normal da borda da CE para o lado da avenida
+    grande = 1e4
+    lado_avenida = lambda recuo: Polygon([P + nn * recuo + e * grande, P + nn * recuo - e * grande,  # noqa: E731
+                                          P + nn * grande - e * grande, P + nn * grande + e * grande])
+    cantos = {}
+    for sig in (1.0, -1.0):
+        C = P + e * ((sig * h - P[1]) / e[1])
+        u1, u2 = np.array([-1.0, 0.0]), (e if e[1] * sig > 0 else -e)
+        cantos[sig] = (C, u1, u2, math.pi - math.acos(float(np.clip(u1 @ u2, -1, 1))))
+    tang = cfg.raio_boca * math.tan(max(d for *_, d in cantos.values()) / 2)
+    curvas, bordas = [], []
+    for sig, (C, u1, u2, defl) in cantos.items():
+        R = tang / math.tan(defl / 2)
+        T1, T2 = C + u1 * tang, C + u2 * tang
+        O = T1 + np.array([0.0, sig]) * R
+        a1, a2 = (math.atan2(*(T - O)[::-1]) for T in (T1, T2))
+        da = (a2 - a1 + math.pi) % (2 * math.pi) - math.pi
+        arco = [O + R * np.array([math.cos(a1 + da * k / 64), math.sin(a1 + da * k / 64)]) for k in range(65)]
+        curvas.append(Polygon([T1, C, T2]).difference(Point(O).buffer(R, quad_segs=64)))
+        borda = LineString([(a.s_ini, sig * h), *[tuple(q) for q in arco], tuple(T2 + u2 * 2 * w)])
+        bordas.append(borda.buffer(-sig * w, single_sided=True))  # para o lado da avenida
+    s_longe = max(C[0] for C, *_ in cantos.values()) + 1.0
+    # a boca vai até a borda real da CE (que faz curva), não só até a reta tangente: sem fresta entre as duas
+    t2 = [C + u2 * tang for C, _, u2, _ in cantos.values()]
+    soleira = Polygon([t2[0], t2[1], t2[1] - nn * 3.0, t2[0] - nn * 3.0])  # da reta tangente até 3 m CE adentro
+    total = unary_union([box(a.s_ini, -h, s_longe, h), *curvas, soleira])
+    total = max(partes(total.difference(ce_l)), key=lambda q: q.area)
+    inicio = box(a.s_ini, -grande, grande, grande)
+    calcadas = unary_union(bordas).intersection(total).intersection(inicio)
+    s_ponta = a.s_fim - cfg.ilha_recuo - cfg.ilha_comprimento
     b = cfg.ilha_base / 2
-    canteiro = Polygon([(a.s_ini, -c), (s_ponta, -c), (s_base, -b), (s_base, b), (s_ponta, c), (a.s_ini, c)])
+    s_x = a.s_fim + 20.0  # a ilha abre de c a b na base (a `ilha_recuo` m da CE) e segue até ser cortada
+    m = c + (b - c) * (s_x - s_ponta) / cfg.ilha_comprimento
+    canteiro = Polygon([(a.s_ini, -c), (s_ponta, -c), (s_x, -m), (s_x, m), (s_ponta, c),
+                        (a.s_ini, c)]).intersection(lado_avenida(cfg.ilha_recuo))  # base paralela à CE
     pista = total.difference(calcadas).difference(canteiro)
     pecas = {"AcessoPista": pista, "AcessoCalcadas": calcadas.difference(canteiro), "AcessoCanteiro": canteiro}
     return {k: _mundo(a, shapely.set_precision(g, 0.001)) for k, g in pecas.items() if not g.is_empty}
