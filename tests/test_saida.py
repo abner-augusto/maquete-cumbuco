@@ -36,7 +36,7 @@ def test_formato_do_lote(doc_sintetico, mapa_sintetico, tabela_sintetica, iptu_s
     l1, h1 = j["lotes"][0], j["lotes"][2]
     assert l1 == {
         "id": "Q01L01", "quadra": "01", "lote": "01", "tipo": "residencial", "area_m2": 200.0,
-        "lados_m": [10.0, 20.0, 10.0, 20.0], "frente_m": 10.0,
+        "lados_m": [10.0, 20.0, 10.0, 20.0], "frente_m": 10.0, "frente_rumo": 180.0,
         "poligono": [[0.0, 0.0], [10.0, 0.0], [10.0, 20.0], [0.0, 20.0]], "inscricao_iptu": "138321-3",
     }
     assert h1["tipo"] == "uso_misto" and "inscricao_iptu" not in h1

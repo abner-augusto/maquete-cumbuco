@@ -21,6 +21,7 @@
     40.0
    ],
    "frente_m": 35.56,
+   "frente_rumo": 207.7,
    "poligono": [
     [
      28.01,
@@ -178,6 +179,7 @@
     40.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 308.1,
    "poligono": [
     [
      35.41,
@@ -211,6 +213,7 @@
     40.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 308.1,
    "poligono": [
     [
      42.81,
@@ -244,6 +247,7 @@
     28.37
    ],
    "frente_m": 9.46,
+   "frente_rumo": 294.5,
    "poligono": [
     [
      85.96,
@@ -365,6 +369,7 @@
     28.37
    ],
    "frente_m": 9.46,
+   "frente_rumo": 267.4,
    "poligono": [
     [
      84.7,
@@ -486,6 +491,7 @@
     28.37
    ],
    "frente_m": 9.46,
+   "frente_rumo": 240.3,
    "poligono": [
     [
      70.78,
@@ -607,6 +613,7 @@
     40.0
    ],
    "frente_m": 9.46,
+   "frente_rumo": 213.2,
    "poligono": [
     [
      70.78,
@@ -729,6 +736,7 @@
     29.0
    ],
    "frente_m": 5.55,
+   "frente_rumo": 195.9,
    "poligono": [
     [
      22.34,
@@ -867,6 +875,7 @@
     30.0
    ],
    "frente_m": 11.2,
+   "frente_rumo": 193.4,
    "poligono": [
     [
      2.62,
@@ -940,6 +949,7 @@
     30.0
    ],
    "frente_m": 11.2,
+   "frente_rumo": 190.1,
    "poligono": [
     [
      -9.95,
@@ -998,6 +1008,7 @@
     30.0
    ],
    "frente_m": 11.2,
+   "frente_rumo": 186.9,
    "poligono": [
     [
      -22.66,
@@ -1072,6 +1083,7 @@
     30.0
    ],
    "frente_m": 11.2,
+   "frente_rumo": 183.6,
    "poligono": [
     [
      -35.49,
@@ -1145,6 +1157,7 @@
     30.0
    ],
    "frente_m": 11.2,
+   "frente_rumo": 180.3,
    "poligono": [
     [
      -48.38,
@@ -1203,6 +1216,7 @@
     30.0
    ],
    "frente_m": 11.2,
+   "frente_rumo": 177.0,
    "poligono": [
     [
      -61.3,
@@ -1277,6 +1291,7 @@
     30.0
    ],
    "frente_m": 11.2,
+   "frente_rumo": 173.7,
    "poligono": [
     [
      -74.19,
@@ -1350,6 +1365,7 @@
     30.0
    ],
    "frente_m": 11.2,
+   "frente_rumo": 170.4,
    "poligono": [
     [
      -87.03,
@@ -1407,6 +1423,7 @@
     30.0
    ],
    "frente_m": 11.2,
+   "frente_rumo": 167.2,
    "poligono": [
     [
      -99.77,
@@ -1466,6 +1483,7 @@
     30.0
    ],
    "frente_m": 7.39,
+   "frente_rumo": 164.4,
    "poligono": [
     [
      -112.37,
@@ -1604,6 +1622,7 @@
     30.0
    ],
    "frente_m": 25.89,
+   "frente_rumo": 250.6,
    "poligono": [
     [
      -121.07,
@@ -1725,6 +1744,7 @@
     30.0
    ],
    "frente_m": 12.92,
+   "frente_rumo": 346.7,
    "poligono": [
     [
      -108.5,
@@ -1782,6 +1802,7 @@
     30.0
    ],
    "frente_m": 12.92,
+   "frente_rumo": 349.6,
    "poligono": [
     [
      -95.8,
@@ -1839,6 +1860,7 @@
     30.0
    ],
    "frente_m": 12.92,
+   "frente_rumo": 352.5,
    "poligono": [
     [
      -82.99,
@@ -1896,6 +1918,7 @@
     30.0
    ],
    "frente_m": 12.92,
+   "frente_rumo": 355.4,
    "poligono": [
     [
      -70.12,
@@ -1953,6 +1976,7 @@
     30.0
    ],
    "frente_m": 12.92,
+   "frente_rumo": 358.3,
    "poligono": [
     [
      -57.21,
@@ -2010,6 +2034,7 @@
     30.0
    ],
    "frente_m": 12.92,
+   "frente_rumo": 1.2,
    "poligono": [
     [
      -44.3,
@@ -2067,6 +2092,7 @@
     30.0
    ],
    "frente_m": 12.92,
+   "frente_rumo": 4.1,
    "poligono": [
     [
      -31.41,
@@ -2124,6 +2150,7 @@
     30.0
    ],
    "frente_m": 12.92,
+   "frente_rumo": 7.0,
    "poligono": [
     [
      -18.59,
@@ -2181,6 +2208,7 @@
     30.0
    ],
    "frente_m": 12.92,
+   "frente_rumo": 9.9,
    "poligono": [
     [
      -5.87,
@@ -2238,6 +2266,7 @@
     30.0
    ],
    "frente_m": 12.92,
+   "frente_rumo": 12.8,
    "poligono": [
     [
      6.73,
@@ -2295,6 +2324,7 @@
     30.0
    ],
    "frente_m": 12.92,
+   "frente_rumo": 15.7,
    "poligono": [
     [
      19.16,
@@ -2353,6 +2383,7 @@
     17.02
    ],
    "frente_m": 19.15,
+   "frente_rumo": 128.1,
    "poligono": [
     [
      30.09,
@@ -2539,6 +2570,7 @@
     26.05
    ],
    "frente_m": 8.62,
+   "frente_rumo": 159.4,
    "poligono": [
     [
      -135.97,
@@ -2660,6 +2692,7 @@
     30.0
    ],
    "frente_m": 11.7,
+   "frente_rumo": 158.5,
    "poligono": [
     [
      -148.54,
@@ -2718,6 +2751,7 @@
     30.0
    ],
    "frente_m": 11.7,
+   "frente_rumo": 157.4,
    "poligono": [
     [
      -159.94,
@@ -2791,6 +2825,7 @@
     30.0
    ],
    "frente_m": 11.7,
+   "frente_rumo": 156.4,
    "poligono": [
     [
      -171.25,
@@ -2849,6 +2884,7 @@
     30.0
    ],
    "frente_m": 11.7,
+   "frente_rumo": 155.3,
    "poligono": [
     [
      -182.48,
@@ -2922,6 +2958,7 @@
     30.0
    ],
    "frente_m": 11.7,
+   "frente_rumo": 154.2,
    "poligono": [
     [
      -193.61,
@@ -2980,6 +3017,7 @@
     30.0
    ],
    "frente_m": 11.7,
+   "frente_rumo": 153.2,
    "poligono": [
     [
      -204.64,
@@ -3053,6 +3091,7 @@
     30.0
    ],
    "frente_m": 11.7,
+   "frente_rumo": 152.1,
    "poligono": [
     [
      -215.58,
@@ -3111,6 +3150,7 @@
     30.0
    ],
    "frente_m": 11.7,
+   "frente_rumo": 151.1,
    "poligono": [
     [
      -226.41,
@@ -3184,6 +3224,7 @@
     30.0
    ],
    "frente_m": 11.7,
+   "frente_rumo": 150.0,
    "poligono": [
     [
      -237.13,
@@ -3241,6 +3282,7 @@
     30.0
    ],
    "frente_m": 11.7,
+   "frente_rumo": 149.0,
    "poligono": [
     [
      -247.75,
@@ -3300,6 +3342,7 @@
     30.0
    ],
    "frente_m": 8.83,
+   "frente_rumo": 148.0,
    "poligono": [
     [
      -258.25,
@@ -3438,6 +3481,7 @@
     30.0
    ],
    "frente_m": 25.99,
+   "frente_rumo": 237.3,
    "poligono": [
     [
      -275.74,
@@ -3559,6 +3603,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 328.7,
    "poligono": [
     [
      -265.56,
@@ -3616,6 +3661,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 329.7,
    "poligono": [
     [
      -255.27,
@@ -3673,6 +3719,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 330.7,
    "poligono": [
     [
      -244.88,
@@ -3730,6 +3777,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 331.7,
    "poligono": [
     [
      -234.39,
@@ -3787,6 +3835,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 332.7,
    "poligono": [
     [
      -223.8,
@@ -3844,6 +3893,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 333.7,
    "poligono": [
     [
      -213.12,
@@ -3901,6 +3951,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 334.6,
    "poligono": [
     [
      -202.36,
@@ -3958,6 +4009,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 335.6,
    "poligono": [
     [
      -191.5,
@@ -4015,6 +4067,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 336.6,
    "poligono": [
     [
      -180.57,
@@ -4072,6 +4125,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 337.6,
    "poligono": [
     [
      -169.55,
@@ -4129,6 +4183,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 338.6,
    "poligono": [
     [
      -158.46,
@@ -4187,6 +4242,7 @@
     25.96
    ],
    "frente_m": 25.96,
+   "frente_rumo": 70.6,
    "poligono": [
     [
      -144.58,
@@ -4309,6 +4365,7 @@
     6.37
    ],
    "frente_m": 25.96,
+   "frente_rumo": 128.1,
    "poligono": [
     [
      54.76,
@@ -4430,6 +4487,7 @@
     30.0
    ],
    "frente_m": 13.61,
+   "frente_rumo": 31.6,
    "poligono": [
     [
      46.31,
@@ -4487,6 +4545,7 @@
     30.0
    ],
    "frente_m": 13.61,
+   "frente_rumo": 27.3,
    "poligono": [
     [
      34.71,
@@ -4544,6 +4603,7 @@
     30.0
    ],
    "frente_m": 13.61,
+   "frente_rumo": 23.1,
    "poligono": [
     [
      22.62,
@@ -4601,6 +4661,7 @@
     30.0
    ],
    "frente_m": 13.61,
+   "frente_rumo": 18.9,
    "poligono": [
     [
      10.1,
@@ -4658,6 +4719,7 @@
     30.0
    ],
    "frente_m": 13.61,
+   "frente_rumo": 14.6,
    "poligono": [
     [
      -2.78,
@@ -4715,6 +4777,7 @@
     30.0
    ],
    "frente_m": 13.61,
+   "frente_rumo": 10.4,
    "poligono": [
     [
      -15.95,
@@ -4772,6 +4835,7 @@
     30.0
    ],
    "frente_m": 13.61,
+   "frente_rumo": 6.2,
    "poligono": [
     [
      -29.33,
@@ -4829,6 +4893,7 @@
     30.0
    ],
    "frente_m": 13.61,
+   "frente_rumo": 2.0,
    "poligono": [
     [
      -42.87,
@@ -4886,6 +4951,7 @@
     30.0
    ],
    "frente_m": 13.61,
+   "frente_rumo": 357.7,
    "poligono": [
     [
      -56.47,
@@ -4943,6 +5009,7 @@
     30.0
    ],
    "frente_m": 13.61,
+   "frente_rumo": 353.5,
    "poligono": [
     [
      -70.07,
@@ -5000,6 +5067,7 @@
     30.0
    ],
    "frente_m": 13.61,
+   "frente_rumo": 349.3,
    "poligono": [
     [
      -83.59,
@@ -5058,6 +5126,7 @@
     30.0
    ],
    "frente_m": 25.85,
+   "frente_rumo": 250.6,
    "poligono": [
     [
      -96.96,
@@ -5180,6 +5249,7 @@
     30.0
    ],
    "frente_m": 10.06,
+   "frente_rumo": 167.2,
    "poligono": [
     [
      -84.15,
@@ -5317,6 +5387,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 172.1,
    "poligono": [
     [
      -70.02,
@@ -5392,6 +5463,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 177.4,
    "poligono": [
     [
      -55.77,
@@ -5481,6 +5553,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 182.7,
    "poligono": [
     [
      -41.52,
@@ -5555,6 +5628,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 188.0,
    "poligono": [
     [
      -27.39,
@@ -5629,6 +5703,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 193.3,
    "poligono": [
     [
      -13.51,
@@ -5703,6 +5778,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 198.6,
    "poligono": [
     [
      0.01,
@@ -5777,6 +5853,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 203.9,
    "poligono": [
     [
      13.06,
@@ -5850,6 +5927,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 209.2,
    "poligono": [
     [
      25.51,
@@ -5925,6 +6003,7 @@
     26.05
    ],
    "frente_m": 9.94,
+   "frente_rumo": 214.1,
    "poligono": [
     [
      39.5,
@@ -6063,6 +6142,7 @@
     25.95
    ],
    "frente_m": 25.95,
+   "frente_rumo": 70.6,
    "poligono": [
     [
      -121.02,
@@ -6184,6 +6264,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 338.1,
    "poligono": [
     [
      -137.04,
@@ -6241,6 +6322,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 337.0,
    "poligono": [
     [
      -148.25,
@@ -6298,6 +6380,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 335.9,
    "poligono": [
     [
      -159.37,
@@ -6355,6 +6438,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 334.8,
    "poligono": [
     [
      -170.4,
@@ -6412,6 +6496,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 333.7,
    "poligono": [
     [
      -181.33,
@@ -6469,6 +6554,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 332.6,
    "poligono": [
     [
      -192.16,
@@ -6526,6 +6612,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 331.5,
    "poligono": [
     [
      -202.89,
@@ -6583,6 +6670,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 330.4,
    "poligono": [
     [
      -213.5,
@@ -6640,6 +6728,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 329.2,
    "poligono": [
     [
      -224.0,
@@ -6698,6 +6787,7 @@
     30.0
    ],
    "frente_m": 25.99,
+   "frente_rumo": 237.3,
    "poligono": [
     [
      -234.38,
@@ -6821,6 +6911,7 @@
     30.0
    ],
    "frente_m": 11.09,
+   "frente_rumo": 148.2,
    "poligono": [
     [
      -217.77,
@@ -6959,6 +7050,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 149.4,
    "poligono": [
     [
      -206.89,
@@ -7032,6 +7124,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 150.6,
    "poligono": [
     [
      -195.87,
@@ -7090,6 +7183,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 151.9,
    "poligono": [
     [
      -184.73,
@@ -7163,6 +7257,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 153.1,
    "poligono": [
     [
      -173.46,
@@ -7221,6 +7316,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 154.3,
    "poligono": [
     [
      -162.07,
@@ -7294,6 +7390,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 155.5,
    "poligono": [
     [
      -150.57,
@@ -7352,6 +7449,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 156.7,
    "poligono": [
     [
      -138.96,
@@ -7425,6 +7523,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 158.0,
    "poligono": [
     [
      -127.25,
@@ -7484,6 +7583,7 @@
     26.05
    ],
    "frente_m": 10.85,
+   "frente_rumo": 159.1,
    "poligono": [
     [
      -112.41,
@@ -7622,6 +7722,7 @@
     25.94
    ],
    "frente_m": 25.94,
+   "frente_rumo": 128.1,
    "poligono": [
     [
      11.72,
@@ -7776,6 +7877,7 @@
     30.0
    ],
    "frente_m": 13.75,
+   "frente_rumo": 25.7,
    "poligono": [
     [
      -0.58,
@@ -7865,6 +7967,7 @@
     30.0
    ],
    "frente_m": 13.75,
+   "frente_rumo": 18.8,
    "poligono": [
     [
      -12.96,
@@ -7938,6 +8041,7 @@
     30.0
    ],
    "frente_m": 13.75,
+   "frente_rumo": 11.9,
    "poligono": [
     [
      -25.97,
@@ -8012,6 +8116,7 @@
     30.0
    ],
    "frente_m": 13.75,
+   "frente_rumo": 4.9,
    "poligono": [
     [
      -39.42,
@@ -8101,6 +8206,7 @@
     30.0
    ],
    "frente_m": 13.75,
+   "frente_rumo": 358.0,
    "poligono": [
     [
      -53.11,
@@ -8174,6 +8280,7 @@
     30.0
    ],
    "frente_m": 13.75,
+   "frente_rumo": 351.0,
    "poligono": [
     [
      -66.84,
@@ -8248,6 +8355,7 @@
     30.0
    ],
    "frente_m": 13.73,
+   "frente_rumo": 344.1,
    "poligono": [
     [
      -80.41,
@@ -8338,6 +8446,7 @@
     30.0
    ],
    "frente_m": 12.38,
+   "frente_rumo": 340.0,
    "poligono": [
     [
      -93.63,
@@ -8411,6 +8520,7 @@
     30.0
    ],
    "frente_m": 12.4,
+   "frente_rumo": 338.7,
    "poligono": [
     [
      -105.26,
@@ -8468,6 +8578,7 @@
     30.0
    ],
    "frente_m": 12.4,
+   "frente_rumo": 337.4,
    "poligono": [
     [
      -116.82,
@@ -8527,6 +8638,7 @@
     30.0
    ],
    "frente_m": 25.69,
+   "frente_rumo": 237.3,
    "poligono": [
     [
      -128.27,
@@ -8666,6 +8778,7 @@
     30.0
    ],
    "frente_m": 19.3,
+   "frente_rumo": 238.2,
    "poligono": [
     [
      -117.17,
@@ -8803,6 +8916,7 @@
     30.0
    ],
    "frente_m": 11.3,
+   "frente_rumo": 157.3,
    "poligono": [
     [
      -106.11,
@@ -8860,6 +8974,7 @@
     30.0
    ],
    "frente_m": 11.3,
+   "frente_rumo": 158.7,
    "poligono": [
     [
      -94.94,
@@ -8917,6 +9032,7 @@
     30.0
    ],
    "frente_m": 11.3,
+   "frente_rumo": 160.0,
    "poligono": [
     [
      -83.68,
@@ -8974,6 +9090,7 @@
     30.0
    ],
    "frente_m": 10.8,
+   "frente_rumo": 166.4,
    "poligono": [
     [
      -67.33,
@@ -9063,6 +9180,7 @@
     30.0
    ],
    "frente_m": 10.8,
+   "frente_rumo": 178.0,
    "poligono": [
     [
      -50.51,
@@ -9152,6 +9270,7 @@
     30.0
    ],
    "frente_m": 10.8,
+   "frente_rumo": 189.5,
    "poligono": [
     [
      -33.91,
@@ -9241,6 +9360,7 @@
     30.0
    ],
    "frente_m": 10.8,
+   "frente_rumo": 201.1,
    "poligono": [
     [
      -18.21,
@@ -9331,6 +9451,7 @@
     26.12
    ],
    "frente_m": 6.97,
+   "frente_rumo": 210.6,
    "poligono": [
     [
      -4.27,
@@ -9469,6 +9590,7 @@
     30.0
    ],
    "frente_m": 12.51,
+   "frente_rumo": 57.3,
    "poligono": [
     [
      -148.1,
@@ -9578,6 +9700,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 57.3,
    "poligono": [
     [
      -141.62,
@@ -9613,6 +9736,7 @@
     1.16
    ],
    "frente_m": 10.84,
+   "frente_rumo": 57.3,
    "poligono": [
     [
      -135.76,
@@ -9678,6 +9802,7 @@
     30.0
    ],
    "frente_m": 12.37,
+   "frente_rumo": 58.0,
    "poligono": [
     [
      -128.58,
@@ -9735,6 +9860,7 @@
     30.0
    ],
    "frente_m": 12.68,
+   "frente_rumo": 59.3,
    "poligono": [
     [
      -122.1,
@@ -9792,6 +9918,7 @@
     30.0
    ],
    "frente_m": 12.68,
+   "frente_rumo": 60.6,
    "poligono": [
     [
      -115.88,
@@ -9849,6 +9976,7 @@
     30.0
    ],
    "frente_m": 12.68,
+   "frente_rumo": 61.9,
    "poligono": [
     [
      -109.91,
@@ -9906,6 +10034,7 @@
     30.0
    ],
    "frente_m": 12.68,
+   "frente_rumo": 63.2,
    "poligono": [
     [
      -104.19,
@@ -9963,6 +10092,7 @@
     30.0
    ],
    "frente_m": 12.68,
+   "frente_rumo": 64.5,
    "poligono": [
     [
      -98.73,
@@ -10020,6 +10150,7 @@
     30.0
    ],
    "frente_m": 12.68,
+   "frente_rumo": 65.8,
    "poligono": [
     [
      -93.54,
@@ -10077,6 +10208,7 @@
     12.68
    ],
    "frente_m": 12.68,
+   "frente_rumo": 67.1,
    "poligono": [
     [
      -93.54,
@@ -10134,6 +10266,7 @@
     12.68
    ],
    "frente_m": 12.68,
+   "frente_rumo": 68.4,
    "poligono": [
     [
      -88.6,
@@ -10191,6 +10324,7 @@
     12.68
    ],
    "frente_m": 12.68,
+   "frente_rumo": 69.7,
    "poligono": [
     [
      -83.93,
@@ -10248,6 +10382,7 @@
     12.68
    ],
    "frente_m": 12.68,
+   "frente_rumo": 71.0,
    "poligono": [
     [
      -79.53,
@@ -10305,6 +10440,7 @@
     12.68
    ],
    "frente_m": 12.68,
+   "frente_rumo": 72.3,
    "poligono": [
     [
      -75.4,
@@ -10364,6 +10500,7 @@
     0.83
    ],
    "frente_m": 11.52,
+   "frente_rumo": 73.0,
    "poligono": [
     [
      -100.22,
@@ -10429,6 +10566,7 @@
     12.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 73.0,
    "poligono": [
     [
      -67.92,
@@ -10463,6 +10601,7 @@
     11.83
    ],
    "frente_m": 11.83,
+   "frente_rumo": 73.0,
    "poligono": [
     [
      -64.41,
@@ -10573,6 +10712,7 @@
     18.23
    ],
    "frente_m": 15.38,
+   "frente_rumo": 253.0,
    "poligono": [
     [
      -93.21,
@@ -10682,6 +10822,7 @@
     12.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 253.0,
    "poligono": [
     [
      -96.71,
@@ -10717,6 +10858,7 @@
     11.17
    ],
    "frente_m": 10.82,
+   "frente_rumo": 253.0,
    "poligono": [
     [
      -99.97,
@@ -10782,6 +10924,7 @@
     12.0
    ],
    "frente_m": 11.32,
+   "frente_rumo": 252.3,
    "poligono": [
     [
      -103.87,
@@ -10839,6 +10982,7 @@
     30.0
    ],
    "frente_m": 11.32,
+   "frente_rumo": 251.0,
    "poligono": [
     [
      -103.87,
@@ -10896,6 +11040,7 @@
     30.0
    ],
    "frente_m": 11.32,
+   "frente_rumo": 249.7,
    "poligono": [
     [
      -107.78,
@@ -10953,6 +11098,7 @@
     30.0
    ],
    "frente_m": 11.32,
+   "frente_rumo": 248.4,
    "poligono": [
     [
      -111.95,
@@ -11010,6 +11156,7 @@
     30.0
    ],
    "frente_m": 11.32,
+   "frente_rumo": 247.1,
    "poligono": [
     [
      -116.37,
@@ -11067,6 +11214,7 @@
     30.0
    ],
    "frente_m": 11.32,
+   "frente_rumo": 245.8,
    "poligono": [
     [
      -121.04,
@@ -11124,6 +11272,7 @@
     30.0
    ],
    "frente_m": 11.32,
+   "frente_rumo": 244.5,
    "poligono": [
     [
      -125.96,
@@ -11181,6 +11330,7 @@
     30.0
    ],
    "frente_m": 11.32,
+   "frente_rumo": 243.2,
    "poligono": [
     [
      -131.12,
@@ -11238,6 +11388,7 @@
     30.0
    ],
    "frente_m": 11.32,
+   "frente_rumo": 241.9,
    "poligono": [
     [
      -136.53,
@@ -11295,6 +11446,7 @@
     30.0
    ],
    "frente_m": 11.32,
+   "frente_rumo": 240.6,
    "poligono": [
     [
      -142.18,
@@ -11352,6 +11504,7 @@
     30.0
    ],
    "frente_m": 11.32,
+   "frente_rumo": 239.3,
    "poligono": [
     [
      -148.07,
@@ -11409,6 +11562,7 @@
     30.0
    ],
    "frente_m": 11.63,
+   "frente_rumo": 238.0,
    "poligono": [
     [
      -154.2,
@@ -11468,6 +11622,7 @@
     30.0
    ],
    "frente_m": 11.54,
+   "frente_rumo": 237.3,
    "poligono": [
     [
      -160.56,
@@ -11533,6 +11688,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 237.3,
    "poligono": [
     [
      -167.04,
@@ -11567,6 +11723,7 @@
     18.21
    ],
    "frente_m": 14.66,
+   "frente_rumo": 237.3,
    "poligono": [
     [
      -183.38,
@@ -11677,6 +11834,7 @@
     6.63
    ],
    "frente_m": 25.77,
+   "frente_rumo": 15.0,
    "poligono": [
     [
      47.95,
@@ -11830,6 +11988,7 @@
     30.0
    ],
    "frente_m": 15.63,
+   "frente_rumo": 122.0,
    "poligono": [
     [
      17.68,
@@ -11919,6 +12078,7 @@
     30.0
    ],
    "frente_m": 15.63,
+   "frente_rumo": 129.9,
    "poligono": [
     [
      11.58,
@@ -12008,6 +12168,7 @@
     30.0
    ],
    "frente_m": 15.63,
+   "frente_rumo": 137.8,
    "poligono": [
     [
      4.21,
@@ -12097,6 +12258,7 @@
     30.0
    ],
    "frente_m": 15.63,
+   "frente_rumo": 145.7,
    "poligono": [
     [
      -4.31,
@@ -12186,6 +12348,7 @@
     30.0
    ],
    "frente_m": 12.16,
+   "frente_rumo": 150.3,
    "poligono": [
     [
      -13.8,
@@ -12243,6 +12406,7 @@
     30.0
    ],
    "frente_m": 12.16,
+   "frente_rumo": 151.6,
    "poligono": [
     [
      -23.79,
@@ -12300,6 +12464,7 @@
     30.0
    ],
    "frente_m": 12.16,
+   "frente_rumo": 152.8,
    "poligono": [
     [
      -33.9,
@@ -12358,6 +12523,7 @@
     30.0
    ],
    "frente_m": 25.69,
+   "frente_rumo": 253.0,
    "poligono": [
     [
      -44.13,
@@ -12481,6 +12647,7 @@
     30.0
    ],
    "frente_m": 19.3,
+   "frente_rumo": 252.1,
    "poligono": [
     [
      -57.53,
@@ -12619,6 +12786,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 332.8,
    "poligono": [
     [
      -47.31,
@@ -12693,6 +12861,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 331.4,
    "poligono": [
     [
      -37.2,
@@ -12768,6 +12937,7 @@
     30.0
    ],
    "frente_m": 9.51,
+   "frente_rumo": 330.2,
    "poligono": [
     [
      -27.25,
@@ -12858,6 +13028,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 321.4,
    "poligono": [
     [
      -18.29,
@@ -12949,6 +13120,7 @@
     4.51
    ],
    "frente_m": 11.5,
+   "frente_rumo": 309.1,
    "poligono": [
     [
      14.14,
@@ -13071,6 +13243,7 @@
     20.53
    ],
    "frente_m": 7.8,
+   "frente_rumo": 298.7,
    "poligono": [
     [
      23.07,
@@ -13208,6 +13381,7 @@
     30.0
    ],
    "frente_m": 25.8,
+   "frente_rumo": 308.1,
    "poligono": [
     [
      43.93,
@@ -13361,6 +13535,7 @@
     30.0
    ],
    "frente_m": 15.22,
+   "frente_rumo": 65.5,
    "poligono": [
     [
      50.24,
@@ -13450,6 +13625,7 @@
     15.22
    ],
    "frente_m": 15.22,
+   "frente_rumo": 73.2,
    "poligono": [
     [
      50.24,
@@ -13539,6 +13715,7 @@
     15.22
    ],
    "frente_m": 15.22,
+   "frente_rumo": 80.9,
    "poligono": [
     [
      54.63,
@@ -13628,6 +13805,7 @@
     15.22
    ],
    "frente_m": 15.22,
+   "frente_rumo": 88.6,
    "poligono": [
     [
      57.04,
@@ -13718,6 +13896,7 @@
     15.14
    ],
    "frente_m": 25.77,
+   "frente_rumo": 195.0,
    "poligono": [
     [
      57.42,
@@ -13872,6 +14051,7 @@
     21.86
    ],
    "frente_m": 8.65,
+   "frente_rumo": 270.9,
    "poligono": [
     [
      27.35,
@@ -14057,6 +14237,7 @@
     18.73
    ],
    "frente_m": 12.0,
+   "frente_rumo": 259.8,
    "poligono": [
     [
      24.05,
@@ -14149,6 +14330,7 @@
     5.9
    ],
    "frente_m": 7.52,
+   "frente_rumo": 249.4,
    "poligono": [
     [
      22.16,
@@ -14335,6 +14517,7 @@
     25.95
    ],
    "frente_m": 25.95,
+   "frente_rumo": 59.7,
    "poligono": [
     [
      17.3,
@@ -14457,6 +14640,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 152.2,
    "poligono": [
     [
      4.48,
@@ -14531,6 +14715,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 153.3,
    "poligono": [
     [
      -5.69,
@@ -14604,6 +14789,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 154.4,
    "poligono": [
     [
      -15.96,
@@ -14662,6 +14848,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 155.5,
    "poligono": [
     [
      -26.33,
@@ -14735,6 +14922,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 156.6,
    "poligono": [
     [
      -36.79,
@@ -14792,6 +14980,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 157.7,
    "poligono": [
     [
      -47.35,
@@ -14850,6 +15039,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 158.8,
    "poligono": [
     [
      -57.99,
@@ -14922,6 +15112,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 159.9,
    "poligono": [
     [
      -68.71,
@@ -14979,6 +15170,7 @@
     30.0
    ],
    "frente_m": 12.08,
+   "frente_rumo": 161.0,
    "poligono": [
     [
      -79.52,
@@ -15052,6 +15244,7 @@
     30.0
    ],
    "frente_m": 25.99,
+   "frente_rumo": 253.0,
    "poligono": [
     [
      -90.39,
@@ -15174,6 +15367,7 @@
     30.0
    ],
    "frente_m": 11.09,
+   "frente_rumo": 342.1,
    "poligono": [
     [
      -98.78,
@@ -15295,6 +15489,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 340.9,
    "poligono": [
     [
      -87.45,
@@ -15352,6 +15547,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 339.7,
    "poligono": [
     [
      -76.19,
@@ -15409,6 +15605,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 338.4,
    "poligono": [
     [
      -65.03,
@@ -15466,6 +15663,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 337.2,
    "poligono": [
     [
      -53.97,
@@ -15523,6 +15721,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 336.0,
    "poligono": [
     [
      -43.01,
@@ -15580,6 +15779,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 334.8,
    "poligono": [
     [
      -32.15,
@@ -15637,6 +15837,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 333.6,
    "poligono": [
     [
      -21.41,
@@ -15694,6 +15895,7 @@
     30.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 332.3,
    "poligono": [
     [
      -10.78,
@@ -15752,6 +15954,7 @@
     26.05
    ],
    "frente_m": 10.85,
+   "frente_rumo": 331.2,
    "poligono": [
     [
      4.14,
@@ -15874,6 +16077,7 @@
     25.96
    ],
    "frente_m": 25.96,
+   "frente_rumo": 59.7,
    "poligono": [
     [
      53.16,
@@ -15995,6 +16199,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 151.7,
    "poligono": [
     [
      42.7,
@@ -16067,6 +16272,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 152.6,
    "poligono": [
     [
      32.67,
@@ -16124,6 +16330,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 153.6,
    "poligono": [
     [
      22.55,
@@ -16197,6 +16404,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 154.6,
    "poligono": [
     [
      12.33,
@@ -16270,6 +16478,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 155.6,
    "poligono": [
     [
      2.03,
@@ -16342,6 +16551,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 156.6,
    "poligono": [
     [
      -8.35,
@@ -16399,6 +16609,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 157.6,
    "poligono": [
     [
      -18.81,
@@ -16471,6 +16682,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 158.5,
    "poligono": [
     [
      -29.35,
@@ -16527,6 +16739,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 159.5,
    "poligono": [
     [
      -39.96,
@@ -16583,6 +16796,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 160.5,
    "poligono": [
     [
      -50.64,
@@ -16640,6 +16854,7 @@
     30.0
    ],
    "frente_m": 11.91,
+   "frente_rumo": 161.5,
    "poligono": [
     [
      -61.38,
@@ -16713,6 +16928,7 @@
     30.0
    ],
    "frente_m": 25.99,
+   "frente_rumo": 253.0,
    "poligono": [
     [
      -72.19,
@@ -16834,6 +17050,7 @@
     30.0
    ],
    "frente_m": 9.84,
+   "frente_rumo": 342.2,
    "poligono": [
     [
      -79.22,
@@ -16955,6 +17172,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 341.3,
    "poligono": [
     [
      -68.33,
@@ -17012,6 +17230,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 340.2,
    "poligono": [
     [
      -57.51,
@@ -17069,6 +17288,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 339.2,
    "poligono": [
     [
      -46.76,
@@ -17126,6 +17346,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 338.1,
    "poligono": [
     [
      -36.09,
@@ -17182,6 +17403,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 337.1,
    "poligono": [
     [
      -25.49,
@@ -17238,6 +17460,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 336.1,
    "poligono": [
     [
      -14.98,
@@ -17295,6 +17518,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 335.0,
    "poligono": [
     [
      -4.56,
@@ -17352,6 +17576,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 334.0,
    "poligono": [
     [
      5.78,
@@ -17409,6 +17634,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 332.9,
    "poligono": [
     [
      16.02,
@@ -17466,6 +17692,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 331.9,
    "poligono": [
     [
      26.16,
@@ -17524,6 +17751,7 @@
     26.05
    ],
    "frente_m": 9.63,
+   "frente_rumo": 331.0,
    "poligono": [
     [
      40.0,
@@ -17645,6 +17873,7 @@
     13.8
    ],
    "frente_m": 12.0,
+   "frente_rumo": 291.8,
    "poligono": [
     [
      231.07,
@@ -17702,6 +17931,7 @@
     13.8
    ],
    "frente_m": 12.0,
+   "frente_rumo": 294.4,
    "poligono": [
     [
      225.94,
@@ -17759,6 +17989,7 @@
     40.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 297.0,
    "poligono": [
     [
      184.19,
@@ -17816,6 +18047,7 @@
     40.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 299.6,
    "poligono": [
     [
      178.75,
@@ -17873,6 +18105,7 @@
     40.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 302.1,
    "poligono": [
     [
      172.83,
@@ -17930,6 +18163,7 @@
     40.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 304.7,
    "poligono": [
     [
      166.45,
@@ -17987,6 +18221,7 @@
     40.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 307.3,
    "poligono": [
     [
      159.61,
@@ -18044,6 +18279,7 @@
     40.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 309.9,
    "poligono": [
     [
      152.34,
@@ -18101,6 +18337,7 @@
     40.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 312.5,
    "poligono": [
     [
      144.65,
@@ -18158,6 +18395,7 @@
     40.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 315.0,
    "poligono": [
     [
      136.55,
@@ -18215,6 +18453,7 @@
     40.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 317.6,
    "poligono": [
     [
      128.06,
@@ -18272,6 +18511,7 @@
     40.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 320.2,
    "poligono": [
     [
      119.2,
@@ -18329,6 +18569,7 @@
     40.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 322.8,
    "poligono": [
     [
      109.98,
@@ -18386,6 +18627,7 @@
     40.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 325.4,
    "poligono": [
     [
      100.43,
@@ -18443,6 +18685,7 @@
     40.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 327.9,
    "poligono": [
     [
      90.56,
@@ -18502,6 +18745,7 @@
     40.0
    ],
    "frente_m": 12.82,
+   "frente_rumo": 330.2,
    "poligono": [
     [
      80.39,
@@ -18592,6 +18836,7 @@
     15.58
    ],
    "frente_m": 8.97,
+   "frente_rumo": 289.1,
    "poligono": [
     [
      160.32,
@@ -18713,6 +18958,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 292.1,
    "poligono": [
     [
      127.28,
@@ -18771,6 +19017,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 295.4,
    "poligono": [
     [
      122.95,
@@ -18845,6 +19092,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 298.8,
    "poligono": [
     [
      118.01,
@@ -18919,6 +19167,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 302.2,
    "poligono": [
     [
      112.47,
@@ -18993,6 +19242,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 305.6,
    "poligono": [
     [
      106.35,
@@ -19066,6 +19316,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 308.9,
    "poligono": [
     [
      99.66,
@@ -19124,6 +19375,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 312.3,
    "poligono": [
     [
      92.44,
@@ -19197,6 +19449,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 315.7,
    "poligono": [
     [
      84.7,
@@ -19255,6 +19508,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 319.0,
    "poligono": [
     [
      76.47,
@@ -19328,6 +19582,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 322.4,
    "poligono": [
     [
      67.79,
@@ -19386,6 +19641,7 @@
     30.0
    ],
    "frente_m": 9.7,
+   "frente_rumo": 325.5,
    "poligono": [
     [
      58.68,
@@ -19508,6 +19764,7 @@
     30.0
    ],
    "frente_m": 25.89,
+   "frente_rumo": 239.7,
    "poligono": [
     [
      73.75,
@@ -19629,6 +19886,7 @@
     30.0
    ],
    "frente_m": 13.03,
+   "frente_rumo": 143.4,
    "poligono": [
     [
      82.98,
@@ -19686,6 +19944,7 @@
     30.0
    ],
    "frente_m": 13.03,
+   "frente_rumo": 140.5,
    "poligono": [
     [
      91.86,
@@ -19743,6 +20002,7 @@
     30.0
    ],
    "frente_m": 13.03,
+   "frente_rumo": 137.6,
    "poligono": [
     [
      100.35,
@@ -19800,6 +20060,7 @@
     30.0
    ],
    "frente_m": 13.03,
+   "frente_rumo": 134.7,
    "poligono": [
     [
      108.43,
@@ -19857,6 +20118,7 @@
     13.03
    ],
    "frente_m": 13.03,
+   "frente_rumo": 131.7,
    "poligono": [
     [
      138.97,
@@ -19914,6 +20176,7 @@
     30.0
    ],
    "frente_m": 13.03,
+   "frente_rumo": 128.8,
    "poligono": [
     [
      123.29,
@@ -19971,6 +20234,7 @@
     13.03
    ],
    "frente_m": 13.03,
+   "frente_rumo": 125.9,
    "poligono": [
     [
      154.77,
@@ -20028,6 +20292,7 @@
     30.0
    ],
    "frente_m": 13.03,
+   "frente_rumo": 123.0,
    "poligono": [
     [
      136.29,
@@ -20085,6 +20350,7 @@
     30.0
    ],
    "frente_m": 13.03,
+   "frente_rumo": 120.0,
    "poligono": [
     [
      142.04,
@@ -20142,6 +20408,7 @@
     30.0
    ],
    "frente_m": 13.03,
+   "frente_rumo": 117.1,
    "poligono": [
     [
      147.28,
@@ -20199,6 +20466,7 @@
     30.0
    ],
    "frente_m": 13.03,
+   "frente_rumo": 114.2,
    "poligono": [
     [
      152.0,
@@ -20256,6 +20524,7 @@
     30.0
    ],
    "frente_m": 13.03,
+   "frente_rumo": 111.3,
    "poligono": [
     [
      156.17,
@@ -20314,6 +20583,7 @@
     6.43
    ],
    "frente_m": 25.89,
+   "frente_rumo": 15.0,
    "poligono": [
     [
      185.32,
@@ -20436,6 +20706,7 @@
     6.49
    ],
    "frente_m": 25.85,
+   "frente_rumo": 15.0,
    "poligono": [
     [
      116.68,
@@ -20573,6 +20844,7 @@
     13.73
    ],
    "frente_m": 13.73,
+   "frente_rumo": 114.6,
    "poligono": [
     [
      114.58,
@@ -20631,6 +20903,7 @@
     13.73
    ],
    "frente_m": 13.73,
+   "frente_rumo": 118.8,
    "poligono": [
     [
      108.87,
@@ -20705,6 +20978,7 @@
     30.0
    ],
    "frente_m": 13.73,
+   "frente_rumo": 123.1,
    "poligono": [
     [
      76.52,
@@ -20778,6 +21052,7 @@
     13.73
    ],
    "frente_m": 13.73,
+   "frente_rumo": 127.3,
    "poligono": [
     [
      94.76,
@@ -20835,6 +21110,7 @@
     30.0
    ],
    "frente_m": 13.73,
+   "frente_rumo": 131.6,
    "poligono": [
     [
      63.27,
@@ -20893,6 +21169,7 @@
     30.0
    ],
    "frente_m": 13.73,
+   "frente_rumo": 135.9,
    "poligono": [
     [
      55.64,
@@ -20967,6 +21244,7 @@
     30.0
    ],
    "frente_m": 13.73,
+   "frente_rumo": 140.1,
    "poligono": [
     [
      47.38,
@@ -21041,6 +21319,7 @@
     30.0
    ],
    "frente_m": 25.85,
+   "frente_rumo": 239.7,
    "poligono": [
     [
      38.56,
@@ -21179,6 +21458,7 @@
     30.0
    ],
    "frente_m": 11.06,
+   "frente_rumo": 322.9,
    "poligono": [
     [
      23.49,
@@ -21316,6 +21596,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 317.7,
    "poligono": [
     [
      32.0,
@@ -21389,6 +21670,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 312.4,
    "poligono": [
     [
      39.75,
@@ -21462,6 +21744,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 307.1,
    "poligono": [
     [
      46.68,
@@ -21535,6 +21818,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 301.8,
    "poligono": [
     [
      52.74,
@@ -21608,6 +21892,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 296.5,
    "poligono": [
     [
      57.87,
@@ -21682,6 +21967,7 @@
     18.33
    ],
    "frente_m": 10.0,
+   "frente_rumo": 291.6,
    "poligono": [
     [
      91.72,
@@ -21820,6 +22106,7 @@
     30.0
    ],
    "frente_m": 25.69,
+   "frente_rumo": 308.1,
    "poligono": [
     [
      87.47,
@@ -21957,6 +22244,7 @@
     30.0
    ],
    "frente_m": 13.73,
+   "frente_rumo": 53.2,
    "poligono": [
     [
      95.7,
@@ -22014,6 +22302,7 @@
     30.0
    ],
    "frente_m": 13.73,
+   "frente_rumo": 57.4,
    "poligono": [
     [
      103.09,
@@ -22071,6 +22360,7 @@
     30.0
    ],
    "frente_m": 13.73,
+   "frente_rumo": 61.7,
    "poligono": [
     [
      109.6,
@@ -22128,6 +22418,7 @@
     13.73
    ],
    "frente_m": 13.73,
+   "frente_rumo": 66.0,
    "poligono": [
     [
      109.6,
@@ -22184,6 +22475,7 @@
     13.73
    ],
    "frente_m": 13.73,
+   "frente_rumo": 70.2,
    "poligono": [
     [
      115.2,
@@ -22241,6 +22533,7 @@
     13.73
    ],
    "frente_m": 13.73,
+   "frente_rumo": 74.5,
    "poligono": [
     [
      119.84,
@@ -22298,6 +22591,7 @@
     13.73
    ],
    "frente_m": 13.73,
+   "frente_rumo": 78.8,
    "poligono": [
     [
      123.52,
@@ -22355,6 +22649,7 @@
     13.73
    ],
    "frente_m": 13.73,
+   "frente_rumo": 83.0,
    "poligono": [
     [
      126.19,
@@ -22412,6 +22707,7 @@
     13.73
    ],
    "frente_m": 13.73,
+   "frente_rumo": 87.3,
    "poligono": [
     [
      127.86,
@@ -22469,6 +22765,7 @@
     13.73
    ],
    "frente_m": 13.73,
+   "frente_rumo": 91.5,
    "poligono": [
     [
      128.52,
@@ -22526,6 +22823,7 @@
     13.73
    ],
    "frente_m": 13.73,
+   "frente_rumo": 95.8,
    "poligono": [
     [
      128.14,
@@ -22584,6 +22882,7 @@
     13.12
    ],
    "frente_m": 25.85,
+   "frente_rumo": 195.0,
    "poligono": [
     [
      126.76,
@@ -22706,6 +23005,7 @@
     19.78
    ],
    "frente_m": 11.16,
+   "frente_rumo": 278.2,
    "poligono": [
     [
      97.77,
@@ -22843,6 +23143,7 @@
     14.27
    ],
    "frente_m": 11.5,
+   "frente_rumo": 273.0,
    "poligono": [
     [
      98.52,
@@ -22917,6 +23218,7 @@
     11.71
    ],
    "frente_m": 11.5,
+   "frente_rumo": 267.7,
    "poligono": [
     [
      97.95,
@@ -22991,6 +23293,7 @@
     11.29
    ],
    "frente_m": 11.5,
+   "frente_rumo": 262.4,
    "poligono": [
     [
      96.57,
@@ -23064,6 +23367,7 @@
     14.27
    ],
    "frente_m": 11.5,
+   "frente_rumo": 257.1,
    "poligono": [
     [
      92.9,
@@ -23137,6 +23441,7 @@
     14.27
    ],
    "frente_m": 11.5,
+   "frente_rumo": 251.8,
    "poligono": [
     [
      88.45,
@@ -23211,6 +23516,7 @@
     2.98
    ],
    "frente_m": 11.5,
+   "frente_rumo": 246.5,
    "poligono": [
     [
      87.36,
@@ -23284,6 +23590,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 241.3,
    "poligono": [
     [
      82.77,
@@ -23357,6 +23664,7 @@
     30.0
    ],
    "frente_m": 11.5,
+   "frente_rumo": 236.0,
    "poligono": [
     [
      75.91,
@@ -23432,6 +23740,7 @@
     30.0
    ],
    "frente_m": 8.49,
+   "frente_rumo": 231.4,
    "poligono": [
     [
      67.93,
@@ -23571,6 +23880,7 @@
     7.69
    ],
    "frente_m": 9.07,
+   "frente_rumo": 247.6,
    "poligono": [
     [
      151.55,
@@ -23692,6 +24002,7 @@
     13.26
    ],
    "frente_m": 11.5,
+   "frente_rumo": 250.6,
    "poligono": [
     [
      154.44,
@@ -23749,6 +24060,7 @@
     13.26
    ],
    "frente_m": 11.5,
+   "frente_rumo": 254.0,
    "poligono": [
     [
      158.84,
@@ -23807,6 +24119,7 @@
     10.18
    ],
    "frente_m": 11.5,
+   "frente_rumo": 257.3,
    "poligono": [
     [
      162.5,
@@ -23881,6 +24194,7 @@
     8.02
    ],
    "frente_m": 11.5,
+   "frente_rumo": 260.7,
    "poligono": [
     [
      165.41,
@@ -23954,6 +24268,7 @@
     13.26
    ],
    "frente_m": 11.5,
+   "frente_rumo": 264.1,
    "poligono": [
     [
      167.55,
@@ -24011,6 +24326,7 @@
     13.26
    ],
    "frente_m": 11.5,
+   "frente_rumo": 267.5,
    "poligono": [
     [
      168.91,
@@ -24068,6 +24384,7 @@
     13.26
    ],
    "frente_m": 11.5,
+   "frente_rumo": 270.8,
    "poligono": [
     [
      169.5,
@@ -24126,6 +24443,7 @@
     10.46
    ],
    "frente_m": 11.5,
+   "frente_rumo": 274.2,
    "poligono": [
     [
      169.31,
@@ -24199,6 +24517,7 @@
     13.26
    ],
    "frente_m": 11.5,
+   "frente_rumo": 277.6,
    "poligono": [
     [
      168.34,
@@ -24257,6 +24576,7 @@
     17.23
    ],
    "frente_m": 10.39,
+   "frente_rumo": 280.8,
    "poligono": [
     [
      166.59,
@@ -24395,6 +24715,7 @@
     9.16
    ],
    "frente_m": 25.89,
+   "frente_rumo": 195.0,
    "poligono": [
     [
      194.99,
@@ -24516,6 +24837,7 @@
     12.58
    ],
    "frente_m": 12.58,
+   "frente_rumo": 99.4,
    "poligono": [
     [
      197.04,
@@ -24573,6 +24895,7 @@
     12.58
    ],
    "frente_m": 12.58,
+   "frente_rumo": 96.6,
    "poligono": [
     [
      198.48,
@@ -24630,6 +24953,7 @@
     12.58
    ],
    "frente_m": 12.58,
+   "frente_rumo": 93.8,
    "poligono": [
     [
      199.31,
@@ -24687,6 +25011,7 @@
     12.58
    ],
    "frente_m": 12.58,
+   "frente_rumo": 90.9,
    "poligono": [
     [
      199.52,
@@ -24744,6 +25069,7 @@
     12.58
    ],
    "frente_m": 12.58,
+   "frente_rumo": 88.1,
    "poligono": [
     [
      199.1,
@@ -24801,6 +25127,7 @@
     12.58
    ],
    "frente_m": 12.58,
+   "frente_rumo": 85.3,
    "poligono": [
     [
      198.07,
@@ -24858,6 +25185,7 @@
     12.58
    ],
    "frente_m": 12.58,
+   "frente_rumo": 82.5,
    "poligono": [
     [
      196.43,
@@ -24915,6 +25243,7 @@
     12.58
    ],
    "frente_m": 12.58,
+   "frente_rumo": 79.7,
    "poligono": [
     [
      194.17,
@@ -24972,6 +25301,7 @@
     12.58
    ],
    "frente_m": 12.58,
+   "frente_rumo": 76.8,
    "poligono": [
     [
      191.31,
@@ -25029,6 +25359,7 @@
     12.58
    ],
    "frente_m": 12.58,
+   "frente_rumo": 74.0,
    "poligono": [
     [
      187.85,
@@ -25086,6 +25417,7 @@
     12.58
    ],
    "frente_m": 12.58,
+   "frente_rumo": 71.2,
    "poligono": [
     [
      183.8,
@@ -25143,6 +25475,7 @@
     12.58
    ],
    "frente_m": 12.58,
+   "frente_rumo": 68.4,
    "poligono": [
     [
      179.16,
@@ -25200,6 +25533,7 @@
     12.58
    ],
    "frente_m": 12.58,
+   "frente_rumo": 65.6,
    "poligono": [
     [
      173.96,
@@ -25258,6 +25592,7 @@
     10.41
    ],
    "frente_m": 18.98,
+   "frente_rumo": 308.1,
    "poligono": [
     [
      169.23,
@@ -25444,6 +25779,7 @@
     19.92
    ],
    "frente_m": 36.09,
+   "frente_rumo": 234.9,
    "poligono": [
     [
      132.63,
@@ -25601,6 +25937,7 @@
     40.0
    ],
    "frente_m": 12.0,
+   "frente_rumo": 128.1,
    "poligono": [
     [
      108.54,
@@ -25636,6 +25973,7 @@
     9.17
    ],
    "frente_m": 3.06,
+   "frente_rumo": 132.4,
    "poligono": [
     [
      120.24,
@@ -25717,6 +26055,7 @@
     40.0
    ],
    "frente_m": 9.0,
+   "frente_rumo": 149.7,
    "poligono": [
     [
      143.36,
@@ -25838,6 +26177,7 @@
     40.0
    ],
    "frente_m": 9.0,
+   "frente_rumo": 175.5,
    "poligono": [
     [
      170.05,
@@ -25959,6 +26299,7 @@
     40.0
    ],
    "frente_m": 9.0,
+   "frente_rumo": 201.3,
    "poligono": [
     [
      194.99,
@@ -26080,6 +26421,7 @@
     40.0
    ],
    "frente_m": 9.0,
+   "frente_rumo": 227.1,
    "poligono": [
     [
      213.23,
@@ -26223,6 +26565,7 @@
     26.86
    ],
    "frente_m": 132.12,
+   "frente_rumo": 208.3,
    "poligono": [
     [
      -67.61,
@@ -26530,6 +26873,7 @@
     23.04
    ],
    "frente_m": 59.0,
+   "frente_rumo": 227.7,
    "poligono": [
     [
      151.73,
@@ -26577,6 +26921,7 @@
     19.49
    ],
    "frente_m": 59.0,
+   "frente_rumo": 227.7,
    "poligono": [
     [
      112.18,
@@ -26624,6 +26969,7 @@
     17.3
    ],
    "frente_m": 59.0,
+   "frente_rumo": 227.7,
    "poligono": [
     [
      87.18,
@@ -26673,6 +27019,7 @@
     16.14
    ],
    "frente_m": 21.08,
+   "frente_rumo": 257.1,
    "poligono": [
     [
      47.73,

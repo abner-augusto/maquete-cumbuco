@@ -96,3 +96,16 @@ def indice_frente(segs: list[tuple[Ponto, Ponto, float]], vias: list[list[Ponto]
 
     candidatos = [i for i, s in enumerate(segs) if s[2] >= LADO_MIN_FRENTE] or list(range(len(segs)))
     return min(candidatos, key=lambda i: distancia(segs[i]))
+
+
+def rumo_para_fora(seg: tuple[Ponto, Ponto, float], pontos: list[Ponto]) -> float:
+    """Rumo (graus a partir do norte, sentido horário) da normal do lado, apontando para fora do lote.
+    Lado em arco usa a corda: para enquadrar a câmera basta a direção."""
+    (x0, y0), (x1, y1), _ = seg
+    dx, dy = x1 - x0, y1 - y0
+    n = math.hypot(dx, dy) or 1.0
+    nx, ny = dy / n, -dx / n
+    meio = ((x0 + x1) / 2, (y0 + y1) / 2)
+    if contem(pontos, (meio[0] + nx * 0.05, meio[1] + ny * 0.05)):
+        nx, ny = -nx, -ny
+    return round(math.degrees(math.atan2(nx, ny)) % 360, 1)

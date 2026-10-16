@@ -121,7 +121,9 @@ def test_frente_usa_a_aresta_de_fechamento_da_via(doc_sintetico, mapa_sintetico)
         [(E0 + 65, N0 - 8), (E0 + 65, N0 - 300), (E0 - 500, N0 - 300), (E0 - 500, N0 - 8)],
         close=True, dxfattribs={"layer": "MEIO_FIO"},
     )
-    assert extrair_lotes(doc_sintetico, mapa_sintetico)["Q01L01"].frente_m == 10.0
+    lote = extrair_lotes(doc_sintetico, mapa_sintetico)["Q01L01"]
+    assert lote.frente_m == 10.0
+    assert lote.frente_rumo == pytest.approx(180.0)  # a rua corre ao sul
 
 
 def test_segmento_degenerado_nao_vira_frente(doc_sintetico, mapa_sintetico):

@@ -44,6 +44,7 @@ def montar_lotes_json(
             "area_m2": round(t.area_m2, 2),
             "lados_m": l.lados_m,
             "frente_m": l.frente_m,
+            "frente_rumo": l.frente_rumo,
             "poligono": para_local(l.pontos, e0, n0),
         }
         if i in iptu:

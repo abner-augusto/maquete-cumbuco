@@ -4,7 +4,7 @@ import ezdxf
 import pytest
 
 from scripts.loteamento.geometria import (
-    area, centroide, contem, extensao, indice_frente, pontos_de, poligono_fechado, segmentos,
+    area, centroide, contem, extensao, indice_frente, pontos_de, poligono_fechado, rumo_para_fora, segmentos,
 )
 
 E0, N0 = 500_000.0, 9_600_000.0
@@ -55,3 +55,10 @@ def test_indice_frente_e_o_lado_mais_proximo_da_via():
     e = _lw([(0, 0), (10, 0), (10, 20), (0, 20)])
     via = [(-5, -3), (50, -3)]
     assert indice_frente(segmentos(e), [via]) == 0
+
+
+@pytest.mark.parametrize("lado, rumo", [(0, 180.0), (1, 90.0), (2, 0.0), (3, 270.0)])
+def test_rumo_para_fora_aponta_do_lote_para_a_rua(lado, rumo):
+    pts = [(0, 0), (10, 0), (10, 20), (0, 20)]
+    e = _lw(pts)
+    assert rumo_para_fora(segmentos(e)[lado], pts) == pytest.approx(rumo)

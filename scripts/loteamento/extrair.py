@@ -5,7 +5,7 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-from .geometria import Ponto, centroide, contem, indice_frente, poligono_fechado, pontos_de, segmentos
+from .geometria import Ponto, centroide, contem, indice_frente, poligono_fechado, pontos_de, rumo_para_fora, segmentos
 from .ids import id_lote, normalizar_lote, normalizar_quadra
 
 _RE_LOTE = re.compile(r"^(?:LOTE|LT\.?|L)?\s*-?\s*(\d{1,3})$", re.IGNORECASE)
@@ -43,6 +43,7 @@ class LoteBruto:
     lados_m: list[float]
     frente_m: float | None
     area_cad: float | None = None  # área escrita no desenho (bloco de área), quando há
+    frente_rumo: float | None = None  # rumo da frente para a rua, graus do norte (enquadra a câmera)
 
 
 class ExtracaoErro(Exception):
@@ -82,9 +83,13 @@ def _textos_soltos(msp) -> list[tuple[Ponto, str]]:
     return saida
 
 
-def _frente(e, vias) -> float | None:
+def _frente(e, vias) -> tuple[float | None, float | None]:
+    """Comprimento e rumo para fora do lado mais próximo da via."""
+    if not vias:
+        return None, None
     segs = segmentos(e)
-    return round(segs[indice_frente(segs, vias)][2], 2) if vias else None
+    s = segs[indice_frente(segs, vias)]
+    return round(s[2], 2), rumo_para_fora(s, [p[:2] for p in e.get_points("xy")])
 
 
 def _lados(e) -> list[float]:
@@ -112,7 +117,8 @@ def _uso_misto(msp, mapa: MapaLayers, vias, erros: list[str]) -> dict[str, LoteB
             erros.append(f"{i}: id de uso misto fora do formato Q<quadra>L<lote>")
             continue
         e, pts = achados[0]
-        lotes[i] = LoteBruto(i, m.group(1), m.group(2), e.dxf.handle, pts, _lados(e), _frente(e, vias))
+        frente, rumo = _frente(e, vias)
+        lotes[i] = LoteBruto(i, m.group(1), m.group(2), e.dxf.handle, pts, _lados(e), frente, frente_rumo=rumo)
     return lotes
 
 
@@ -169,9 +175,10 @@ def extrair_lotes(doc, mapa: MapaLayers) -> dict[str, LoteBruto]:
             erros.append(f"{i} repetido (handles {lotes[i].handle} e {h})")
             continue
         area_cad = [float(a.replace(",", ".")) for p, a in areas if contem(pts, p)]
+        frente, rumo = _frente(e, vias)
         lotes[i] = LoteBruto(
-            i, q, l, h, pts, _lados(e), _frente(e, vias),
-            area_cad[0] if len(area_cad) == 1 else None,
+            i, q, l, h, pts, _lados(e), frente,
+            area_cad[0] if len(area_cad) == 1 else None, rumo,
         )
 
     for p, r in rotulos_lote:
