@@ -20,17 +20,19 @@ Antecedentes: GLBs convertidos e aprovados (`scripts/marcos/conversao/README.md`
 ## Encaixe
 
 1. **Referencial comum.** Nos `.blend` de origem, portaria e rotatória têm só a translação `ORIGIN`; o clube tem a mesma translação e mais +28° em torno de `PIVOT` (40,56; 45,98). Desfazendo esses 28° (−28° em torno de `PIVOT`), os três ficam no referencial da portaria.
-2. **Âncora.** A transformação rígida (giro e translação, escala 1) do referencial da portaria para a planta de venda sai de dois pares:
-   - o centro da ilha da rotatória do GLB (caixa de `ROTATORIA_*` no plano) com o centro do círculo da rotatória de acesso na planta de venda (o `CIRCLE` das layers de via com o raio mais próximo do raio da ilha do GLB; empate ou diferença > 3 m falha);
-   - a direção ilha → portaria (centro da caixa dos objetos de edificação de `PORTARIA`) com a direção do eixo da via de acesso no DWG, do centro da rotatória para o platô.
+2. **Âncora.** Dois pares de pontos dão a transformação rígida (giro e translação, escala 1) do referencial da portaria para a planta de venda:
+   - o centro da ilha da rotatória do GLB (caixa de `ROTATORIA_*` no plano) ↔ o centro do círculo da rotatória no DWG;
+   - o centro do clube (caixa de `CLUBE_*`, já sem os 28°) ↔ o centroide da quadra central da placa (a maior peça `ChaoPlato` interior, 6.045 m²).
 
-   Refinamento: ICP rígido entre o contorno do piso do GLB (`PORTARIA_PISO`, faces voltadas para cima e perto de z = 0) e o contorno das vias e calçadas do DWG, só num raio de 150 m da rotatória. O script imprime giro, translação e resíduo mediano, e falha acima de 1,5 m.
-3. **Conferência.** Com a mesma transformação, o centro do clube tem de cair dentro da quadra central da placa (peça `ChaoPlato` interior, 6.045 m²); senão o script falha. Prévia de cima com a imagem `maqueteclubeplanta.jpg` sobreposta.
+   O círculo é o `CIRCLE` das layers de via cujo raio difere do raio da ilha do GLB em até 3 m e cuja distância à quadra difere da distância ilha–clube do GLB em até 10 m; nenhum ou mais de um candidato falha. Nos dados atuais: círculo de r = 17,5 m em (176,2; 124,9), 364,2 m da quadra, contra 360,6 m e r ≈ 17,4 m no GLB.
+
+   Refinamento: ICP rígido entre a borda do chão do GLB da portaria (faces voltadas para cima, perto de z = 0) e a borda das vias e calçadas do DWG, num raio de 150 m da rotatória, ignorando pares a mais de 5 m. O script imprime giro, translação e resíduo mediano, e falha acima de 1,5 m.
+3. **Conferência.** Depois do refinamento, o centro do clube continua dentro da quadra central; senão o script falha. Prévia de cima da cena com os marcos, montada lado a lado com a imagem `maqueteclubeplanta.jpg`.
 4. **Cotas.** O z = 0 dos modelos vai para a cota do platô; o do clube, para o topo da quadra (+0,25).
 
 ## Sem briga com a placa
 
-O piso dos modelos não pode ficar coplanar com a placa. Cada marco tem uma **pegada**, e a placa perde a pegada (as paredes da regra única aparecem na borda do furo). Do modelo, ficam só as faces cujo centro está dentro da pegada mais 1 m.
+O piso dos modelos não pode ficar coplanar com a placa. Cada marco tem uma **pegada**, e a placa perde a pegada (as paredes da regra única aparecem na borda do furo). Do modelo, ficam só as faces cujo centro está dentro da pegada.
 
 | Marco | Pegada |
 |---|---|
@@ -43,12 +45,12 @@ Os pedaços de rua dos GLBs, inclusive o pedaço solto a 250 m da portaria, saem
 ## Arquivos
 
 - `scripts/marcos/marcos.toml`: fontes, `ORIGIN`/`PIVOT`/28°, objetos de edificação, raio do ICP, limites.
-- `scripts/marcos/encaixe.py` (Python puro): pegadas, âncora, ICP, conferências → `cache/cena/marcos.json` (transformações e pegadas no referencial local).
+- `scripts/marcos/encaixe.py` (Python puro): pegadas, âncora, ICP, conferências → `cache/cena/marcos.json` (transformações e pegadas no referencial local). A quadra central vem das peças da placa, que `cena.py` passa a expor sem montar malhas (`pecas_da_placa`).
 - `scripts/blender/extrair_marcos.py` (Blender): contorno de piso e caixas dos GLBs fonte → `cache/cena/marcos-fonte.json`.
 - `scripts/blender/gerar_marcos.py` (Blender): aplica as transformações, recorta pela pegada, exporta `10-MAQUETE INTERATIVA/marcos.glb` com os objetos `Clube`, `Portaria`, `Rotatoria` (materiais por categoria mantidos; vidro e água transparentes).
 - `cena.py`: a placa perde as pegadas de `cache/cena/marcos.json` (se existir).
 - `dados/marcos.json` (contrato com o front): `{"versao": 1, "marcos": [{id, nome, x, y, z, objeto, galeria: [{foto, legenda}], planta, lat, lon}]}`; `objeto` é o nome no `marcos.glb` (`null` no estande); `planta` só no estande (a planta humanizada do KMZ); `lat, lon` para "Como chegar".
-- Galeria: `scripts/marcos/curadoria.json` (editada à mão) lista as imagens de cada marco; o script as reduz a 1600 px no lado maior (JPEG 82) em `dados/marcos/`. Primeira curadoria: todas as candidatas de `04-CLUBE/Julho 25/Clube_Alta`, `05-PORTARIA/Artes Portaria` e a planta humanizada do estande; a escolha final fica para a sessão de revisão visual (⛔ Abner).
+- Galeria: `scripts/marcos/curadoria.json` (editada à mão) lista as imagens de cada marco; o script as reduz a 1600 px no lado maior (JPEG 82) em `dados/marcos/`. Primeira curadoria: seis renders de `04-CLUBE/Julho 25/Clube_Alta` (Alta 01 a 06), cinco de `05-PORTARIA/Artes Portaria` (portaria 01 a 05) e a planta humanizada do estande, ~3 MB no total; a escolha final fica para a sessão de revisão visual (⛔ Abner).
 - Orçamento: `marcos.glb` ≤ 6 MB.
 
 ## Testes
