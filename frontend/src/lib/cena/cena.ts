@@ -7,7 +7,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { Dados, Lote, Vista } from '../dados';
 import type { Ponto } from '../pontos';
 import { Ceu } from './ceu';
-import { Entorno } from './entorno';
+import { Entorno, raiosDosAneis } from './entorno';
 import { duracaoDoVoo, poseDoVoo, vistaDeFrente, type Pose } from './enquadramento';
 import { COR_AGUA, alcanceDaAgua, desbotarDaAgua, materialDaAgua, quadroDaAgua } from './agua';
 
@@ -256,6 +256,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     const { clientWidth: w, clientHeight: h } = container;
     if (!w || !h) return;
     renderer.setSize(w, h);
+    entorno?.tela(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     if (abertura) inicio();
@@ -343,7 +344,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   });
 
   // ---- entorno ----
-  const RAIOS = [1000, 3000];
+  const RAIOS = raiosDosAneis(600, 3000);
   let entorno: Entorno | null = null;
   let carregandoEntorno: Promise<Entorno> | null = null;
   let pedidoEntorno = 0;
@@ -390,6 +391,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
         entorno.grupo.traverse(x => { if ((x as THREE.Mesh).isMesh && x.name.startsWith('Entorno_')) raioTerra = Math.max(raioTerra, alcanceDaAgua(x as THREE.Mesh, centro)); });
         agua.uniforms.uDesbotar.value.copy(desbotarDaAgua(raioTerra || alcanceAgua));
       }
+      entorno.tela(el.clientWidth, el.clientHeight);
       cena.add(entorno.grupo);
     }
     camera.far = Math.max(FAR, alcanceAgua * 1.2);

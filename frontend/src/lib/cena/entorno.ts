@@ -2,6 +2,17 @@
 // anéis de distância. Carrega só quando pedido (botão de entorno).
 import * as THREE from 'three';
 import type { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { Line2 } from 'three/addons/lines/Line2.js';
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+
+/** Raios dos anéis de distância: um a cada `passo` m, até `ate` m. */
+export function raiosDosAneis(passo: number, ate: number): number[] {
+  return Array.from({ length: Math.floor(ate / passo + 1e-9) }, (_, i) => (i + 1) * passo);
+}
+
+/** Altura dos anéis sobre o terreno: soltos do chão, acima das copas e dos telhados baixos. */
+const ALTURA_ANEL = 12;
 
 interface Vegetacao {
   /** `especies.<nome>.instancias`: [x_dm, y_dm, z_cm, escala_pct, rotacao_graus, …], x leste, y norte. */
@@ -15,6 +26,7 @@ export class Entorno {
   private readonly arvores: { malha: THREE.InstancedMesh; total: number }[] = [];
   private readonly terreno: THREE.Object3D[];
   private readonly raio = new THREE.Raycaster();
+  private readonly linhaAnel = new LineMaterial({ color: 0x2b2e1e, linewidth: 1.6, transparent: true, opacity: 0.7, depthWrite: false });
 
   private constructor(cenario: THREE.Group, modelos: THREE.Group, vegetacao: Vegetacao, centro: THREE.Vector3, raios: number[], fracao: number) {
     this.grupo.name = 'ENTORNO';
@@ -50,19 +62,26 @@ export class Entorno {
     }
     this.vegetacao(fracao);
 
-    // Anéis de distância em volta dos lotes, deitados sobre o terreno (cada vértice na cota de baixo).
-    const material = new THREE.LineBasicMaterial({ color: 0x2b2e1e, transparent: true, opacity: 0.55, depthWrite: false });
+    // Anéis de distância em volta dos lotes: linha fina (em pixels) solta acima do terreno, que
+    // acompanha o relevo e não some atrás das dunas.
     for (const r of raios) {
-      const pontos = Array.from({ length: 257 }, (_, i) => {
+      const posicoes: number[] = [];
+      for (let i = 0; i <= 256; i++) {
         const a = (i / 256) * Math.PI * 2;
         const x = centro.x + Math.cos(a) * r;
         const z = centro.z + Math.sin(a) * r;
-        return new THREE.Vector3(x, this.cotaEm(x, -z) + 1.5, z);
-      });
-      const anel = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pontos), material);
+        posicoes.push(x, Math.max(this.cotaEm(x, -z), 0) + ALTURA_ANEL, z);
+      }
+      const anel = new Line2(new LineGeometry().setPositions(posicoes), this.linhaAnel);
+      anel.computeLineDistances();
       anel.renderOrder = 2;
       this.grupo.add(anel);
     }
+  }
+
+  /** Tamanho da tela em pixels: a espessura dos anéis é medida nela. */
+  tela(largura: number, altura: number): void {
+    this.linhaAnel.resolution.set(largura, altura);
   }
 
   static async carregar(loader: GLTFLoader, base: URL, centro: THREE.Vector3, raios: number[], fracao: number): Promise<Entorno> {
