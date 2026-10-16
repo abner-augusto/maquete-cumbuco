@@ -36,6 +36,9 @@ export interface Cena {
   enquadrarMarco(id: string): void;
   selecionar(id: string | null): void;      // realce de seleção
   aproximar(fator: number): void;
+  /** Modo dev: posição e alvo da câmera (metros da cena), para copiar e para reabrir o mesmo quadro. */
+  camera(): { posicao: number[]; alvo: number[] };
+  irPara(posicao: number[], alvo: number[]): void;
   ceu(modo: 'claro' | 'escuro'): void;
   /** Liga o entorno (carrega na primeira vez) com os pontos de referência, ou desliga. */
   entorno(ativo: boolean, pontos: Ponto[]): Promise<void>;
@@ -435,6 +438,13 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
       abertura = false;
       const d = camera.position.clone().sub(controles.target).multiplyScalar(f);
       camera.position.copy(controles.target).add(d.setLength(THREE.MathUtils.clamp(d.length(), controles.minDistance, controles.maxDistance)));
+      controles.update();
+    },
+    camera: () => ({ posicao: camera.position.toArray(), alvo: controles.target.toArray() }),
+    irPara(posicao, alvo) {
+      abertura = false;
+      controles.target.fromArray(alvo);
+      camera.position.fromArray(posicao);
       controles.update();
     },
     ceu(modo) { ceu.cor(modo); agua.uniforms.uAgua.value.set(COR_AGUA[modo]); sujo = true; },

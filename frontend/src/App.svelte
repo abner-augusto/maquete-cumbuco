@@ -2,6 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { criarCena, type Cena, type QuadroEntorno, type Tela } from './lib/cena/cena';
   import { carregarDados, type Dados, type Lote } from './lib/dados';
+  import { cameraDaUrl, modoDev } from './lib/dev';
   import { modoCor, primeiraVisita, vegetacao } from './lib/dispositivo';
   import { prepararPontos } from './lib/pontos';
   import { buscar, loteDaUrl, precosVisiveis, rotuloCurto } from './lib/lotes';
@@ -9,6 +10,7 @@
   import BoasVindas from './componentes/BoasVindas.svelte';
   import Busca from './componentes/Busca.svelte';
   import Controles from './componentes/Controles.svelte';
+  import DevCamera from './componentes/DevCamera.svelte';
   import Ficha from './componentes/Ficha.svelte';
   import FichaPonto from './componentes/FichaPonto.svelte';
   import Folha, { type Batente } from './componentes/Folha.svelte';
@@ -24,6 +26,7 @@
 
   let fase = $state<Fase>('carregando');
   let cena = $state<Cena | null>(null);
+  const dev = modoDev(location.search);
   let dados = $state<Dados | null>(null);
   let palco: HTMLElement | undefined = $state();
 
@@ -98,6 +101,13 @@
       return void (fase = 'erro');
     }
     fase = 'pronto';
+    // Modo dev com câmera no link: reabre o mesmo quadro (com o entorno, se estava ligado).
+    const camDev = cameraDaUrl(location.search);
+    if (camDev) {
+      if (camDev.entorno) await alternarEntorno();
+      cena.irPara(camDev.posicao, camDev.alvo);
+      return;
+    }
     const inicial = loteDaUrl(dados.lotes, location.search);
     if (inicial) abrirFicha(inicial.id, true);
     else {
@@ -263,6 +273,9 @@
     {/if}
     <Marca escuro={cor === 'escuro'} />
 
+    {#if dev && cena}
+      <DevCamera camera={() => ({ ...cena!.camera(), entorno: modoEntorno })} />
+    {/if}
     <Controles
       {rumo}
       buscaAtiva={batente !== 'some' && conteudo === 'busca'}

@@ -247,3 +247,14 @@ test('16. no celular os pontos distantes ficam na borda, compactos, e os que se 
       expect(cobre, `setas ${i} e ${j} se cobrem`).toBe(false);
     }
 });
+
+test('17. modo dev: o link copiado devolve a mesma câmera', async ({ page }, info) => {
+  test.skip(info.project.name !== 'tablet-paisagem', 'um aparelho basta');
+  await jaVisitou(page);
+  const cam = '150,90,-260,-20,21,40';
+  await page.goto(`./?dev&cam=${cam}`);
+  await page.getByRole('button', { name: 'Copiar câmera' }).click();
+  const link = await page.getByRole('textbox', { name: 'Link da câmera' }).inputValue();
+  expect(new URL(link).searchParams.get('cam')).toBe(cam);
+  expect(new URL(link).searchParams.has('dev')).toBe(true);
+});
