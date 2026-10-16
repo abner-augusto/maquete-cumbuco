@@ -127,9 +127,12 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     if (m.material !== m.userData.base) (m.material as THREE.Material).dispose();
     m.material = m.userData.base;
   };
+  // Desenha só quando algo mudou (câmera, realce, tamanho, céu): parada, a cena não gasta CPU nem bateria.
+  let sujo = true;
   let selecionado: string | null = null;
   let passando: string | null = null;
   function aplicarRealces() {
+    sujo = true;
     for (const [id, m] of lotes) {
       if (id === selecionado) realce(m, 0x64461d, 0.55);
       else if (id === passando) realce(m, 0xe4c89b, 0.35);
@@ -170,6 +173,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   el.addEventListener('pointercancel', e => { ponteiros.delete(e.pointerId); gesto = null; });
   let abertura = true;
   controles.addEventListener('start', () => (abertura = false));
+  controles.addEventListener('change', () => (sujo = true));
 
   let container: HTMLElement | null = null;
   const redimensionar = new ResizeObserver(() => {
@@ -180,6 +184,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     if (abertura) inicio();
+    sujo = true;
   });
 
   const projetar = (p: THREE.Vector3): Tela | null => {
@@ -192,10 +197,6 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   renderer.setAnimationLoop(() => {
     if (!container) return;
     controles.update();
-    // near acompanha a altura: a placa a 0,25 m do terreno não briga na profundidade de longe.
-    const perto = THREE.MathUtils.clamp((camera.position.y - centro.y) * 0.2, 1, 200);
-    if (Math.abs(perto - camera.near) > 0.5) { camera.near = perto; camera.updateProjectionMatrix(); }
-    ceu.malha.position.copy(camera.position);
     if (pendente) {
       const e = pendente;
       pendente = null;
@@ -208,6 +209,12 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
       }
       el.style.cursor = id ? 'pointer' : '';
     }
+    if (!sujo) return;
+    sujo = false;
+    // near acompanha a altura: a placa a 0,25 m do terreno não briga na profundidade de longe.
+    const perto = THREE.MathUtils.clamp((camera.position.y - centro.y) * 0.2, 1, 200);
+    if (Math.abs(perto - camera.near) > 0.5) { camera.near = perto; camera.updateProjectionMatrix(); }
+    ceu.malha.position.copy(camera.position);
     renderer.render(cena, camera);
     const m = selecionado ? lotes.get(selecionado) : undefined;
     const tela = m ? projetar(m.getWorldPosition(new THREE.Vector3())) : null;
@@ -225,7 +232,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   };
 
   return {
-    montar(e) { container = e; e.prepend(el); redimensionar.observe(e); },
+    montar(e) { container = e; e.prepend(el); redimensionar.observe(e); sujo = true; },
     inicio() { abertura = true; inicio(); },
     enquadrar,
     selecionar(id) { selecionado = id; aplicarRealces(); },
@@ -235,7 +242,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
       camera.position.copy(controles.target).add(d.setLength(THREE.MathUtils.clamp(d.length(), controles.minDistance, controles.maxDistance)));
       controles.update();
     },
-    ceu(modo) { ceu.cor(modo); },
+    ceu(modo) { ceu.cor(modo); sujo = true; },
     cores: () => ({ residencial: corDo('residencial'), uso_misto: corDo('uso_misto') }),
     descartar() {
       redimensionar.disconnect();

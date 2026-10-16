@@ -5,8 +5,9 @@ export default defineConfig({
   testDir: 'e2e',
   timeout: 60_000,
   expect: { timeout: 15_000 },
-  // WebGL por software (SwiftShader) derruba o navegador com muitas instâncias simultâneas.
-  workers: 2,
+  // WebGL por software (SwiftShader) ocupa todos os núcleos: um navegador por vez, para a máquina
+  // continuar usável. E2E_WORKERS sobe isso quando a máquina estiver livre.
+  workers: Number(process.env.E2E_WORKERS ?? 1),
   reporter: [['list']],
   use: {
     baseURL: 'http://127.0.0.1:4173',

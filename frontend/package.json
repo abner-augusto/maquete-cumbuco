@@ -11,7 +11,8 @@
     "test:unidade": "vitest run",
     "test": "playwright test",
     "verificar": "node scripts/verificar-dist.mjs",
-    "pacote": "node scripts/pacote.mjs"
+    "pacote": "node scripts/pacote.mjs",
+    "test:leve": ".\\e2e-leve.cmd"
   },
   "dependencies": {
     "@fontsource/cinzel": "5.2.8",
