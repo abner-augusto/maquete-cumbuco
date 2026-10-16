@@ -98,6 +98,23 @@ def instancias(pontos: list[tuple[float, float, str]], relevo, nivel_mar: float,
     return {e: [c for inst in v for c in inst] for e, v in saida.items()}
 
 
+def _poligono(a):
+    return Polygon(a[0], a[1:]).buffer(0)
+
+
+def area_livre(base: dict, raio: float, plato, gleba=None):
+    """Onde pode haver árvore: o raio menos o platô, vias, prédios, água, areia e o masterplan
+    (as fases 2–10 são pintadas no chão; árvore por cima esconde o desenho)."""
+    tirar = [
+        plato.buffer(5), faixas(base["vias"], "via_principal").buffer(2), faixas(base["vias"], "via_local").buffer(1),
+        *[_poligono(p).buffer(1.5) for pr in base["predios"] for p in pr["poligonos"]],
+        *[_poligono(p) for a in base["areas"] if a["tipo"] in ("agua", "estacionamento", "areia") for p in a["poligonos"]],
+    ]
+    if gleba is not None:
+        tirar.append(gleba)
+    return Point(base["centro"]).buffer(raio, 128).difference(unary_union(tirar))
+
+
 def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8")
     cfg = EntornoCfg.carregar()
@@ -111,16 +128,17 @@ def main() -> int:
     relevo = Relevo.carregar()
     nivel = next(o for o in json.loads(DESTINO_ENTORNO.read_text(encoding="utf-8"))["objetos"]
                  if o["nome"] == "Mar")["vertices"][0][2]
-    poligono = lambda a: Polygon(a[0], a[1:]).buffer(0)  # noqa: E731
-    livre = Point(base["centro"]).buffer(cfg.raio_vegetacao, 128).difference(unary_union([
-        plato.buffer(5), faixas(base["vias"], "via_principal").buffer(2), faixas(base["vias"], "via_local").buffer(1),
-        *[poligono(p).buffer(1.5) for pr in base["predios"] for p in pr["poligonos"]],
-        *[poligono(p) for a in base["areas"] if a["tipo"] in ("agua", "estacionamento", "areia") for p in a["poligonos"]],
-    ]))
+    gleba = None
+    if cfg.masterplan:
+        from .masterplan import META
+
+        if META.exists():
+            gleba = Polygon(json.loads(META.read_text(encoding="utf-8"))["gleba"]).buffer(0)
+    livre = area_livre(base, cfg.raio_vegetacao, plato, gleba)
     sorte = random.Random(4)
     pts, ja, por_zona = [], Polygon(), {}
     for nome, regra, m2, mistura in ZONAS:
-        g = unary_union([poligono(p) for a in base["areas"] if regra(a["tags"]) for p in a["poligonos"]])
+        g = unary_union([_poligono(p) for a in base["areas"] if regra(a["tags"]) for p in a["poligonos"]])
         zona = g.difference(ja).intersection(livre)
         ja = ja.union(g)
         novos = pontos_zona(zona, m2, mistura, sorte)

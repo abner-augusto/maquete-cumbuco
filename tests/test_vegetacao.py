@@ -3,7 +3,7 @@ import random
 import pytest
 from shapely.geometry import Point, Polygon
 
-from scripts.entorno.vegetacao import canteiros, instancias, pontos_zona
+from scripts.entorno.vegetacao import area_livre, canteiros, instancias, pontos_zona
 
 
 class Plano:
@@ -42,3 +42,14 @@ def test_canteiros_ficam_no_topo_dos_verdes():
     from scripts.loteamento.placa import PlacaCfg
 
     assert OFFSET_CANTEIRO == PlacaCfg.carregar(RAIZ / "scripts" / "loteamento" / "cena.toml").alturas["Verdes"]
+
+
+def test_area_livre_tira_o_masterplan_e_o_plato():
+    base = {"centro": [0.0, 0.0], "vias": [], "predios": [], "areas": []}
+    plato = Polygon([(-10, -10), (10, -10), (10, 10), (-10, 10)])
+    gleba = Polygon([(100, -50), (300, -50), (300, 50), (100, 50)])
+    livre = area_livre(base, 500.0, plato, gleba)
+    assert not livre.contains(Point(0, 0))      # platô da Fase 1
+    assert not livre.contains(Point(200, 0))    # fases do masterplan, sem árvore por cima
+    assert livre.contains(Point(-200, 0))       # mata do entorno
+    assert not livre.contains(Point(600, 0))    # fora do raio
