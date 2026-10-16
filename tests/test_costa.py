@@ -93,3 +93,13 @@ def test_malha_do_mar_vai_ao_horizonte_so_do_lado_do_mar():
     assert not cobre(0, 6000)     # terra além do entorno: sem água
     # todos os triângulos com a face para cima
     assert all((v[b][0] - v[a][0]) * (v[c][1] - v[a][1]) - (v[b][1] - v[a][1]) * (v[c][0] - v[a][0]) > 0 for a, b, c in f)
+
+
+def test_prolongamento_segue_o_angulo_medio_da_orla_nao_o_ultimo_trecho():
+    # Orla reta para leste por 4 km e um último trecho de 150 m dobrado 45° para o sul: o mar
+    # prolongado segue a orla (leste), não o trecho torto.
+    costa = LineString([(-4000, 0), (0, 0), (106, -106)])
+    mar = mar_da_costa([costa], (0.0, 0.0), 20000.0)
+    assert not mar.contains(Point(10000, 300))    # a terra continua ao norte da orla
+    assert mar.contains(Point(10000, -1500))      # o mar, ao sul
+    assert not mar.contains(Point(10000, -500)) or mar.contains(Point(10000, -200))

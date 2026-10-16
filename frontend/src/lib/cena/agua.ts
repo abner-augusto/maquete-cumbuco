@@ -26,7 +26,7 @@ const vertexShader = /* glsl */ `
   }
 `;
 
-// Ondas por ruído fractal (sete escalas, de 96 m a 1,5 m; a mais longa ainda se lê de longe), cada uma girada e andando para um lado.
+// Ondas por ruído fractal (sete escalas, de 64 m a 1 m; a mais longa ainda se lê de longe), cada uma girada e andando para um lado.
 // Cada escala some quando fica menor que ~3 px na tela (fwidth): de longe e rente não há faixas
 // nem cintilação, e o mar vira espelho do horizonte, como no real. Sem névoa da cena: a água
 // desbota sozinha para a cor do horizonte até o fim do plano.
@@ -68,7 +68,7 @@ const fragmentShader = /* glsl */ `
     float pixel = max(length(fwidth(p)), 1e-3);  // metros por pixel
     vec2 inclinacao = vec2(0.0);
     float amp = 1.0;
-    float freq = 1.0 / 96.0;
+    float freq = 1.0 / 64.0;
     mat2 gira = mat2(0.8, -0.6, 0.6, 0.8);
     vec2 dir = vec2(0.71, 0.71);
     for (int i = 0; i < 7; i++) {

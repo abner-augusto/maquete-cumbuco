@@ -48,14 +48,20 @@ def linhas_de_costa(e0: float, n0: float) -> list[LineString]:
             if e.get("tags", {}).get("natural") == "coastline" and len(e.get("geometry") or []) > 1]
 
 
-def _prolongar(linha: LineString, d: float) -> LineString:
+def _prolongar(linha: LineString, d: float, base: float = 3000.0) -> LineString:
+    """A linha com as pontas esticadas `d` m. A direção é a média dos últimos `base` m de orla
+    (da ponta até o ponto a `base` m dela, pela linha), não a do último trecho, que no OSM costuma
+    dobrar num espigão ou na foz: fora do entorno o mar segue o rumo geral da orla."""
     c = list(linha.coords)
+    b = min(base, linha.length / 2)
 
-    def ponta(a, b):
-        v = np.subtract(a, b)
+    def ponta(a, de):
+        v = np.subtract(a, de)
         return tuple(np.add(a, v / (np.linalg.norm(v) or 1.0) * d))
 
-    return LineString([ponta(c[0], c[1]), *c, ponta(c[-1], c[-2])])
+    inicio = ponta(c[0], linha.interpolate(b).coords[0])
+    fim = ponta(c[-1], linha.interpolate(linha.length - b).coords[0])
+    return LineString([inicio, *c, fim])
 
 
 def mar_da_costa(linhas: list[LineString], centro: tuple[float, float], raio: float) -> BaseGeometry:
