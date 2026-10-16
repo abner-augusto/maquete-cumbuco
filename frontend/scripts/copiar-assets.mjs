@@ -29,16 +29,25 @@ function terrenoDir() {
 
 const readFileSyncTexto = p => readFileSync(p, 'utf8');
 
+/**
+ * Meshopt com as posições em 16 bits (o padrão, 14, dá passos de 24 cm numa janela de 4 km do
+ * entorno: a terra baixa, a 20 cm da água, caía no plano dela e piscava; em 16 bits o passo é de 6 cm).
+ */
+export async function comprimirDocumento(doc) {
+  const { meshopt } = await import('@gltf-transform/functions');
+  const { MeshoptEncoder } = await import('meshoptimizer');
+  await MeshoptEncoder.ready;
+  await doc.transform(meshopt({ encoder: MeshoptEncoder, level: 'medium', quantizePosition: 16 }));
+}
+
 async function comprimir(origem, destino) {
   const { NodeIO } = await import('@gltf-transform/core');
   const { ALL_EXTENSIONS } = await import('@gltf-transform/extensions');
-  const { meshopt } = await import('@gltf-transform/functions');
   const { MeshoptEncoder, MeshoptDecoder } = await import('meshoptimizer');
-  await MeshoptEncoder.ready;
   const io = new NodeIO().registerExtensions(ALL_EXTENSIONS)
     .registerDependencies({ 'meshopt.encoder': MeshoptEncoder, 'meshopt.decoder': MeshoptDecoder });
   const doc = await io.read(origem);
-  await doc.transform(meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
+  await comprimirDocumento(doc);
   await io.write(destino, doc);
 }
 

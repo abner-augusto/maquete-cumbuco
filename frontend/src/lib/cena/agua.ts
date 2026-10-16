@@ -122,5 +122,10 @@ export function materialDaAgua(ceu: CoresCeu): MaterialAgua {
     },
     vertexShader,
     fragmentShader,
+    // O plano passa sob toda a terra do entorno, a centímetros dela nas baixadas e nas margens:
+    // empurrado para trás na profundidade, o terreno ganha onde os dois quase coincidem e nada pisca.
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1,
   }) as MaterialAgua;
 }

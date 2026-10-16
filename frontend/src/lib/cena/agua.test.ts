@@ -12,3 +12,15 @@ describe('quadroDaAgua', () => {
     expect(quadroDaAgua({ ...base, reduzido: true })).toBe(false);
   });
 });
+
+describe('materialDaAgua', () => {
+  test('o plano da água cede a profundidade ao terreno: sob a terra baixa ele não briga nem pisca', async () => {
+    const THREE = await import('three');
+    const { materialDaAgua } = await import('./agua');
+    const cor = () => new THREE.Color();
+    const m = materialDaAgua({ zenite: cor(), faixa: cor(), horizonte: cor(), sol: new THREE.Vector3(0, 1, 0) });
+    expect(m.polygonOffset).toBe(true);
+    expect(m.polygonOffsetFactor).toBeGreaterThan(0);
+    expect(m.polygonOffsetUnits).toBeGreaterThan(0);
+  });
+});
