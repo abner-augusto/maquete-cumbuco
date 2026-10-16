@@ -1,0 +1,206 @@
+{
+ "versao": 1,
+ "marcos": [
+  {
+   "id": "clube",
+   "nome": "Clube",
+   "x": -57.2,
+   "y": -154.74,
+   "z": 21.25,
+   "objeto": "Clube",
+   "galeria": [
+    {
+     "foto": "marcos/clube/01.jpg",
+     "legenda": ""
+    },
+    {
+     "foto": "marcos/clube/02.jpg",
+     "legenda": ""
+    },
+    {
+     "foto": "marcos/clube/03.jpg",
+     "legenda": ""
+    },
+    {
+     "foto": "marcos/clube/04.jpg",
+     "legenda": ""
+    },
+    {
+     "foto": "marcos/clube/05.jpg",
+     "legenda": ""
+    },
+    {
+     "foto": "marcos/clube/06.jpg",
+     "legenda": ""
+    }
+   ],
+   "planta": null,
+   "lat": -3.6645529,
+   "lon": -38.6889424
+  },
+  {
+   "id": "portaria",
+   "nome": "Portaria",
+   "x": 123.87,
+   "y": 47.64,
+   "z": 21.0,
+   "objeto": "Portaria",
+   "galeria": [
+    {
+     "foto": "marcos/portaria/01.jpg",
+     "legenda": ""
+    },
+    {
+     "foto": "marcos/portaria/02.jpg",
+     "legenda": ""
+    },
+    {
+     "foto": "marcos/portaria/03.jpg",
+     "legenda": ""
+    },
+    {
+     "foto": "marcos/portaria/04.jpg",
+     "legenda": ""
+    },
+    {
+     "foto": "marcos/portaria/05.jpg",
+     "legenda": ""
+    }
+   ],
+   "planta": null,
+   "lat": -3.6627215,
+   "lon": -38.6873125
+  },
+  {
+   "id": "estande",
+   "nome": "Estande de vendas",
+   "x": 145.91,
+   "y": 193.32,
+   "z": 21.0,
+   "objeto": null,
+   "galeria": [
+    {
+     "foto": "marcos/estande/01.jpg",
+     "legenda": ""
+    }
+   ],
+   "planta": "marcos/estande/planta.jpg",
+   "lat": -3.6614034,
+   "lon": -38.6871145,
+   "pegada": [
+    [
+     145.76,
+     183.28
+    ],
+    [
+     145.6,
+     183.19
+    ],
+    [
+     145.42,
+     183.12
+    ],
+    [
+     145.23,
+     183.09
+    ],
+    [
+     145.05,
+     183.08
+    ],
+    [
+     144.86,
+     183.11
+    ],
+    [
+     144.68,
+     183.16
+    ],
+    [
+     144.51,
+     183.24
+    ],
+    [
+     144.35,
+     183.34
+    ],
+    [
+     144.22,
+     183.47
+    ],
+    [
+     130.22,
+     198.86
+    ],
+    [
+     130.02,
+     199.1
+    ],
+    [
+     129.87,
+     199.38
+    ],
+    [
+     129.77,
+     199.67
+    ],
+    [
+     129.71,
+     199.98
+    ],
+    [
+     129.7,
+     200.3
+    ],
+    [
+     129.74,
+     200.61
+    ],
+    [
+     129.82,
+     200.91
+    ],
+    [
+     129.96,
+     201.19
+    ],
+    [
+     130.13,
+     201.45
+    ],
+    [
+     130.35,
+     201.68
+    ],
+    [
+     139.96,
+     210.43
+    ],
+    [
+     156.12,
+     192.68
+    ],
+    [
+     157.3,
+     193.76
+    ],
+    [
+     163.36,
+     187.1
+    ],
+    [
+     151.82,
+     176.6
+    ],
+    [
+     145.76,
+     183.26
+    ],
+    [
+     145.91,
+     183.39
+    ]
+   ]
+  }
+ ]
+}

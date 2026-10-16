@@ -1,0 +1,17 @@
+{
+  "clube": {"nome": "Clube", "objeto": "Clube", "fotos": [
+    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/Clube_Alta/Alta 01.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/Clube_Alta/Alta 02.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/Clube_Alta/Alta 03.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/Clube_Alta/Alta 04.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/Clube_Alta/Alta 05.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/Clube_Alta/Alta 06.jpg", "legenda": ""}]},
+  "portaria": {"nome": "Portaria", "objeto": "Portaria", "fotos": [
+    {"arquivo": "6-PROJETOS/05-PORTARIA/Artes Portaria/2025-03-07 portaria 01.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/05-PORTARIA/Artes Portaria/2025-03-07 portaria 02.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/05-PORTARIA/Artes Portaria/2025-03-07 portaria 03.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/05-PORTARIA/Artes Portaria/2025-03-07 portaria 04.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/05-PORTARIA/Artes Portaria/2025-03-07 portaria 05.jpg", "legenda": ""}]},
+  "estande": {"nome": "Estande de vendas", "objeto": null, "fotos": [
+    {"arquivo": "6-PROJETOS/08-ESTANDE/2026-10-09 estande v10c - humanizada Gemini (editado).png", "legenda": ""}]}
+}
