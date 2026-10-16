@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { Lote } from './dados';
-import { buscar, loteDaUrl, precosVisiveis, rotuloCurto, rotuloLongo } from './lotes';
+import { buscar, linkDoLote, loteDaUrl, precosVisiveis, rotuloCurto, rotuloLongo } from './lotes';
 
 const lote = (quadra: string, n: string): Lote => ({ id: `Q${quadra}L${n}`, quadra, lote: n, tipo: 'residencial', area_m2: 300,
   lados_m: [10, 30, 10, 30], frente_m: 10, poligono: [[0, 0], [10, 0], [10, 30], [0, 30]] });
@@ -37,4 +37,13 @@ test('rótulos', () => {
   expect(rotuloCurto(LOTES[0]!)).toBe('Q07 · L04');
   expect(rotuloCurto(LOTES[3]!)).toBe('QH · L01');
   expect(rotuloLongo(LOTES[0]!)).toBe('Quadra 07 · Lote 04');
+});
+
+describe('linkDoLote', () => {
+  test('aponta para o lote e descarta os outros parâmetros', () => {
+    expect(linkDoLote('https://x.dev/m/?lote=Q01L01&foo=1', 'Q07L04')).toBe('https://x.dev/m/?lote=Q07L04');
+  });
+  test('mantém precos=0: quem apresenta sem preço compartilha sem preço', () => {
+    expect(linkDoLote('https://x.dev/?lote=Q01L01&precos=0', 'Q07L04')).toBe('https://x.dev/?lote=Q07L04&precos=0');
+  });
 });

@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Config, Lote } from '../lib/dados';
-  import { formatarArea, metros, reais, ROTULO_TIPO, rotuloLongo } from '../lib/lotes';
+  import { formatarArea, linkDoLote, metros, reais, ROTULO_TIPO, rotuloLongo } from '../lib/lotes';
   import Contorno from './Contorno.svelte';
   import Icone from './Icone.svelte';
 
@@ -10,11 +10,10 @@
   const STATUS = { disponivel: 'Disponível', reservado: 'Reservado', vendido: 'Vendido' } as const;
 
   async function compartilhar() {
-    const url = new URL(location.href);
-    url.search = `?lote=${lote.id}`;
-    const dados = { title: rotuloLongo(lote), url: url.href };
+    const url = linkDoLote(location.href, lote.id);
+    const dados = { title: rotuloLongo(lote), url };
     if (navigator.share) await navigator.share(dados).catch(() => {});
-    else { await navigator.clipboard?.writeText(url.href); copiado = true; setTimeout(() => (copiado = false), 2000); }
+    else { await navigator.clipboard?.writeText(url); copiado = true; setTimeout(() => (copiado = false), 2000); }
   }
 </script>
 
@@ -42,8 +41,8 @@
 <button class="btn" onclick={compartilhar}><Icone nome="link" tamanho={18} />{copiado ? 'Link copiado' : 'Compartilhar'}</button>
 
 <style>
-  .barra { display: flex; align-items: center; justify-content: space-between; height: 36px; margin: 0 -8px 2px; }
-  .fechar { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 0; background: none; border-radius: var(--raio-1); color: var(--tema-tinta-2); cursor: pointer; }
+  .barra { display: flex; align-items: center; justify-content: space-between; height: var(--toque); margin: 0 -12px 2px; }
+  .fechar { display: inline-flex; align-items: center; justify-content: center; width: var(--toque); height: var(--toque); padding: 0; border: 0; background: none; border-radius: var(--raio-1); color: var(--tema-tinta-2); cursor: pointer; }
   .fechar:hover { background: var(--tema-papel-2); color: var(--tema-tinta); }
   .fechar:focus-visible { outline: 2px solid var(--tema-acento); outline-offset: 2px; }
   .titulo { font-family: var(--tema-fonte-display); font-weight: 600; font-size: 30px; line-height: 1.05; margin: 0; }

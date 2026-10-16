@@ -30,3 +30,11 @@ const n2 = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFra
 export const metros = (n: number) => `${n2.format(n)} m`;
 export const formatarArea = (n: number) => `${n2.format(n)} m²`;
 export const reais = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+
+/** Link para compartilhar o lote: só o `lote`, mais o `precos=0` de quem apresenta sem preço. */
+export function linkDoLote(href: string, id: string): string {
+  const url = new URL(href);
+  const semPreco = url.searchParams.get('precos') === '0';
+  url.search = `?lote=${id}${semPreco ? '&precos=0' : ''}`;
+  return url.href;
+}
