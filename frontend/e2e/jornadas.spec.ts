@@ -204,6 +204,9 @@ test('14. o toque num lote leva a câmera até ele; online a ficha oferece Compa
 
 test('15. no entorno o mar tem ondas; com movimento reduzido fica parado', async ({ page }, info) => {
   test.skip(info.project.name !== 'tablet-paisagem', 'um aparelho basta: o shader é o mesmo');
+  // Animado, o entorno no WebGL por software leva segundos por quadro: janela pequena e mais prazo.
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 640, height: 420 });
   const canvas = page.locator('canvas');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await jaVisitou(page);
