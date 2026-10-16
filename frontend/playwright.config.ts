@@ -1,12 +1,19 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// WebGL na placa de vídeo (ANGLE/D3D11): rápido e leve para a CPU. E2E_GPU=0 volta ao
+// SwiftShader (por software), para máquina sem GPU ou CI.
+const GPU = process.env.E2E_GPU !== '0';
+const WEBGL = GPU
+  ? ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist']
+  : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
+
 // Jornadas e2e. O app roda do build de produção.
 export default defineConfig({
   testDir: 'e2e',
   timeout: 60_000,
   expect: { timeout: 15_000 },
-  // WebGL por software (SwiftShader) ocupa todos os núcleos: um navegador por vez, para a máquina
-  // continuar usável. E2E_WORKERS sobe isso quando a máquina estiver livre.
+  // Um navegador por vez: com E2E_GPU=0 (SwiftShader) cada um ocupa todos os núcleos e a máquina
+  // trava. E2E_WORKERS sobe isso quando a máquina estiver livre.
   workers: Number(process.env.E2E_WORKERS ?? 1),
   reporter: [['list']],
   use: {
@@ -15,7 +22,7 @@ export default defineConfig({
     timezoneId: 'America/Fortaleza',
     // Sem as ondas do mar: a cena volta a desenhar só sob demanda e o e2e pesa menos.
     reducedMotion: 'reduce',
-    launchOptions: { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] },
+    launchOptions: { args: WEBGL },
   },
   projects: [
     // Densidade 1: com a do Pixel 7 (2,6), o WebGL por software desenha 4× mais pixels e trava no

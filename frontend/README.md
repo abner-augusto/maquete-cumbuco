@@ -16,7 +16,8 @@ npm test               # Playwright direto; E2E_WORKERS=2 sobe o paralelismo
 npm run check          # svelte-check
 ```
 
-O e2e usa WebGL por software (SwiftShader), que ocupa a CPU: prefira o `test:leve` com a máquina em uso.
+O e2e desenha o WebGL na placa de vídeo (ANGLE/D3D11, ~1 min a suíte). Numa máquina sem GPU, `E2E_GPU=0` usa o
+SwiftShader, por software: ocupa a CPU e leva uns 4 min; prefira o `test:leve` com a máquina em uso.
 
 ## De onde vem o `public/`
 
