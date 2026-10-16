@@ -57,8 +57,9 @@ const fragmentShader = /* glsl */ `
     // sem degrau; a câmera do espelho olha para baixo e só enxerga a parte baixa do céu.
     vec3 ceu = mix(horizonte, uFaixa, smoothstep(0.0, 0.07, d.y));
     ceu = mix(ceu, uZenite, smoothstep(0.07, 0.32, d.y));
-    // Abaixo: a névoa já é do solo (areia), e o chão chega devagar.
-    vec3 solo = mix(mix(horizonte, uChao, 0.65), uChao, smoothstep(0.0, 0.3, -d.y));
+    // Abaixo: logo sob a linha, a cor do horizonte (o mar chega até ela e emenda sem faixa);
+    // mais para baixo, onde a borda da terra some na névoa, o solo (areia).
+    vec3 solo = mix(horizonte, uChao, smoothstep(0.0, 0.05, -d.y));
     vec3 cor = d.y >= 0.0 ? ceu : solo;
     // Sol na posição do horário: disco com borda escurecida, coroa curta e um brilho largo que
     // tinge o céu em volta. O disco é ~4× o real para ser lido de longe; some sob o horizonte.

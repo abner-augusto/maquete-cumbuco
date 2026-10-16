@@ -1,4 +1,4 @@
-// O mar do entorno: reflexo do céu pelo Fresnel, ondas por normais procedurais (o disco tem poucos
+// O mar do entorno: reflexo do céu pelo Fresnel, ondas por normais procedurais (o plano tem poucos
 // vértices; nada se desloca) e o brilho do sol. As cores do céu são as mesmas instâncias do Ceu,
 // então o modo claro/escuro chega aqui sem cópia.
 import * as THREE from 'three';
@@ -18,20 +18,21 @@ export interface CoresCeu {
 }
 
 const vertexShader = /* glsl */ `
-  #include <fog_pars_vertex>
   varying vec3 vMundo;
   void main() {
     vec4 mundo = modelMatrix * vec4(position, 1.0);
     vMundo = mundo.xyz;
-    vec4 mvPosition = viewMatrix * mundo;
-    gl_Position = projectionMatrix * mvPosition;
-    #include <fog_vertex>
+    gl_Position = projectionMatrix * viewMatrix * mundo;
   }
 `;
 
+// Ondas por ruído fractal (sete escalas, de 96 m a 1,5 m; a mais longa ainda se lê de longe), cada uma girada e andando para um lado.
+// Cada escala some quando fica menor que ~3 px na tela (fwidth): de longe e rente não há faixas
+// nem cintilação, e o mar vira espelho do horizonte, como no real. Sem névoa da cena: a água
+// desbota sozinha para a cor do horizonte até o fim do plano.
 const fragmentShader = /* glsl */ `
-  #include <fog_pars_fragment>
   uniform float uTempo;
+  uniform float uAlcance;
   uniform vec3 uAgua;
   uniform vec3 uZenite;
   uniform vec3 uFaixa;
@@ -39,36 +40,63 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uSolDirecao;
   varying vec3 vMundo;
 
-  // Uma onda: direção, comprimento (m), velocidade (m/s) e inclinação. Devolve a derivada da altura.
-  vec2 onda(vec2 p, vec2 dir, float comp, float vel, float incl) {
-    float k = 6.2831853 / comp;
-    float fase = k * (dot(p, dir) - vel * uTempo);
-    return dir * (incl * cos(fase));
+  float hash(vec2 p) {
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+  }
+
+  // Ruído de valor com derivadas analíticas (valor, d/dx, d/dy).
+  vec3 ruido(vec2 x) {
+    vec2 i = floor(x);
+    vec2 f = fract(x);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    vec2 du = 6.0 * f * (1.0 - f);
+    float a = hash(i), b = hash(i + vec2(1.0, 0.0)), c = hash(i + vec2(0.0, 1.0)), d = hash(i + vec2(1.0, 1.0));
+    float k = a - b - c + d;
+    return vec3(a + (b - a) * u.x + (c - a) * u.y + k * u.x * u.y, du * (vec2(b - a, c - a) + k * u.yx));
+  }
+
+  vec3 ceuEm(vec3 r) {
+    float y = max(r.y, 0.0);
+    vec3 c = mix(uHorizonte, uFaixa, smoothstep(0.0, 0.07, y));
+    return mix(c, uZenite, smoothstep(0.07, 0.32, y));
   }
 
   void main() {
     vec2 p = vMundo.xz;
-    float dist = length(cameraPosition - vMundo);
-    // Ondas curtas somem com a distância: de longe viram ruído e cintilam.
-    float perto = 1.0 - smoothstep(600.0, 3500.0, dist);
-    vec2 d = onda(p, normalize(vec2(0.8, 0.6)), 61.0, 4.1, 0.10)
-           + onda(p, normalize(vec2(0.3, 0.95)), 37.0, 3.2, 0.08)
-           + perto * (onda(p, normalize(vec2(-0.6, 0.8)), 17.0, 2.2, 0.07)
-                    + onda(p, normalize(vec2(0.95, -0.2)), 9.0, 1.6, 0.05));
-    vec3 n = normalize(vec3(-d.x, 1.0, -d.y));
+    float pixel = max(length(fwidth(p)), 1e-3);  // metros por pixel
+    vec2 inclinacao = vec2(0.0);
+    float amp = 1.0;
+    float freq = 1.0 / 96.0;
+    mat2 gira = mat2(0.8, -0.6, 0.6, 0.8);
+    vec2 dir = vec2(0.71, 0.71);
+    for (int i = 0; i < 7; i++) {
+      float vel = 1.4 / sqrt(freq * 48.0);  // ondas longas andam mais rápido
+      vec3 n = ruido(p * freq + dir * uTempo * vel * freq * 6.0);
+      float some = 1.0 - smoothstep(0.08, 0.33, pixel * freq);
+      inclinacao += amp * some * n.yz * freq;
+      amp *= 0.55;
+      freq *= 2.0;
+      p = gira * p;
+      dir = gira * dir;
+    }
+    vec3 n = normalize(vec3(-inclinacao.x * 7.0, 1.0, -inclinacao.y * 7.0));
     vec3 v = normalize(cameraPosition - vMundo);
     float fresnel = 0.02 + 0.98 * pow(1.0 - max(dot(n, v), 0.0), 5.0);
     vec3 r = reflect(-v, n);
-    float ry = max(r.y, 0.0);
-    vec3 ceu = mix(uHorizonte, uFaixa, smoothstep(0.0, 0.07, ry));
-    ceu = mix(ceu, uZenite, smoothstep(0.07, 0.32, ry));
-    vec3 cor = mix(uAgua, ceu, clamp(fresnel * 0.85, 0.0, 0.85));
-    // Brilho do sol nas cristas, contido: a luz de apresentação não é a simulação do sol.
-    float brilho = pow(max(dot(r, normalize(uSolDirecao)), 0.0), 180.0);
-    cor += vec3(1.0, 0.95, 0.85) * brilho * 0.6;
+    r.y = abs(r.y);
+    // Corpo da água: mais claro na face da onda voltada para quem olha.
+    vec3 corpo = uAgua * (0.85 + 0.35 * max(dot(n, v), 0.0));
+    vec3 cor = mix(corpo, ceuEm(r), fresnel);
+    vec3 sol = normalize(uSolDirecao);
+    float s = max(dot(r, sol), 0.0);
+    cor += vec3(1.0, 0.94, 0.82) * (pow(s, 700.0) * 1.6 + pow(s, 50.0) * 0.12);
+    // Longe, a água vira a cor do horizonte até o fim do plano: sem faixa entre mar e céu.
+    float dist = length(cameraPosition.xz - vMundo.xz);
+    cor = mix(cor, uHorizonte, smoothstep(uAlcance * 0.35, uAlcance * 0.85, dist));
     gl_FragColor = vec4(cor, 1.0);
     #include <colorspace_fragment>
-    #include <fog_fragment>
   }
 `;
 
@@ -82,10 +110,9 @@ export type MaterialAgua = THREE.ShaderMaterial & {
 export function materialDaAgua(ceu: CoresCeu): MaterialAgua {
   return new THREE.ShaderMaterial({
     name: 'agua',
-    fog: true,
     uniforms: {
-      ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
       uTempo: { value: 0 },
+      uAlcance: { value: 16000 },
       uAgua: { value: new THREE.Color(COR_AGUA.claro) },
       // Mesmas instâncias do céu (sem clonar): trocar o modo de cor muda a água junto.
       uZenite: { value: ceu.zenite },
