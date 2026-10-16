@@ -18,3 +18,17 @@ test('o pacote abre sem internet: cena, ficha e galeria', async ({ page }) => {
   await expect(page.getByRole('region', { name: 'Galeria: Clube' }).getByRole('img').first()).toBeVisible();
   expect(fora).toEqual([]);
 });
+
+test('o servidor segue de pé depois de uma requisição interrompida ou inválida', async ({ baseURL }) => {
+  const http = await import('node:http');
+  // Download cortado no meio, como um F5 com o GLB carregando.
+  await new Promise<void>(ok => {
+    const req = http.get(`${baseURL}/modelos/loteamento.glb`, r => r.once('data', () => (req.destroy(), ok())));
+    req.on('error', () => ok());
+  });
+  await new Promise(ok => setTimeout(ok, 500));
+  expect((await fetch(`${baseURL}/`)).status).toBe(200);
+  // Caminho que o .NET recusa ao montar o arquivo.
+  expect((await fetch(`${baseURL}/a:b`)).status).toBe(404);
+  expect((await fetch(`${baseURL}/`)).status).toBe(200);
+});

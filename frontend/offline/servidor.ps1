@@ -12,19 +12,25 @@ if (-not $SemNavegador) { Start-Process "http://127.0.0.1:$Porta/" }
 try {
   while ($http.IsListening) {
     $ctx = $http.GetContext()
-    $rel = [Uri]::UnescapeDataString($ctx.Request.Url.AbsolutePath.TrimStart('/'))
-    if ($rel -eq '') { $rel = 'index.html' }
-    $arquivo = [IO.Path]::GetFullPath((Join-Path $raiz $rel))
     $resp = $ctx.Response
-    if (-not $arquivo.StartsWith($raiz, [StringComparison]::OrdinalIgnoreCase) -or -not (Test-Path $arquivo -PathType Leaf)) {
-      $resp.StatusCode = 404
-    } else {
-      $bytes = [IO.File]::ReadAllBytes($arquivo)
-      $ext = [IO.Path]::GetExtension($arquivo).ToLower()
-      $resp.ContentType = if ($tipos.ContainsKey($ext)) { $tipos[$ext] } else { 'application/octet-stream' }
-      $resp.ContentLength64 = $bytes.Length
-      $resp.OutputStream.Write($bytes, 0, $bytes.Length)
+    # Uma requisição que falha (download cortado por F5, caminho inválido) não derruba o servidor.
+    try {
+      $rel = [Uri]::UnescapeDataString($ctx.Request.Url.AbsolutePath.TrimStart('/'))
+      if ($rel -eq '') { $rel = 'index.html' }
+      $arquivo = [IO.Path]::GetFullPath((Join-Path $raiz $rel))
+      if (-not $arquivo.StartsWith($raiz, [StringComparison]::OrdinalIgnoreCase) -or -not (Test-Path -LiteralPath $arquivo -PathType Leaf)) {
+        $resp.StatusCode = 404
+      } else {
+        $bytes = [IO.File]::ReadAllBytes($arquivo)
+        $ext = [IO.Path]::GetExtension($arquivo).ToLower()
+        $resp.ContentType = if ($tipos.ContainsKey($ext)) { $tipos[$ext] } else { 'application/octet-stream' }
+        $resp.ContentLength64 = $bytes.Length
+        $resp.OutputStream.Write($bytes, 0, $bytes.Length)
+      }
+    } catch {
+      try { $resp.StatusCode = 404 } catch { }
+    } finally {
+      try { $resp.Close() } catch { }
     }
-    $resp.Close()
   }
 } finally { $http.Stop() }
