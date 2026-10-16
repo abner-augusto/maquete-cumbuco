@@ -41,7 +41,7 @@ def test_costa_suave_mantem_rio_ligado_ao_mar_longe_da_costa():
     z[9:12, 3] = -5.0  # faixa que o Copernicus põe no mar, mas o OSM diz que é terra (70–130 m da costa)
     rio = Polygon([(-10, 100), (10, 100), (10, 400), (-10, 400)])
     g = costa_suave(Grade(g0.x0, g0.y0, g0.passo, g0.nx, g0.ny, z.tolist()), mar, 0.0, 0.05, 0.1, 5.0, agua=rio)
-    assert g.cota(0, 240) == pytest.approx(-5.0)       # o rio do OSM fica abaixo do nível
+    assert g.cota(0, 240) < 0.0                        # o rio do OSM fica abaixo do nível
     assert g.cota(-210, 0) > 0.0                       # a faixa falsa vira terra: sem dente
 
 
@@ -62,3 +62,19 @@ def test_grade_fina_usa_a_faixa_da_grossa_e_as_duas_coincidem_na_costa():
     fina = costa_suave(_grade(n=61, passo=10.0), mar, 0.0, 0.05, 0.1, 5.0, celula=30.0)
     for x, y in [(-100, -50), (0, -10), (120, 10), (200, 60)]:
         assert fina.cota(x, y) == pytest.approx(grossa.cota(x, y), abs=0.05)
+
+
+def test_margem_da_lagoa_da_foz_segue_o_poligono_do_osm():
+    # Lagoa da foz: água abaixo do nível no Copernicus, terra adentro. A margem tem que seguir o
+    # polígono do OSM, não a escada das células.
+    costa = LineString([(-400, -250), (400, -250)])
+    mar = mar_da_costa([costa], (0.0, 0.0), 1000.0)
+    lagoa = Point(20, 60).buffer(110, 64)
+    g0 = _grade()
+    gx, gy = np.meshgrid(g0.x0 + g0.passo * np.arange(g0.nx), g0.y0 + g0.passo * np.arange(g0.ny))
+    z = np.where(np.hypot(gx - 20, gy - 60) < 125, -5.0, 8.0)  # o Copernicus vê a lagoa em escada
+    g = costa_suave(Grade(g0.x0, g0.y0, g0.passo, g0.nx, g0.ny, z.tolist()), mar, 0.0, 0.05, 0.1, 5.0, agua=lagoa)
+    borda = [lagoa.exterior.interpolate(k, normalized=True) for k in np.linspace(0, 1, 40, endpoint=False)]
+    zs = amostrar_grade(g, np.array([p.x for p in borda]), np.array([p.y for p in borda]))
+    assert np.abs(zs).max() < 0.3
+    assert g.cota(20, 60) < -1.0

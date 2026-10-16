@@ -83,10 +83,16 @@ def costa_suave(g: Grade, mar: BaseGeometry, nivel: float, praia: float, fundo: 
     """Cota de `g` com a costa de `mar`: rampa de `praia` (m/m) dos dois lados até 1,5 célula da
     linha; além disso o fundo desce a `fundo` até `nivel − rebaixo` e a terra volta ao relevo até
     4,5 células (a duna além disso fica como está). Abaixo do nível terra adentro só fica o que
-    está em `agua` (rios e lagoas do OSM): o resto é a costa em escada do Copernicus e vira terra. `celula` (m) mede as faixas; uma grade fina que encosta numa grossa
+    está em `agua` (rios e lagoas do OSM): o resto é a costa em escada do Copernicus e vira terra.
+    A água que fica (a lagoa da foz) entra no mar da conta: a margem dela segue o polígono do OSM. `celula` (m) mede as faixas; uma grade fina que encosta numa grossa
     usa a célula da grossa, e as duas coincidem perto da costa (sem dente na emenda)."""
     gx, gy = np.meshgrid(g.x0 + g.passo * np.arange(g.nx), g.y0 + g.passo * np.arange(g.ny))
     z0 = np.array(g.z, dtype=float)
+    if agua is not None:
+        baixo = z0 < nivel
+        partes = [p for p in getattr(agua, "geoms", [agua])
+                  if shapely.contains_xy(p, gx[baixo], gy[baixo]).any()]
+        mar = unary_union([mar, *partes])
     no_mar = shapely.contains_xy(mar, gx, gy)
     linha = mar.boundary
     d = shapely.distance(linha, shapely.points(gx, gy))
@@ -97,6 +103,5 @@ def costa_suave(g: Grade, mar: BaseGeometry, nivel: float, praia: float, fundo: 
     # De 1,5 a 4,5 células, da rampa ao relevo (acima da água): sem degrau e sem aplainar a duna.
     w = np.clip((d - perto) / (2 * perto), 0.0, 1.0)
     z_terra = (1 - w) * rampa + w * np.maximum(z0, nivel + 0.2)
-    rio = (z0 < nivel) & shapely.contains_xy(agua, gx, gy) if agua is not None else np.zeros_like(no_mar)
-    z = np.where(no_mar, z_mar, np.where(rio, z0, z_terra))
+    z = np.where(no_mar, z_mar, z_terra)
     return Grade(g.x0, g.y0, g.passo, g.nx, g.ny, np.round(z, 2).tolist())
