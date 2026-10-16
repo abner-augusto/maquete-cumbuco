@@ -108,3 +108,19 @@ def test_coordenada_do_satelite_longe_da_referencia_e_recusada():
          "satelite": {"lat": -3.6640, "lon": -38.7117, "imagem": "Esri World Imagery z18", "data": "2026-10-15"}}
     with pytest.raises(SystemExit, match="satelite"):
         coordenada_osm(p, P)  # 3,3 km: digitação errada, não o lugar
+
+
+def test_ponto_do_elemento_perto_da_referencia():
+    # a praia do Cumbuco é uma faixa de 8 km: o pino vai ao trecho que a curadoria aponta (referência do
+    # Google), em terra, e não a um ponto qualquer da faixa (o representative_point caía 7 km a oeste)
+    from shapely.geometry import Point, Polygon
+
+    from scripts.pontos.pontos import ponto_do_elemento
+
+    ele = [(0, 0), (1000, 0), (1000, 50), (50, 50), (50, 1000), (0, 1000), (0, 0)]
+    el = {"type": "way", "geometry": [{"lon": lon, "lat": lat} for lon, lat in (P.lonlat(x, y) for x, y in ele)]}
+    x, y = P.xy(*ponto_do_elemento(P, el, ref=(25, 950)))
+    assert Polygon(ele).contains(Point(x, y)) and abs(x - 25) < 10 and abs(y - 950) < 10
+    # referência no braço horizontal, que está no mar: o pino fica no ponto de terra mais perto dela
+    x, y = P.xy(*ponto_do_elemento(P, el, em_terra=lambda x, y: y > 500, ref=(900, 25)))
+    assert Polygon(ele).contains(Point(x, y)) and 500 <= y < 520

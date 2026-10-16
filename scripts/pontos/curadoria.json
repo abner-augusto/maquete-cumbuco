@@ -16,7 +16,8 @@
    "google_nome": "Icaraí",
    "ref_lat": -3.677564,
    "ref_lon": -38.688343,
-   "osm": "relation/9248972"
+   "osm": "relation/9248972",
+   "foto": "File:Fortaleza, CE. Pescadores na Praia de Pedras - panoramio.jpg"
   },
   {
    "nome": "Cumbuco Acqua Beach",
@@ -46,7 +47,8 @@
     "imagem": "Esri World Imagery, z19",
     "data": "2026-10-15",
     "nota": "lote de frente para o mar com piscina e coqueiral, ligado ao estacionamento da avenida onde o Google põe o endereço; conferir na revisão visual"
-   }
+   },
+   "foto": "File:Fortaleza, Ceará, Brazil, Kitesurf in Cumbuco Beach - panoramio.jpg"
   },
   {
    "nome": "Praia do Cumbuco",
@@ -55,7 +57,8 @@
    "google_nome": "Praia de Cumbuco - Main Beach",
    "ref_lat": -3.625687,
    "ref_lon": -38.727347,
-   "osm": "relation/9248967"
+   "osm": "relation/9248967",
+   "foto": "File:Cumbuco2.jpg"
   },
   {
    "nome": "Lagoa do Banana",
@@ -63,7 +66,8 @@
    "google_place_id": "ChIJPcCz-EHJwAcRzEss_QSRSyI",
    "google_nome": "Lagoa do Banana",
    "ref_lat": -3.637692,
-   "ref_lon": -38.752526
+   "ref_lon": -38.752526,
+   "foto": "File:Lagoa do Banana 1.JPG"
   },
   {
    "nome": "Sesc Iparana",
@@ -71,7 +75,8 @@
    "google_place_id": "ChIJZV5Le2Y1xwcRng27yc6L0HM",
    "google_nome": "Sesc Iparana Reserva Natural",
    "ref_lat": -3.690936,
-   "ref_lon": -38.625383
+   "ref_lon": -38.625383,
+   "foto": "File:SESC Iparana 2.JPG"
   },
   {
    "nome": "Iandê Caucaia Mall",
@@ -79,7 +84,8 @@
    "google_place_id": "ChIJQTZqWdK0wAcRlbZsSe51B4w",
    "google_nome": "Iandê Caucaia Mall",
    "ref_lat": -3.734048,
-   "ref_lon": -38.655904
+   "ref_lon": -38.655904,
+   "foto": "File:Iandê Shopping Caucaia 07.jpg"
   },
   {
    "nome": "Hospital Municipal de Caucaia",
@@ -103,7 +109,8 @@
    "google_place_id": "ChIJW9QsPLGzwAcR7UZW_f6swyI",
    "google_nome": "Outlet Premium Fortaleza",
    "ref_lat": -3.77258,
-   "ref_lon": -38.672061
+   "ref_lon": -38.672061,
+   "foto": "File:Outlet Premium Fortaleza 01.jpg"
   },
   {
    "nome": "Lagoa do Cauípe",
@@ -112,7 +119,8 @@
    "google_nome": "Lagoa do Cauípe Cumbuco",
    "ref_lat": -3.588943,
    "ref_lon": -38.780015,
-   "osm": "relation/9248969"
+   "osm": "relation/9248969",
+   "foto": "File:Kite Cauipe 3.jpg"
   },
   {
    "nome": "Shopping RioMar Kennedy",
@@ -121,7 +129,8 @@
    "google_nome": "Shopping RioMar Kennedy",
    "ref_lat": -3.726211,
    "ref_lon": -38.567034,
-   "osm": "relation/15771487"
+   "osm": "relation/15771487",
+   "foto": "File:RioMar Kennedy Shopping 02.jpg"
   },
   {
    "nome": "Porto do Pecém",
@@ -129,7 +138,8 @@
    "google_place_id": "ChIJC_ChZg_QwAcRVcxdDxuRPSQ",
    "google_nome": "Porto do Pecém",
    "ref_lat": -3.549541,
-   "ref_lon": -38.810835
+   "ref_lon": -38.810835,
+   "foto": "File:02.08.2024 - Cerimônia de assinatura da Medida Provisória que institui o Programa Mover, dos Projetos de Lei nº 858 2024 e nº 2308 2023 (53897745783).jpg"
   },
   {
    "nome": "Praia do Pecém",
@@ -137,7 +147,8 @@
    "google_place_id": "ChIJe0BLYLnawAcRWc0MkwcBrpY",
    "google_nome": "Praia do Pecém",
    "ref_lat": -3.545873,
-   "ref_lon": -38.836329
+   "ref_lon": -38.836329,
+   "foto": "File:Praia do Pecém 20.JPG"
   },
   {
    "nome": "Aterro da Praia de Iracema",
@@ -145,7 +156,8 @@
    "google_place_id": "ChIJL3kZlkFIxwcRVpoVsloNfVY",
    "google_nome": "Aterro da Praia de Iracema",
    "ref_lat": -3.722182,
-   "ref_lon": -38.506366
+   "ref_lon": -38.506366,
+   "foto": "File:Iracema (2).jpg"
   }
  ]
 }
