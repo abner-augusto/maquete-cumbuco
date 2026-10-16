@@ -87,7 +87,7 @@
     touch-action: none;
   }
   .folha.arrastando { transition: none; }
-  .alca { flex: none; height: 26px; display: grid; place-items: center; cursor: grab; touch-action: none; }
+  .alca { flex: none; height: var(--toque); display: grid; place-items: center; cursor: grab; touch-action: none; }
   .alca::before { content: ""; width: 40px; height: 4px; border-radius: 2px; background: var(--tema-filete-forte); }
   .alca:focus-visible { outline: 2px solid var(--tema-acento); outline-offset: -4px; border-radius: var(--raio-2); }
   .corpo { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 0 20px 16px; min-height: 0; touch-action: pan-y; }

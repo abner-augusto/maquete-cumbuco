@@ -27,8 +27,8 @@
 {#if ampliada}<PlantaAmpliada src={ampliada.src} alt={ampliada.alt} aoFechar={() => (ampliada = null)} />{/if}
 
 <style>
-  .barra { display: flex; align-items: center; justify-content: space-between; height: 36px; margin: 0 -8px 2px; }
-  .fechar { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 0; background: none; border-radius: var(--raio-1); color: var(--tema-tinta-2); cursor: pointer; }
+  .barra { display: flex; align-items: center; justify-content: space-between; height: var(--toque); margin: 0 -12px 2px; }
+  .fechar { display: inline-flex; align-items: center; justify-content: center; width: var(--toque); height: var(--toque); padding: 0; border: 0; background: none; border-radius: var(--raio-1); color: var(--tema-tinta-2); cursor: pointer; }
   .fechar:hover { background: var(--tema-papel-2); color: var(--tema-tinta); }
   .fechar:focus-visible { outline: 2px solid var(--tema-acento); outline-offset: 2px; }
   .titulo { font-family: var(--tema-fonte-display); font-weight: 600; font-size: 30px; line-height: 1.05; margin: 0 0 14px; }

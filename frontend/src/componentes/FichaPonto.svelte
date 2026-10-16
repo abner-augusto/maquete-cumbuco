@@ -40,8 +40,8 @@
 <a class="btn" href={ponto.maps} target="_blank" rel="noopener noreferrer">Abrir no Google Maps<Icone nome="externo" tamanho={18} /></a>
 
 <style>
-  .barra { display: flex; align-items: center; height: 36px; margin: 0 -8px 2px; }
-  .voltar { display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 8px; border: 0; background: none; border-radius: var(--raio-1); color: var(--tema-tinta-2); font-size: 14px; font-weight: 500; cursor: pointer; }
+  .barra { display: flex; align-items: center; height: var(--toque); margin: 0 -8px 2px; }
+  .voltar { display: inline-flex; align-items: center; gap: 4px; height: var(--toque); padding: 0 8px; border: 0; background: none; border-radius: var(--raio-1); color: var(--tema-tinta-2); font-size: 14px; font-weight: 500; cursor: pointer; }
   .voltar:hover { background: var(--tema-papel-2); color: var(--tema-tinta); }
   .voltar:focus-visible { outline: 2px solid var(--tema-acento); outline-offset: 2px; }
   .titulo { font-family: var(--tema-fonte-display); font-weight: 600; font-size: 26px; line-height: 1.1; margin: 0; }

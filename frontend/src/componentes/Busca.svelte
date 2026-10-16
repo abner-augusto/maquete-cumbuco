@@ -39,7 +39,7 @@
   .busca { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 6px 0 14px; border: 1.5px solid var(--tema-acento); border-radius: var(--raio-2); background: var(--tema-campo); color: var(--tema-tinta-2); }
   input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 20px; font-weight: 600; color: var(--tema-tinta); caret-color: var(--tema-acento); }
   input::placeholder { color: var(--tema-tinta-3); font-weight: 400; font-size: 15px; }
-  .limpar { width: 36px; height: 36px; display: grid; place-items: center; border: 0; background: none; color: var(--tema-tinta-2); border-radius: var(--raio-1); cursor: pointer; }
+  .limpar { width: var(--toque); height: var(--toque); display: grid; place-items: center; border: 0; background: none; color: var(--tema-tinta-2); border-radius: var(--raio-1); cursor: pointer; }
   .contagem { margin: 12px 0 4px; font-size: 13px; color: var(--tema-tinta-2); }
   .resultados { list-style: none; margin: 0 -20px; padding: 0; }
   .resultados li + li { border-top: 1px solid var(--tema-filete); }
