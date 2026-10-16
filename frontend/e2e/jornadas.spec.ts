@@ -201,3 +201,22 @@ test('14. o toque num lote leva a câmera até ele; online a ficha oferece Compa
   await page.mouse.click(cx, cy);
   await expect(page.getByRole('region', { name: /Ficha do lote/ })).toHaveAttribute('aria-label', id!);
 });
+
+test('15. no entorno o mar tem ondas; com movimento reduzido fica parado', async ({ page }, info) => {
+  test.skip(info.project.name !== 'tablet-paisagem', 'um aparelho basta: o shader é o mesmo');
+  const canvas = page.locator('canvas');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await jaVisitou(page);
+  await page.goto('./');
+  await page.getByRole('button', { name: 'Entorno e pontos de referência' }).click();
+  await expect(page.getByRole('region', { name: 'Pontos de referência' })).toBeVisible({ timeout: 60_000 });
+  await page.waitForTimeout(1500);
+  const a = await canvas.screenshot();
+  await page.waitForTimeout(700);
+  expect((await canvas.screenshot()).equals(a)).toBe(false);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.waitForTimeout(800);
+  const c = await canvas.screenshot();
+  await page.waitForTimeout(700);
+  expect((await canvas.screenshot()).equals(c)).toBe(true);
+});

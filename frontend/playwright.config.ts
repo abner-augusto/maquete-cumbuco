@@ -13,6 +13,8 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:4173',
     locale: 'pt-BR',
     timezoneId: 'America/Fortaleza',
+    // Sem as ondas do mar: a cena volta a desenhar só sob demanda e o e2e pesa menos.
+    reducedMotion: 'reduce',
     launchOptions: { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] },
   },
   projects: [

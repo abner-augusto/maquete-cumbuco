@@ -9,6 +9,7 @@ import type { Ponto } from '../pontos';
 import { Ceu } from './ceu';
 import { Entorno } from './entorno';
 import { vistaDeFrente } from './enquadramento';
+import { COR_AGUA, materialDaAgua, quadroDaAgua } from './agua';
 
 export type Tela = { x: number; y: number };
 export type Formato = 'retrato' | 'paisagem';
@@ -255,6 +256,11 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     const k = v.z > 1 ? -1000 : 1;
     return { x: ((v.x * k + 1) / 2) * el.clientWidth, y: ((1 - v.y * k) / 2) * el.clientHeight };
   };
+  // O mar do entorno anima as ondas: único caso em que a cena desenha sem pedido (a ~24 quadros/s).
+  const agua = materialDaAgua(ceu.coresAgua());
+  const movimentoReduzido = matchMedia('(prefers-reduced-motion: reduce)');
+  movimentoReduzido.addEventListener('change', () => (sujo = true));
+  let ultimaAgua = 0;
   let ultimaEtiqueta = '';
   let ultimoRumo = NaN;
   let ultimosMarcos = '';
@@ -272,6 +278,12 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
         o.aoPassar(id ? { id, tela: { x: e.clientX - r.left, y: e.clientY - r.top } } : null);
       }
       el.style.cursor = id ? 'pointer' : '';
+    }
+    const agora = performance.now();
+    if (quadroDaAgua({ entorno: entornoAtivo(), reduzido: movimentoReduzido.matches, agora, ultimo: ultimaAgua })) {
+      ultimaAgua = agora;
+      agua.uniforms.uTempo.value = agora / 1000;
+      sujo = true;
     }
     if (!sujo) return;
     sujo = false;
@@ -337,7 +349,11 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     }
     // Desligado enquanto carregava: fica carregado, mas escondido.
     if (pedido !== pedidoEntorno) return;
-    if (!entorno.grupo.parent) cena.add(entorno.grupo);
+    if (!entorno.grupo.parent) {
+      const mar = entorno.grupo.getObjectByName('Mar') as THREE.Mesh | undefined;
+      if (mar) { (mar.material as THREE.Material).dispose(); mar.material = agua; }
+      cena.add(entorno.grupo);
+    }
     entorno.grupo.visible = true;
     // A cota de cada ponto vem do terreno do entorno, uma vez.
     const e = entorno;
@@ -421,7 +437,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
       camera.position.copy(controles.target).add(d.setLength(THREE.MathUtils.clamp(d.length(), controles.minDistance, controles.maxDistance)));
       controles.update();
     },
-    ceu(modo) { ceu.cor(modo); sujo = true; },
+    ceu(modo) { ceu.cor(modo); agua.uniforms.uAgua.value.set(COR_AGUA[modo]); sujo = true; },
     entorno: mostrarEntorno,
     cores: () => ({ residencial: corDo('residencial'), uso_misto: corDo('uso_misto') }),
     descartar() {
@@ -430,6 +446,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
       controles.dispose();
       ceu.descartar();
       entorno?.descartar();
+      agua.dispose();
       renderer.dispose();
       el.remove();
     },
