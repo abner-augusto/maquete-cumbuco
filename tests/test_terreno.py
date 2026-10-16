@@ -87,8 +87,27 @@ def test_entorno_tem_furo_no_perto_e_fica_no_raio():
     v, f = malha_entorno(dem, buraco=(-90.0, -90.0, 90.0, 90.0), centro=(0.0, 0.0), raio=500.0)
     centros = [np.mean([v[i][:2] for i in t], axis=0) for t in f]
     assert not any(abs(cx) < 90 and abs(cy) < 90 for cx, cy in centros)
-    assert all(math.hypot(x, y) <= 500.0 + 1e-6 for x, y, _ in v)
+    assert all(math.hypot(x, y) <= 500.0 + 0.01 for x, y, _ in v)  # vértices arredondados ao centímetro
     assert len(f) > 0 and all(len(t) == 3 for t in f)
+
+
+def test_borda_do_entorno_e_redonda_nao_em_escada():
+    # a borda do mundo a 4 km aparecia em degraus de 30 m: as células cortadas pelo círculo entram,
+    # com os cantos de fora trazidos ao círculo pelo raio (cota amostrada na superfície da malha)
+    dem = _grade(lambda x, y: 10.0 + 0.01 * x, passo=30.0, x0=-600.0, y0=-600.0, n=41)
+    v, f = malha_entorno(dem, buraco=(-90.0, -90.0, 90.0, 90.0), centro=(0.0, 0.0), raio=500.0)
+    dist = [math.hypot(x, y) for x, y, _ in v]
+    assert max(dist) <= 500.0 + 0.01  # vértices arredondados ao centímetro
+    # Toda aresta de contorno (usada por uma face só) que não é do furo está no círculo.
+    arestas: dict[tuple[int, int], int] = {}
+    for t in f:
+        for a, b in ((t[0], t[1]), (t[1], t[2]), (t[2], t[0])):
+            arestas[(min(a, b), max(a, b))] = arestas.get((min(a, b), max(a, b)), 0) + 1
+    contorno = [e for e, n in arestas.items() if n == 1 and not all(abs(v[k][0]) <= 90 and abs(v[k][1]) <= 90 for k in e)]
+    assert len(contorno) >= 60
+    assert all(abs(dist[k] - 500.0) < 0.01 for e in contorno for k in e)
+    for x, y, z in v:  # a cota do canto trazido vem da superfície
+        assert z == pytest.approx(10.0 + 0.01 * x, abs=0.02)
 
 
 def test_borda_do_perto_e_linear_entre_nos_do_entorno():
@@ -119,16 +138,17 @@ def test_plato_tem_folga_antes_do_talude():
 
 
 def test_mar_nao_passa_da_borda_da_terra():
-    # revisão final: o disco no raio cheio aparecia como serrilhado azul além da escada das células
-    from scripts.loteamento.terreno import raio_do_mar
+    # revisão final: o disco no raio cheio aparecia como serrilhado azul além da escada das células;
+    # com a borda da terra no círculo, o disco do mar vai ao raio cheio e a terra o cobre até lá
+    from shapely.geometry import Point, Polygon
+    from shapely.ops import unary_union
 
     dem = _grade(lambda x, y: 10.0, passo=30.0, x0=-600.0, y0=-600.0, n=41)
     v, f = malha_entorno(dem, buraco=(-90.0, -90.0, 90.0, 90.0), centro=(0.0, 0.0), raio=500.0)
-    celulas = {(math.floor(min(v[i][0] for i in t) / 30), math.floor(min(v[i][1] for i in t) / 30)) for t in f}
-    r = raio_do_mar(500.0, 30.0)
+    terra = unary_union([Polygon([v[k][:2] for k in t]) for t in f])
+    r = 500.0 - 0.5  # meio metro para dentro do contorno do mar
     for k in range(360):
-        x, y = r * math.cos(math.radians(k)), r * math.sin(math.radians(k))
-        assert (math.floor(x / 30), math.floor(y / 30)) in celulas  # todo o contorno do mar tem terra (ou fundo) embaixo
+        assert terra.contains(Point(r * math.cos(math.radians(k)), r * math.sin(math.radians(k))))  # terra (ou fundo) embaixo
 
 
 def test_relevo_usa_o_perto_dentro_e_o_longe_fora():

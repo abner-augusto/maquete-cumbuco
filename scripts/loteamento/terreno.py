@@ -152,19 +152,30 @@ def aplicar_acesso(g: Grade, a: Acesso, acfg: AcessoCfg, area: BaseGeometry, tal
 def malha_entorno(dem: Grade, buraco: tuple[float, float, float, float], centro: tuple[float, float],
                   raio: float, janela: tuple[float, float, float, float] | None = None
                   ) -> tuple[list[list[float]], list[list[int]]]:
-    """Grade do Copernicus em triângulos: células com os 4 cantos no raio e fora do `buraco`
+    """Grade do Copernicus em triângulos: células com algum canto no raio e fora do `buraco`
     (o terreno perto). O buraco cai em linhas da grade, então cada célula está toda dentro ou fora.
-    Com `janela`, só as células cujo centro cai nela (tiles.da_janela)."""
+    Canto de fora do raio vem ao círculo pelo seu raio, com a cota da superfície da malha ali: a
+    borda do mundo é redonda, não em escada de célula. Com `janela`, só as células cujo centro
+    cai nela (tiles.da_janela)."""
     bx0, by0, bx1, by1 = buraco
     z = dem.z
     indice: dict[tuple[int, int], int] = {}
     vertices: list[list[float]] = []
     faces: list[list[int]] = []
 
+    def dentro(x: float, y: float) -> bool:
+        return math.hypot(x - centro[0], y - centro[1]) <= raio
+
     def no(i: int, j: int) -> int:
         if (i, j) not in indice:
             indice[(i, j)] = len(vertices)
-            vertices.append([round(dem.x0 + i * dem.passo, 2), round(dem.y0 + j * dem.passo, 2), z[j][i]])
+            x, y = dem.x0 + i * dem.passo, dem.y0 + j * dem.passo
+            if dentro(x, y):
+                vertices.append([round(x, 2), round(y, 2), z[j][i]])
+            else:
+                d = math.hypot(x - centro[0], y - centro[1])
+                x, y = centro[0] + (x - centro[0]) * raio / d, centro[1] + (y - centro[1]) * raio / d
+                vertices.append([round(x, 2), round(y, 2), round(dem.cota_malha(x, y), 2)])
         return indice[(i, j)]
 
     for j in range(dem.ny - 1):
@@ -175,17 +186,11 @@ def malha_entorno(dem: Grade, buraco: tuple[float, float, float, float], centro:
                 continue
             if bx0 <= xa and xb <= bx1 and by0 <= ya and yb <= by1:
                 continue
-            if any(math.hypot(x - centro[0], y - centro[1]) > raio for x in (xa, xb) for y in (ya, yb)):
+            if not any(dentro(x, y) for x in (xa, xb) for y in (ya, yb)):
                 continue
             a, b, c, d = no(i, j), no(i + 1, j), no(i + 1, j + 1), no(i, j + 1)
             faces += [[a, b, c], [a, c, d]]
     return vertices, faces
-
-
-def raio_do_mar(raio: float, passo: float) -> float:
-    """O entorno só guarda células com os 4 cantos no raio: a terra acaba em escada até uma
-    diagonal de célula para dentro. O disco do mar para ali, para não sobrar água além da terra."""
-    return raio - passo * math.sqrt(2)
 
 
 def disco_mar(centro: tuple[float, float], raio: float, nivel: float, n: int = 96) -> tuple[list[list[float]], list[list[int]]]:
@@ -279,9 +284,9 @@ def main() -> int:
                for k, jan in janelas(ext_da_grade(longe), longe.passo).items()
                for v, f in [malha_entorno(longe, ext, centro, cfg.raio, jan)]]
     if mar is not None:
-        vm, fm = malha_mar(centro, raio_do_mar(cfg.raio, longe.passo), mar, cfg.mar_alcance, round(delta, 2))
+        vm, fm = malha_mar(centro, cfg.raio, mar, cfg.mar_alcance, round(delta, 2))
     else:
-        vm, fm = disco_mar(centro, raio_do_mar(cfg.raio, longe.passo), round(delta, 2))
+        vm, fm = disco_mar(centro, cfg.raio, round(delta, 2))
     DESTINO_PERTO.parent.mkdir(parents=True, exist_ok=True)
     DESTINO_PERTO.write_text(json.dumps(perto.para_json()), encoding="utf-8")
     DESTINO_LONGE.write_text(json.dumps(longe.para_json()), encoding="utf-8")
