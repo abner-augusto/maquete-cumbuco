@@ -107,3 +107,27 @@ def test_pecas_da_placa_sem_malhas(msp):
     pecas, plato = pecas_da_placa(msp, LOTES, CFG, PLACA, PLATO, E0, N0)
     assert {"Q01L01", "Pista", "Lagoa"} <= set(pecas)
     assert plato.area == pytest.approx(20000, rel=1e-3)
+
+
+def test_pegada_abre_furo_na_placa(msp):
+    pegada = box(40, 40, 60, 60)  # no meio da via
+    por_nome = {o["nome"]: o for o in montar(msp, GRADE, LOTES, CFG, PLACA, PLATO, JANELAS, E0, N0,
+                                             pegadas=pegada)["objetos"]}
+    for o in por_nome.values():
+        v = o["vertices"]
+        for f in o["faces"]:
+            if len({round(v[i][2], 3) for i in f}) == 1:  # topo
+                assert not pegada.buffer(-0.01).contains(Polygon([v[i][:2] for i in f]).centroid), o["nome"]
+
+
+def test_pegada_sobre_lote_falha_nomeando(msp):
+    with pytest.raises(ValueError, match="Q01L01"):
+        montar(msp, GRADE, LOTES, CFG, PLACA, PLATO, JANELAS, E0, N0, pegadas=box(2, 2, 8, 8))
+
+
+def test_main_sem_marcos_avisa_e_segue(tmp_path, monkeypatch, capsys):
+    from scripts.loteamento import cena
+
+    monkeypatch.setattr(cena, "MARCOS_JSON", tmp_path / "nao-existe.json")
+    assert cena.pegadas_dos_marcos() is None
+    assert "sem marcos" in capsys.readouterr().out

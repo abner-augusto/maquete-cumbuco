@@ -28,6 +28,7 @@ DXF = RAIZ / "cache" / "dxf" / "planta-venda.dxf"
 CFG_TOML = RAIZ / "scripts" / "loteamento" / "cena.toml"
 DESTINO = RAIZ / "cache" / "cena" / "loteamento.json"
 TERRENO_JSON = RAIZ / "cache" / "cena" / "terreno.json"  # platô, morro e transição (terreno.py)
+MARCOS_JSON = RAIZ / "cache" / "cena" / "marcos.json"  # pegadas dos marcos (scripts/marcos/encaixe.py)
 
 
 @dataclass(frozen=True)
@@ -89,9 +90,24 @@ def pecas_da_placa(msp, lotes: list[dict], cfg: CenaCfg, placa_cfg: PlacaCfg, pl
     return particionar(plato, papeis, lotes_g, agua, placa_cfg), plato
 
 
+def pegadas_dos_marcos() -> BaseGeometry | None:
+    if not MARCOS_JSON.exists():
+        print("cena: sem marcos (cache/cena/marcos.json): placa sem furos")
+        return None
+    marcos = json.loads(MARCOS_JSON.read_text(encoding="utf-8"))["marcos"]
+    return unary_union([Polygon(m["pegada"]).buffer(0) for m in marcos.values()])
+
+
 def montar(msp, grade: Grade, lotes: list[dict], cfg: CenaCfg, placa_cfg: PlacaCfg,
-           plato_aneis: list[list[Ponto]], janelas_: dict[str, Ext], e0: float, n0: float) -> dict:
+           plato_aneis: list[list[Ponto]], janelas_: dict[str, Ext], e0: float, n0: float,
+           pegadas: BaseGeometry | None = None) -> dict:
     pecas, plato = pecas_da_placa(msp, lotes, cfg, placa_cfg, plato_aneis, e0, n0)
+    if pegadas is not None and not pegadas.is_empty:
+        invadidos = [k for k, g in pecas.items() if k.startswith("Q") and g.intersection(pegadas).area > 0.5]
+        if invadidos:
+            raise ValueError(f"pegada de marco sobre lote: {', '.join(invadidos)}")
+        pecas = {k: (g if k.startswith("Q") else g.difference(pegadas)) for k, g in pecas.items()}
+        pecas = {k: g for k, g in pecas.items() if not g.is_empty}
     cota = grade.cota_malha(*plato.representative_point().coords[0])  # o platô é plano
     objetos = montar_placa(pecas, placa_cfg, cota, {l["id"]: f"lote_{l['tipo']}" for l in lotes})
     for k, jan in janelas_.items():
@@ -113,7 +129,7 @@ def main() -> int:
     msp = ezdxf.readfile(DXF).modelspace()
     plato = aneis_do_plato(msp, TerrenoCfg.carregar(CFG_TOML), lotes, e0, n0)
     cena = montar(msp, grade, lotes, CenaCfg.carregar(CFG_TOML), PlacaCfg.carregar(CFG_TOML), plato,
-                  janelas(ext_da_grade(longe), longe.passo), e0, n0)
+                  janelas(ext_da_grade(longe), longe.passo), e0, n0, pegadas=pegadas_dos_marcos())
     DESTINO.parent.mkdir(parents=True, exist_ok=True)
     DESTINO.write_text(json.dumps(cena), encoding="utf-8")
     tris = {o["nome"]: len(o["faces"]) for o in cena["objetos"]}

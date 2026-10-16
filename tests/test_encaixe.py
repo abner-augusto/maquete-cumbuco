@@ -60,8 +60,9 @@ def test_sem_quadra_interior_falha_com_area():
         quadra_do_clube(box(0, 0, 5, 100), box(0, 0, 100, 100))
 
 
-def test_pegada_portaria_e_envoltoria_com_margem():
-    g = pegada_portaria([[0, 0, 0, 10, 4, 3], [8, 2, 0, 12, 10, 3]], 1.0)
+def test_pegada_portaria_e_envoltoria_dos_topos_com_margem():
+    # triângulos de topo, não caixas: parede solta sem topo (que esticava a caixa por 370 m) fica fora
+    g = pegada_portaria([[0, 0, 10, 0, 10, 4], [8, 2, 12, 2, 12, 10]], 1.0)
     assert g.contains(Point(11.5, 9.5)) and g.contains(Point(-0.5, -0.5)) and not g.contains(Point(-2, 5))
 
 

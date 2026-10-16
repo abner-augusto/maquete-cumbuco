@@ -123,8 +123,10 @@ def pegada_de_triangulos(tris) -> object:
                         for t in tris]).buffer(-0.001, join_style="mitre")
 
 
-def pegada_portaria(caixas: list[list[float]], margem: float) -> Polygon:
-    pts = [(x, y) for x0, y0, _, x1, y1, _ in caixas for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))]
+def pegada_portaria(tris, margem: float) -> Polygon:
+    """Envoltória dos triângulos de topo da edificação + margem. Caixa não serve: parede solta sem topo
+    estica a caixa do objeto por centenas de metros."""
+    pts = [(t[i], t[i + 1]) for t in tris for i in (0, 2, 4)]
     return MultiPoint(pts).convex_hull.buffer(margem, join_style="mitre")
 
 
@@ -157,8 +159,8 @@ def encaixar(fonte: dict, cfg: MarcosCfg, circulos, pecas: dict, plato, cota: fl
     clube_d, port_d = fonte[cfg.clube], fonte[cfg.portaria]
     cx = [c for n, c in clube_d["objetos"].items() if n.startswith("CLUBE_")]
     ilha_cx = [c for n, c in port_d["objetos"].items() if n.startswith("ROTATORIA_")]
-    port_cx = [c for n, c in port_d["objetos"].items()
-               if n.startswith("PORTARIA_") and n.split("_", 1)[1].split(".")[0] in cfg.edificacao]
+    port_topo = [tr for n, ts in port_d["topo"].items()
+                 if n.startswith("PORTARIA_") and n.split("_", 1)[1].split(".")[0] in cfg.edificacao for tr in ts]
     pivo = tuple(cfg.pivo_clube)
     clube_c = girar(_centro(cx)[None], pivo, -cfg.giro_clube)[0]
     ilha_c = _centro(ilha_cx)
@@ -183,8 +185,8 @@ def encaixar(fonte: dict, cfg: MarcosCfg, circulos, pecas: dict, plato, cota: fl
     print(f"encaixe: projeção do clube cobre {cob:.0%} da quadra ({quadra.area:.0f} m²)")
     if cob < cfg.cobertura_min:
         raise SystemExit(f"encaixe: projeção do clube cobre {cob:.0%} da quadra (mínimo {cfg.cobertura_min:.0%})")
-    cantos = t.aplicar([[x, y] for c in port_cx for x, y in ((c[0], c[1]), (c[3], c[1]), (c[3], c[4]), (c[0], c[4]))])
-    port_peg = MultiPoint([tuple(p) for p in cantos]).convex_hull.buffer(cfg.margem_portaria, join_style="mitre")
+    port_peg = pegada_portaria(t.aplicar(np.asarray(port_topo, dtype=float).reshape(-1, 2)).reshape(-1, 6).tolist(),
+                               cfg.margem_portaria)
     ilha_peg = Point(circ[:2]).buffer(circ[2], 128)
     tj = {"s": 1.0, "theta": t.theta, "tx": t.tx, "ty": t.ty}
     anel = lambda g: [[round(x, 3), round(y, 3)] for x, y in g.exterior.coords[:-1]]  # noqa: E731
