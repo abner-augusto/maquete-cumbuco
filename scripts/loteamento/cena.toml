@@ -22,6 +22,8 @@ transicao = 100.0    # m do levantamento ao Copernicus
 raio = 4000.0        # m do entorno, a partir do centro dos lotes
 mar_rebaixo = 5.0    # m que o fundo do mar desce abaixo do plano da água (1 m brigava com ele de longe)
 passo_perto = 10.0   # m da grade do terreno perto (múltiplo do passo do Copernicus)
+praia_inclinacao = 0.05  # m/m da rampa dos dois lados da linha de costa do OSM (scripts/loteamento/costa.py)
+fundo_inclinacao = 0.1   # m/m do fundo do mar além da rampa, até o mar_rebaixo
 
 [acesso]   # a avenida em rampa da rotatória à CE (scripts/loteamento/acesso.py)
 camada_via = "AR-CNT-VIA-011"     # a faixa de acesso do DWG (o anel comprido da camada)
