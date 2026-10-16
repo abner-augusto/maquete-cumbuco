@@ -111,3 +111,23 @@ def test_umeyama_rigido_mantem_escala_um():
     b = Semelhanca(2.0, 0.3, 5.0, 5.0).aplicar(a)
     assert umeyama(a, b, escala=False).s == 1.0
     assert umeyama(a, b).s == pytest.approx(2.0)
+
+
+def test_raster_sem_curvas_de_nivel_mantem_hachura_colorida():
+    # curvas de nível e contornos são traços neutros (cinza, preto, branco); a hachura de área verde é traço colorido
+    import pymupdf
+
+    from scripts.entorno.masterplan import rasterizar_contorno
+
+    doc = pymupdf.open()
+    pagina = doc.new_page(width=300, height=300)
+    pagina.draw_rect(pymupdf.Rect(50, 50, 250, 250), color=(0, 0, 0), fill=(1, 0.9, 0.4), width=3)
+    pagina.draw_line((50, 150), (250, 150), color=(0.4, 0.4, 0.4), width=3)
+    pagina.draw_line((50, 200), (250, 200), color=(0.4, 0.75, 0.4), width=3)
+    contorno = np.array([[50.0, 50.0], [250.0, 50.0], [250.0, 250.0], [50.0, 250.0]])
+    img, clip = rasterizar_contorno(pagina, 2.0, contorno)
+    px = lambda x, y: img.getpixel((int((x - clip[0]) * 2), int((y - clip[1]) * 2)))  # noqa: E731
+    assert px(150, 150) == px(150, 100)  # a curva cinza some no amarelo
+    assert px(51, 100) == px(150, 100)  # o contorno preto também
+    r, g, b = px(150, 200)
+    assert g > r + 40  # a hachura verde fica

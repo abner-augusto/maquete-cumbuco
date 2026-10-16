@@ -1,6 +1,6 @@
 """Masterplan das fases 2–10 pintado no chão, em segundo plano.
 
-Fonte: página 5 ("MASTERPLAN") do MASTER URBANO.pdf (plano b), em vetor. O registro é a semelhança
+Fonte: página 5 ("MASTERPLAN") do MASTER URBANO.pdf (plano b), em vetor, sem as curvas de nível (`sem_curvas`). O registro é a semelhança
 que leva a poligonal desenhada no PDF à poligonal do DWG R05. O PDF tem y para baixo: o contorno
 entra como (x, −y), senão a semelhança teria de ser um espelho.
 
@@ -131,9 +131,44 @@ def caminhos_fechados(pagina, min_pontos: int = 50) -> list[np.ndarray]:
     return saida
 
 
+def _neutro(cor) -> bool:
+    return cor is not None and max(cor) - min(cor) < 0.02
+
+
+def sem_curvas(pagina):
+    """Cópia vetorial da página sem os traços neutros (cinza, preto, branco): curvas de nível e contornos.
+    Ficam os preenchimentos (áreas, lotes, vias) e os traços coloridos (a hachura das áreas verdes). O PDF
+    não tem camadas, então a separação é pela cor; o texto também sai, como devia no chão da maquete."""
+    import pymupdf
+
+    doc = pymupdf.open()
+    nova = doc.new_page(width=pagina.rect.width, height=pagina.rect.height)
+    forma = nova.new_shape()
+    for d in pagina.get_drawings():
+        traco = d["type"] != "f" and not _neutro(d.get("color"))
+        if d["type"] == "s" and not traco:
+            continue
+        for it in d["items"]:
+            if it[0] == "l":
+                forma.draw_line(it[1], it[2])
+            elif it[0] == "c":
+                forma.draw_bezier(*it[1:5])
+            elif it[0] == "re":  # ("re", retângulo, sentido)
+                forma.draw_rect(it[1])
+            elif it[0] == "qu":
+                forma.draw_quad(it[1])
+        forma.finish(fill=d.get("fill"), color=d.get("color") if traco else None, width=d.get("width") or 0,
+                     even_odd=d.get("even_odd", False), closePath=d.get("closePath", False),
+                     fill_opacity=d.get("fill_opacity") or 1, stroke_opacity=d.get("stroke_opacity") or 1)
+    forma.commit()
+    nova._doc_ref = doc  # o documento tem de viver enquanto a página é usada
+    return nova
+
+
 def rasterizar_contorno(pagina, px_por_pt: float, contorno: np.ndarray | None = None) -> tuple[Image.Image, list[float]]:
-    """Raster da caixa do contorno (+5 pt). Zera o /Rotate da página antes: get_drawings dá o vetor sem o
-    giro e get_pixmap desenha com ele; sem giro, os dois ficam no mesmo espaço (o registro absorve o giro)."""
+    """Raster da caixa do contorno (+5 pt), sem as curvas de nível (`sem_curvas`). Zera o /Rotate da página
+    antes: get_drawings dá o vetor sem o giro e get_pixmap desenha com ele; sem giro, os dois ficam no mesmo
+    espaço (o registro absorve o giro)."""
     import pymupdf
 
     pagina.set_rotation(0)
@@ -141,7 +176,7 @@ def rasterizar_contorno(pagina, px_por_pt: float, contorno: np.ndarray | None = 
         contorno = max(caminhos_fechados(pagina), key=lambda c: Polygon(c).buffer(0).area)
     xs, ys = contorno[:, 0], contorno[:, 1]
     clip = pymupdf.Rect(xs.min() - 5, ys.min() - 5, xs.max() + 5, ys.max() + 5)
-    pix = pagina.get_pixmap(matrix=pymupdf.Matrix(px_por_pt, px_por_pt), clip=clip, alpha=False)
+    pix = sem_curvas(pagina).get_pixmap(matrix=pymupdf.Matrix(px_por_pt, px_por_pt), clip=clip, alpha=False)
     return Image.frombytes("RGB", (pix.width, pix.height), pix.samples), [clip.x0, clip.y0, clip.x1, clip.y1]
 
 
