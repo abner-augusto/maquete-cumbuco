@@ -19,6 +19,7 @@ from scripts.comum.ambiente import RAIZ
 from scripts.loteamento.cena import CFG_TOML, DXF
 from scripts.loteamento.malha import drapear, triangular
 from scripts.loteamento.placa import ccw, aneis_orientados
+from scripts.loteamento.acesso import Acesso, AcessoCfg, corredor, sem_faixa
 from scripts.loteamento.terreno import DESTINO_LONGE, Relevo, TerrenoCfg, aneis_do_plato
 
 from .extrair import BASE, CACHE, EntornoCfg
@@ -144,9 +145,15 @@ def main() -> int:
     base = json.loads(BASE.read_text(encoding="utf-8"))
     georref = json.loads((RAIZ / "dados" / "georref.json").read_text(encoding="utf-8"))
     lotes = json.loads((RAIZ / "dados" / "lotes.json").read_text(encoding="utf-8"))["lotes"]
-    plato = unary_union([Polygon(a).buffer(0) for a in aneis_do_plato(
-        ezdxf.readfile(DXF).modelspace(), TerrenoCfg.carregar(CFG_TOML), lotes,
-        georref["origem"]["E"], georref["origem"]["N"]) if len(a) >= 3])
+    aneis = aneis_do_plato(ezdxf.readfile(DXF).modelspace(), TerrenoCfg.carregar(CFG_TOML), lotes,
+                           georref["origem"]["E"], georref["origem"]["N"])
+    acesso, acfg = Acesso.carregar(), AcessoCfg.carregar(CFG_TOML)
+    if acesso is None:
+        raise SystemExit("sem cache/cena/acesso.json: rode uv run python -m scripts.loteamento.terreno")
+    # o platô sem a faixa do acesso, que desce até a CE; a avenida em rampa entra à parte
+    plano = unary_union([Polygon(a).buffer(0) for a in sem_faixa(aneis, acesso, acfg) if len(a) >= 3])
+    area_acesso = corredor(acesso, acfg)
+    plato = plano.union(area_acesso)
     relevo = Relevo.carregar()
     centro = tuple(base["centro"])
     longe = json.loads(DESTINO_LONGE.read_text(encoding="utf-8"))
@@ -175,7 +182,7 @@ def main() -> int:
     tiles = gerar_tiles(camadas, ext, longe["passo"], cfg.tile_px, cfg.tile_margem_px, CACHE, pos)
     MAPA_JSON.write_text(json.dumps({"tiles": tiles}), encoding="utf-8")
 
-    fora = plato.buffer(10)
+    fora = plano.buffer(10).union(area_acesso)  # a CE encosta na boca do acesso: sem folga ali
     circulo = Point(centro).buffer(cfg.raio_faixas, 128)
     vf, ff = [], []
     for via in base["vias"]:

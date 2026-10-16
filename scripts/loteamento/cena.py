@@ -18,10 +18,11 @@ from shapely.ops import unary_union
 from scripts.comum.ambiente import RAIZ
 from scripts.entorno.tiles import Ext, ext_da_grade, janelas
 
+from .acesso import Acesso, AcessoCfg, montar_acesso, pecas_acesso
 from .chao import malha_perto
 from .geometria import Ponto, area, contem, poligono_fechado, pontos_de
 from .malha import simplificar
-from .placa import PlacaCfg, montar_placa, particionar, poligonos
+from .placa import PlacaCfg, altura, montar_placa, particionar, poligonos
 from .relevo import Grade
 
 DXF = RAIZ / "cache" / "dxf" / "planta-venda.dxf"
@@ -99,18 +100,44 @@ def pegadas_dos_marcos() -> BaseGeometry | None:
     return unary_union([Polygon(p[0], p[1:]).buffer(0) for m in marcos.values() for p in m["furo"]])
 
 
+def acesso_da_cena() -> "tuple[Acesso, AcessoCfg] | None":
+    a = Acesso.carregar()
+    if a is None:
+        print("cena: sem acesso (cache/cena/acesso.json): a faixa do DWG fica no platô")
+        return None
+    return a, AcessoCfg.carregar(CFG_TOML)
+
+
 def montar(msp, grade: Grade, lotes: list[dict], cfg: CenaCfg, placa_cfg: PlacaCfg,
            plato_aneis: list[list[Ponto]], janelas_: dict[str, Ext], e0: float, n0: float,
-           pegadas: BaseGeometry | None = None) -> dict:
+           pegadas: BaseGeometry | None = None, acesso: "tuple[Acesso, AcessoCfg] | None" = None) -> dict:
     pecas, plato = pecas_da_placa(msp, lotes, cfg, placa_cfg, plato_aneis, e0, n0)
+    pecas_ac: dict[str, BaseGeometry] = {}
+    if acesso is not None:
+        a, acfg = acesso
+        ce = unary_union([Polygon(r[0], r[1:]) for r in a.ce]) if a.ce else Polygon()
+        pecas_ac = pecas_acesso(a, ce, acfg)
+        area = unary_union(list(pecas_ac.values()))
+        invadidos = [k for k, g in pecas.items() if k.startswith("Q") and g.intersection(area).area > 0.5]
+        if invadidos:
+            raise ValueError(f"acesso sobre lote: {', '.join(invadidos)}")
+        pecas = {k: g.difference(area) for k, g in pecas.items()}
+        pecas = {k: g for k, g in pecas.items() if not g.is_empty}
+        plano = plato.difference(area)  # a cota sai do platô que ficou plano
+        plato = plato.union(area)  # o terreno perde o corredor também
+    else:
+        plano = plato
     if pegadas is not None and not pegadas.is_empty:
         invadidos = [k for k, g in pecas.items() if k.startswith("Q") and g.intersection(pegadas).area > 0.5]
         if invadidos:
             raise ValueError(f"pegada de marco sobre lote: {', '.join(invadidos)}")
         pecas = {k: (g if k.startswith("Q") else g.difference(pegadas)) for k, g in pecas.items()}
         pecas = {k: g for k, g in pecas.items() if not g.is_empty}
-    cota = grade.cota_malha(*plato.representative_point().coords[0])  # o platô é plano
+    cota = grade.cota_malha(*plano.representative_point().coords[0])  # o platô é plano
     objetos = montar_placa(pecas, placa_cfg, cota, {l["id"]: f"lote_{l['tipo']}" for l in lotes})
+    if pecas_ac:
+        vizinhos = {k: (g, altura(k, placa_cfg)) for k, g in pecas.items()}
+        objetos += montar_acesso(acesso[0], pecas_ac, vizinhos, cota, placa_cfg.fundo, acesso[1])
     for k, jan in janelas_.items():
         v, f = malha_perto(grade, plato, jan)
         if f:
@@ -130,7 +157,8 @@ def main() -> int:
     msp = ezdxf.readfile(DXF).modelspace()
     plato = aneis_do_plato(msp, TerrenoCfg.carregar(CFG_TOML), lotes, e0, n0)
     cena = montar(msp, grade, lotes, CenaCfg.carregar(CFG_TOML), PlacaCfg.carregar(CFG_TOML), plato,
-                  janelas(ext_da_grade(longe), longe.passo), e0, n0, pegadas=pegadas_dos_marcos())
+                  janelas(ext_da_grade(longe), longe.passo), e0, n0, pegadas=pegadas_dos_marcos(),
+                  acesso=acesso_da_cena())
     DESTINO.parent.mkdir(parents=True, exist_ok=True)
     DESTINO.write_text(json.dumps(cena), encoding="utf-8")
     tris = {o["nome"]: len(o["faces"]) for o in cena["objetos"]}

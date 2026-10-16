@@ -161,3 +161,32 @@ def test_entorno_em_janelas_reparte_as_celulas_sem_repetir():
         _, f = malha_entorno(dem, buraco, centro, raio, jan)
         total += len(f)
     assert total == len(inteiro)
+
+
+def test_faixa_livre_fica_no_chao_natural_mesmo_perto_do_plato():
+    # a CE passa a 10 m do platô: sem `livre`, o talude a levantava (a lombada na entrada)
+    from shapely.geometry import box
+
+    lev = _grade(lambda x, y: 10.0)
+    dem = _grade(lambda x, y: 10.0, passo=30.0, x0=-600.0, y0=-600.0, n=41)
+    sem = np.array(compor_perto(lev, dem, [QUADRADO], 22.0, CFG).z)
+    com = np.array(compor_perto(lev, dem, [QUADRADO], 22.0, CFG, livre=box(55, -300, 75, 300)).z)
+    j, i = 30, 36  # nó (60, 0)
+    assert sem[j, i] > 10.5 and com[j, i] == pytest.approx(10.0)
+
+
+def test_corredor_do_acesso_desce_com_o_perfil_e_emenda_no_entorno():
+    from shapely.geometry import box
+
+    from scripts.loteamento.acesso import Acesso, perfil_vertical
+    from scripts.loteamento.terreno import aplicar_acesso
+    from tests.test_acesso import CFG as ACFG
+
+    a = Acesso(c0=(0.0, 0.0), d=(0.0, 1.0), s_ini=10.0, s_fim=100.0,
+               pvis=[(10.0, 21.0), (20.0, 21.0), (80.0, 4.4), (100.0, 4.0)])
+    g = aplicar_acesso(_grade(lambda x, y: 10.0), a, ACFG, box(-10.5, 10, 10.5, 100), talude=20.0)
+    z = np.array(g.z)
+    zs = perfil_vertical(a.pvis, ACFG.curva_vertical)
+    assert z[35, 30] == pytest.approx(zs(50) - 0.5, abs=0.01)  # nó (0, 50): chão sob a pista
+    assert z[35, 35] == pytest.approx(10.0)  # nó (50, 50): longe, o chão de antes
+    assert abs(np.diff(z, axis=1)).max() < 6.0  # talude, sem paredão

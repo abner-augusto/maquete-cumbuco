@@ -12,12 +12,15 @@ from pathlib import Path
 
 import ezdxf
 import numpy as np
+import shapely
 from scipy.ndimage import distance_transform_edt, gaussian_filter, label, map_coordinates
+from shapely.geometry.base import BaseGeometry
 
 from scripts.comum.ambiente import RAIZ
 from scripts.entorno import dem
 from scripts.entorno.tiles import da_janela, ext_da_grade, janelas
 
+from .acesso import Acesso, AcessoCfg, com_perfil, corredor, eixo_do_acesso, perfil_vertical, sem_faixa
 from .cena import CFG_TOML, DXF, CenaCfg, aneis_da_layer
 from .geometria import Ponto, centroide
 from .relevo import DESTINO as RELEVO_JSON
@@ -103,10 +106,12 @@ def _distancia_fora(g: Grade, aneis: list[list[Ponto]]) -> np.ndarray:
     return np.maximum(distance_transform_edt(~mascara(g, aneis)) * g.passo - g.passo, 0.0)
 
 
-def compor_perto(lev: Grade, dem: Grade, poligonal: list[list[Ponto]], cota: float, cfg: TerrenoCfg) -> Grade:
+def compor_perto(lev: Grade, dem: Grade, poligonal: list[list[Ponto]], cota: float, cfg: TerrenoCfg,
+                 livre: BaseGeometry | None = None) -> Grade:
     """Platô na cota dentro da poligonal; talude de `cfg.talude` m; depois o levantamento suavizado
     (σ = `cfg.sigma`) até `cfg.alcance` m, passando ao Copernicus em `cfg.transicao` m. Onde o
-    levantamento acaba, a troca também é gradual (peso pela cobertura suavizada)."""
+    levantamento acaba, a troca também é gradual (peso pela cobertura suavizada). Em `livre` (a faixa
+    da CE), o chão natural: o talude do platô não sobe nela."""
     z = np.array(lev.z, dtype=float)
     tem = ~np.isnan(z)
     s = cfg.sigma / lev.passo
@@ -119,8 +124,25 @@ def compor_perto(lev: Grade, dem: Grade, poligonal: list[list[Ponto]], cota: flo
     peso = np.clip((cfg.alcance + cfg.transicao - dist) / cfg.transicao, 0.0, 1.0) * np.clip(cobertura, 0.0, 1.0)
     base = peso * suave + (1.0 - peso) * longe
     t = np.clip((dist - cfg.plato_folga) / cfg.talude, 0.0, 1.0)
+    if livre is not None:
+        t = np.where(shapely.contains_xy(livre, gx, gy), 1.0, t)
     final = (1.0 - t) * cota + t * base
     return Grade(lev.x0, lev.y0, lev.passo, lev.nx, lev.ny, np.round(final, 2).tolist())
+
+
+def aplicar_acesso(g: Grade, a: Acesso, acfg: AcessoCfg, area: BaseGeometry, talude: float) -> Grade:
+    """Chão do corredor do acesso: 0,5 m abaixo do perfil até uma célula e meia da área (a célula que a
+    borda corta fica toda no perfil), depois talude de `talude` m até o chão que já estava."""
+    gx, gy = _nos(g)
+    dist = shapely.distance(area, shapely.points(gx, gy))
+    perto = dist <= 1.5 * g.passo + talude
+    zs = perfil_vertical(a.pvis, acfg.curva_vertical)
+    s, _ = a.local(np.c_[gx[perto], gy[perto]])
+    zc = np.array([zs(min(max(x, a.s_ini), a.s_fim)) for x in s]) - 0.5
+    w = np.clip((dist[perto] - 1.5 * g.passo) / talude, 0.0, 1.0)
+    z = np.array(g.z, dtype=float)
+    z[perto] = (1.0 - w) * zc + w * z[perto]
+    return Grade(g.x0, g.y0, g.passo, g.nx, g.ny, np.round(z, 2).tolist())
 
 
 def malha_entorno(dem: Grade, buraco: tuple[float, float, float, float], centro: tuple[float, float],
@@ -219,6 +241,9 @@ def main() -> int:
     # O platô cobre tudo o que está desenhado (vias de acesso, verdes e lotes fora da poligonal
     # também): nada da planta fica no talude, onde a grade de 10 m o cortaria.
     plato = aneis_do_plato(msp, cfg, lotes, e0, n0)
+    acfg = AcessoCfg.carregar(CFG_TOML)
+    acesso, livre = eixo_do_acesso(msp, acfg, e0, n0)
+    plato = sem_faixa(plato, acesso, acfg)
     xs = [x for a in poligonal for x, _ in a]
     ys = [y for a in poligonal for _, y in a]
     folga = cfg.alcance + cfg.transicao + bruto.passo  # a borda do perto já é Copernicus puro
@@ -230,7 +255,10 @@ def main() -> int:
     longe = Grade(bruto.x0, bruto.y0, bruto.passo, bruto.nx, bruto.ny,
                   (np.array(com_mar.z, dtype=float) + delta).round(2).tolist())
     cota = cfg.plato_cota if cfg.plato_cota is not None else cota_plato(lev, lotes)
-    perto = compor_perto(perto_lev, longe, plato, cota, cfg)
+    perto = compor_perto(perto_lev, longe, plato, cota, cfg, livre=livre)
+    acesso = com_perfil(acesso, perto, cota, acfg)
+    perto = aplicar_acesso(perto, acesso, acfg, corredor(acesso, acfg), cfg.talude)
+    acesso.salvar()
     centro = dem.centro_dos_lotes()
     entorno = [{"nome": f"Entorno_{k}", "material": "entorno", "vertices": v, "faces": f}
                for k, jan in janelas(ext_da_grade(longe), longe.passo).items()

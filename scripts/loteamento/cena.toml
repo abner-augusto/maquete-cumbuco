@@ -23,6 +23,20 @@ raio = 4000.0        # m do entorno, a partir do centro dos lotes
 mar_rebaixo = 5.0    # m que o fundo do mar desce abaixo do plano da água (1 m brigava com ele de longe)
 passo_perto = 10.0   # m da grade do terreno perto (múltiplo do passo do Copernicus)
 
+[acesso]   # a avenida em rampa da rotatória à CE (scripts/loteamento/acesso.py)
+camada_via = "AR-CNT-VIA-011"     # a faixa de acesso do DWG (o anel comprido da camada)
+secao = [2.0, 7.0, 3.0, 7.0, 2.0] # calçada, pista, canteiro, pista, calçada: a da avenida até a portaria
+raio_boca = 15.0           # m, curva das bordas na CE
+patamar = 20.0             # m quase planos antes da CE, onde o carro converte
+patamar_inclinacao = 0.02
+curva_vertical = 20.0      # m de cada curva vertical nas quebras do perfil
+rampa_max = 0.18           # o desnível (~17 m em ~110 m) dá ~16,5%
+passo = 2.0                # m, aresta máxima das peças em rampa
+folga_ce = 5.0             # m além da meia largura da CE que ficam no chão natural (sem o talude do platô)
+ilha_base = 10.0           # m, a ilha triangular no fim do canteiro
+ilha_comprimento = 15.0
+ilha_recuo = 3.0           # m entre a base da ilha e a borda da CE
+
 [placa]   # a placa em volume (scripts/loteamento/placa.py); alturas relativas à cota do platô
 recuo_lote = 0.15   # m de cada lado: a junta entre lotes vizinhos tem o dobro
 fundo = -1.0        # m, base das paredes: meio-fio, margem da lagoa e saia da borda

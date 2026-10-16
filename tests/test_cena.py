@@ -143,3 +143,37 @@ def test_pegadas_dos_marcos_le_o_furo_com_buracos(tmp_path, monkeypatch):
     (tmp_path / "m.json").write_text(json.dumps(m), encoding="utf-8")
     monkeypatch.setattr(cena, "MARCOS_JSON", tmp_path / "m.json")
     assert cena.pegadas_dos_marcos().area == pytest.approx(96.0)  # o furo, não a pegada
+
+
+def _acesso(c0, d, s_ini, s_fim, ce):
+    from scripts.loteamento.acesso import Acesso
+
+    return Acesso(c0=c0, d=d, s_ini=s_ini, s_fim=s_fim,
+                  pvis=[(s_ini, 10.0), (s_ini + 10, 10.0), (s_fim - 20, 6.4), (s_fim, 6.0)],
+                  ce=[[list(ce.exterior.coords)[:-1]]])
+
+
+def test_acesso_em_rampa_sai_do_plato_e_fura_o_terreno(msp):
+    from shapely.geometry import Point
+
+    from tests.test_acesso import CFG as ACFG
+
+    a = _acesso((50.0, 50.0), (1.0, 0.0), 50.0, 140.0, box(190, -10, 199, 180))
+    objs = {o["nome"]: o for o in montar(msp, GRADE, LOTES, CFG, PLACA, PLATO, JANELAS, E0, N0,
+                                         acesso=(a, ACFG))["objetos"]}
+    assert {"AcessoPista", "AcessoCalcadas", "AcessoCanteiro"} <= set(objs)
+    assert min(v[2] for v in objs["AcessoPista"]["vertices"]) < 7.0  # desce até a CE (o platô está a 10)
+    corr = box(101, 40, 189, 60)
+    for k, o in objs.items():
+        if k.startswith("Terreno"):
+            v = o["vertices"]
+            assert not any(corr.contains(Point(sum(v[i][0] for i in f) / 3, sum(v[i][1] for i in f) / 3))
+                           for f in o["faces"]), k
+
+
+def test_acesso_sobre_lote_falha_nomeando(msp):
+    from tests.test_acesso import CFG as ACFG
+
+    a = _acesso((5.0, 50.0), (0.0, -1.0), 10.0, 55.0, box(-50, -14, 60, -5))
+    with pytest.raises(ValueError, match="Q01L01"):
+        montar(msp, GRADE, LOTES, CFG, PLACA, PLATO, JANELAS, E0, N0, acesso=(a, ACFG))
