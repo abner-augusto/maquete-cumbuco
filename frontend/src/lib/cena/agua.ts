@@ -124,8 +124,10 @@ export function materialDaAgua(ceu: CoresCeu): MaterialAgua {
     fragmentShader,
     // O plano passa sob toda a terra do entorno, a centímetros dela nas baixadas e nas margens:
     // empurrado para trás na profundidade, o terreno ganha onde os dois quase coincidem e nada pisca.
+    // Só o termo constante: o fator pela inclinação cresce sem limite na água rasante de longe e
+    // jogava os fragmentos além do plano distante (serrilhado no fim do mar).
     polygonOffset: true,
-    polygonOffsetFactor: 1,
-    polygonOffsetUnits: 1,
+    polygonOffsetFactor: 0,
+    polygonOffsetUnits: 2,
   }) as MaterialAgua;
 }

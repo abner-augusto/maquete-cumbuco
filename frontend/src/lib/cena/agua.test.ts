@@ -20,7 +20,8 @@ describe('materialDaAgua', () => {
     const cor = () => new THREE.Color();
     const m = materialDaAgua({ zenite: cor(), faixa: cor(), horizonte: cor(), sol: new THREE.Vector3(0, 1, 0) });
     expect(m.polygonOffset).toBe(true);
-    expect(m.polygonOffsetFactor).toBeGreaterThan(0);
     expect(m.polygonOffsetUnits).toBeGreaterThan(0);
+    // Sem o termo pela inclinação: na água rasante de longe ele cresce sem limite e some com o mar.
+    expect(m.polygonOffsetFactor).toBe(0);
   });
 });
