@@ -124,3 +124,12 @@ def test_ponto_do_elemento_perto_da_referencia():
     # referência no braço horizontal, que está no mar: o pino fica no ponto de terra mais perto dela
     x, y = P.xy(*ponto_do_elemento(P, el, em_terra=lambda x, y: y > 500, ref=(900, 25)))
     assert Polygon(ele).contains(Point(x, y)) and 500 <= y < 520
+
+
+def test_credito_sem_prefixo_user():
+    # o Commons devolve "User:Fulano" para quem não preencheu o campo autor: na legenda sai só o nome
+    from scripts.pontos.pontos import credito
+
+    assert credito("User:Eduardo P") == "Eduardo P"
+    assert credito("Boris Karpuk") == "Boris Karpuk"
+    assert credito("") == ""

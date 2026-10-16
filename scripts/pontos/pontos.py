@@ -233,6 +233,11 @@ def coordenada_osm(p: dict, proj: Projecao, em_terra=None) -> dict:
     return {"lat": float(r["lat"]), "lon": float(r["lon"]), "osm_type": r["osm_type"], "osm_id": r["osm_id"], "fonte": "osm"}
 
 
+def credito(autor: str) -> str:
+    """Autor da foto como sai na legenda: o Commons devolve "User:Fulano" para quem não preencheu o autor."""
+    return re.sub(r"^User:", "", autor or "").strip()
+
+
 def baixar_foto(p: dict, cand: list[dict]) -> dict:
     escolhida = next((c for c in cand if c["titulo"] == p["foto"]), None)
     if escolhida is None:
@@ -243,7 +248,7 @@ def baixar_foto(p: dict, cand: list[dict]) -> dict:
         req = urllib.request.Request(escolhida["miniatura"], headers={"User-Agent": AGENTE})
         with urllib.request.urlopen(req, timeout=120) as r:
             destino.write_bytes(r.read())
-    return {"foto": f"pontos/fotos/{destino.name}", "credito": escolhida["autor"], "licenca": escolhida["licenca"],
+    return {"foto": f"pontos/fotos/{destino.name}", "credito": credito(escolhida["autor"]), "licenca": escolhida["licenca"],
             "licenca_url": escolhida["licenca_url"], "fonte_foto": escolhida["pagina"]}
 
 
