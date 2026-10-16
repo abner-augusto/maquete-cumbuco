@@ -92,6 +92,11 @@ def construir(dados: dict, nome: str = "Loteamento") -> bpy.types.Collection:
             me.materials.append(material_textura(o["textura"]["arquivo"]))
         else:
             me.materials.append(material(o["material"]))
+        if "alfa" in o:  # desbote da borda (orla): COLOR_0 RGBA, branco com o alfa por vértice
+            cor = me.color_attributes.new("Alfa", "FLOAT_COLOR", "POINT")
+            for i, a in enumerate(o["alfa"]):
+                cor.data[i].color = (1.0, 1.0, 1.0, a)
+            me.color_attributes.active_color = cor
         if o.get("suave", True):
             # Normais suaves: o glTF compartilha o vértice entre triângulos (facetado duplica tudo).
             me.shade_smooth()
@@ -175,7 +180,8 @@ def main() -> None:
     for ob in col.objects:
         ob.select_set(True)
     bpy.ops.export_scene.gltf(filepath=str(GLB), export_format="GLB", use_selection=True,
-                              export_apply=True, export_yup=True, export_texcoords=True)
+                              export_apply=True, export_yup=True, export_texcoords=True,
+                              export_vertex_color="ACTIVE", export_all_vertex_colors=True)
     ctx = construir(json.loads(CONTEXTO.read_text(encoding="utf-8")), "Contexto") if CONTEXTO else None
     if PREVIA:
         previa(PREVIA, col, ctx)

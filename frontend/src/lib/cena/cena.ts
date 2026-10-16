@@ -320,7 +320,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
       // A borda do entorno some na névoa, na cor do solo do céu.
       const alcance = camera.position.distanceTo(controles.target);
       nevoa.near = alcance * 0.9 + 600;
-      nevoa.far = alcance + 5000;
+      nevoa.far = alcance + 5000 + raioOrla;
       nevoa.color.copy(ceu.corSolo());
     }
     ceu.malha.position.copy(camera.position);
@@ -350,6 +350,11 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   let pedidoEntorno = 0;
   let pontosEntorno: { p: Ponto; posicao: THREE.Vector3 }[] = [];
   let alcanceAgua = 0;
+  let raioTerra = 0;
+  /** Alcance da orla regional a partir do centro (0 até ela chegar): abre a névoa e o afastamento. */
+  let raioOrla = 0;
+  let carregandoOrla: Promise<void> | null = null;
+  const afastamentoEntorno = () => Math.max(9000, raioOrla * 1.3);
   let ultimoEntorno = '';
   const nevoa = new THREE.Fog(0xffffff, 1000, 6000);
   const entornoAtivo = () => entorno?.grupo.visible === true;
@@ -387,7 +392,6 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
         // O plano vai até o horizonte: o `far` da câmera acompanha a malha; o desbotar para o
         // céu começa onde a terra do entorno acaba.
         alcanceAgua = alcanceDaAgua(mar, centro);
-        let raioTerra = 0;
         entorno.grupo.traverse(x => { if ((x as THREE.Mesh).isMesh && x.name.startsWith('Entorno_')) raioTerra = Math.max(raioTerra, alcanceDaAgua(x as THREE.Mesh, centro)); });
         agua.uniforms.uDesbotar.value.copy(desbotarDaAgua(raioTerra || alcanceAgua));
       }
@@ -401,7 +405,8 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     const e = entorno;
     pontosEntorno = pontos.map(p => ({ p, posicao: new THREE.Vector3(p.x, e.cotaEm(p.x, p.y), -p.y) }));
     cena.fog = nevoa;
-    controles.maxDistance = 9000;
+    controles.maxDistance = afastamentoEntorno();
+    carregandoOrla ??= carregarOrla(e);
     // Do alto, pelo mesmo rumo de agora, com o anel de 3 km inteiro na largura da tela.
     abertura = false;
     const rumo = camera.position.clone().sub(controles.target).setY(0);
@@ -413,6 +418,24 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     controles.target.copy(centro);
     camera.position.copy(centro).addScaledVector(rumo, Math.cos(elevacao) * distancia).setY(centro.y + Math.sin(elevacao) * distancia);
     controles.update();
+    sujo = true;
+  }
+
+  async function carregarOrla(e: Entorno) {
+    let orla: THREE.Group;
+    try {
+      orla = await Entorno.carregarOrla(gltf, o.base);
+    } catch (erro) {
+      console.warn('orla regional não carregou', erro);  // o entorno segue sem ela
+      return;
+    }
+    e.adicionarOrla(orla);
+    for (const m of e.orla) raioOrla = Math.max(raioOrla, alcanceDaAgua(m, centro));
+    agua.uniforms.uDesbotar.value.copy(desbotarDaAgua(Math.max(raioTerra, raioOrla) || alcanceAgua));
+    // Os pontos de longe estavam na cota 0, sem terreno sob eles: agora pousam na orla.
+    pontosEntorno = pontosEntorno.map(({ p }) => ({ p, posicao: new THREE.Vector3(p.x, e.cotaEm(p.x, p.y), -p.y) }));
+    if (entornoAtivo()) controles.maxDistance = afastamentoEntorno();
+    ultimoEntorno = '';
     sujo = true;
   }
 

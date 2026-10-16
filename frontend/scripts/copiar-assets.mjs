@@ -76,7 +76,7 @@ async function main() {
     await webp(origem, base);
   }
 
-  for (const n of ['loteamento', 'entorno', 'vegetacao'])
+  for (const n of ['loteamento', 'entorno', 'vegetacao', 'orla'])
     await comprimir(path.join(maquete, `${n}.glb`), path.join(PUBLIC, 'modelos', `${n}.glb`));
   await copyFile(path.join(maquete, 'marcos.glb'), path.join(PUBLIC, 'modelos', 'marcos.glb'));
   await copyFile(path.join(maquete, 'vegetacao.json'), path.join(PUBLIC, 'modelos', 'vegetacao.json'));

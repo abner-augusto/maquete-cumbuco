@@ -50,6 +50,14 @@ class EntornoCfg:
     masterplan_opacidade: float = 0.55
     raio_predios_orla: float = 0.0  # na faixa da orla, prédios até este raio (0: só raio_predios)
     orla_m: float = 0.0             # largura da faixa da orla, a partir da linha de costa do OSM
+    orla_de: str = ""               # orla regional (scripts/entorno/orla.py): ponto de referência de uma ponta
+    orla_ate: str = ""              # ... e da outra
+    orla_profundidade: float = 4000.0
+    orla_margem: float = 2000.0
+    orla_passo: float = 60.0
+    orla_desbote: float = 1500.0
+    orla_afundar: float = 0.5
+    orla_tile_px: int = 2048
 
     @property
     def raio_download_predios(self) -> float:
@@ -181,6 +189,10 @@ def main() -> int:
     osm_qm = overpass(f"[out:json][timeout:120];wr[man_made~\"^(breakwater|groyne)$\"]{cerca};out geom;",
                       CACHE / "osm-quebra-mar.json", refazer)
     base["quebra_mares"] = quebra_mares(proj, osm_qm, centro, cfg.raio_vias)
+    if cfg.orla_de:  # a costa de toda a orla: o mar do terreno.py segue ela além do entorno
+        from .orla import baixar_costa
+
+        baixar_costa(proj, cfg, refazer)
     base["fontes"]["osm_timestamp"] = osm_vias.get("osm3s", {}).get("timestamp_osm_base")
     base["gerado_em"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     BASE.write_text(json.dumps(base, ensure_ascii=False), encoding="utf-8")

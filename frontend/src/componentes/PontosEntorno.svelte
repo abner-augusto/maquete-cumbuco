@@ -7,6 +7,7 @@
   import { fade } from 'svelte/transition';
   import { MARGEM_FADE, type QuadroEntorno, type Tela } from '../lib/cena/cena';
   import { rotuloKm, type Ponto } from '../lib/pontos';
+  import { rotulosQueCabem } from '../lib/cena/entorno';
   import Icone from './Icone.svelte';
   import IconePonto, { iconeDaCategoria } from './IconePonto.svelte';
 
@@ -160,10 +161,8 @@
 </script>
 
 <div class="camada" bind:clientWidth={largura} bind:clientHeight={altura} aria-label="Pontos de referência na cena">
-  {#each quadro.aneis as anel (anel.raio)}
-    {#if anel.tela}
-      <span class="anel" style:left="{anel.tela.x}px" style:top="{anel.tela.y}px" aria-hidden="true">{formatoRaio(anel.raio)}</span>
-    {/if}
+  {#each rotulosQueCabem(quadro.aneis, 52) as anel (anel.raio)}
+    <span class="anel" style:left="{anel.tela!.x}px" style:top="{anel.tela!.y}px" aria-hidden="true">{formatoRaio(anel.raio)}</span>
   {/each}
 
   {#each camadas.marcadores as { ponto, x, y, opacidade, rotulo } (ponto.id)}

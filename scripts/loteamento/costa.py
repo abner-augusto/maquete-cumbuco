@@ -18,6 +18,7 @@ from scripts.comum.ambiente import RAIZ
 from .relevo import Grade
 
 OSM_AREAS = RAIZ / "cache" / "entorno" / "osm-areas.json"
+OSM_COSTA = RAIZ / "cache" / "entorno" / "orla-costa.json"  # scripts/entorno/orla.py
 
 
 def agua_do_osm(e0: float, n0: float) -> BaseGeometry | None:
@@ -35,16 +36,19 @@ def agua_do_osm(e0: float, n0: float) -> BaseGeometry | None:
 
 
 def linhas_de_costa(e0: float, n0: float) -> list[LineString]:
-    """`natural=coastline` do cache do entorno, em coordenadas locais; vazio sem o cache."""
+    """`natural=coastline` em coordenadas locais: a costa regional da orla (do Pecém a Iracema), se
+    estiver no cache, senão a do entorno; vazio sem nenhum dos dois. Com a regional, o mar segue a
+    costa de verdade além do entorno, em vez da reta prolongada."""
     import json
 
     from scripts.entorno.osm import Projecao, linha_osm
 
-    if not OSM_AREAS.exists():
+    fonte = OSM_COSTA if OSM_COSTA.exists() else OSM_AREAS
+    if not fonte.exists():
         return []
     proj = Projecao(e0, n0)
     return [LineString(linha_osm(proj, e["geometry"]))
-            for e in json.loads(OSM_AREAS.read_text(encoding="utf-8"))["elements"]
+            for e in json.loads(fonte.read_text(encoding="utf-8"))["elements"]
             if e.get("tags", {}).get("natural") == "coastline" and len(e.get("geometry") or []) > 1]
 
 

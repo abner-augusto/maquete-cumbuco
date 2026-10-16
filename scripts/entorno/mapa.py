@@ -5,6 +5,7 @@ from PIL import Image, ImageDraw
 # Cores de cena (ambiente, não marca), sRGB. O solo é a cor do terreno do Blender (0.86, 0.80, 0.68).
 CORES = {
     "solo": (219, 204, 173),
+    "urbano": (206, 196, 178),  # bairros na orla regional (landuse residencial, comercial, industrial)
     "verde": (171, 180, 138),
     "lazer": (178, 190, 142),
     "areia": (234, 223, 195),

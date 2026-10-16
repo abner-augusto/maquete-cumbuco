@@ -11,3 +11,14 @@ tile_margem_px = 2          # pixels a mais de borda: o filtro da GPU não abre 
 masterplan = true           # fases 2–10 pintadas em segundo plano (scripts/entorno/masterplan.py)
 masterplan_saturacao = 0.35
 masterplan_opacidade = 0.55
+
+# Orla regional (scripts/entorno/orla.py): faixa simplificada da costa, só com o mapa do OSM, para a
+# vista de longe. As pontas são pontos de referência de dados/pontos.json.
+orla_de = "Porto do Pecém"
+orla_ate = "Aterro da Praia de Iracema"
+orla_profundidade = 4000.0  # m terra adentro da costa: a gleba do masterplan chega a 2,8 km dela
+orla_margem = 2000.0        # m além de cada ponta, ao longo da costa
+orla_passo = 60.0           # m da grade do relevo (o dobro do Copernicus)
+orla_desbote = 1500.0       # m em que a borda de terra desbota até sumir (alfa dos vértices)
+orla_afundar = 0.5          # m abaixo do entorno detalhado, onde as duas malhas se sobrepõem
+orla_tile_px = 2048         # lado maior de cada um dos 4 tiles do mapa da orla

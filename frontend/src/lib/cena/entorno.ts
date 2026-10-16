@@ -11,6 +11,19 @@ export function raiosDosAneis(passo: number, ate: number): number[] {
   return Array.from({ length: Math.floor(ate / passo + 1e-9) }, (_, i) => (i + 1) * passo);
 }
 
+/**
+ * Rótulos de anel que cabem na tela: do anel de fora para dentro (o maior é o que mais informa),
+ * fica o que está a `folga` px ou mais de todos os que já ficaram. De longe, os anéis se juntam.
+ */
+export function rotulosQueCabem<T extends { raio: number; tela: { x: number; y: number } | null }>(aneis: T[], folga: number): T[] {
+  const ficam: T[] = [];
+  for (const a of [...aneis].sort((p, q) => q.raio - p.raio)) {
+    const t = a.tela;
+    if (t && ficam.every(f => Math.hypot(f.tela!.x - t.x, f.tela!.y - t.y) >= folga)) ficam.push(a);
+  }
+  return ficam.sort((p, q) => p.raio - q.raio);
+}
+
 /** Altura dos anéis sobre o terreno: soltos do chão, acima das copas e dos telhados baixos. */
 const ALTURA_ANEL = 12;
 
@@ -25,6 +38,8 @@ export class Entorno {
   readonly grupo = new THREE.Group();
   private readonly arvores: { malha: THREE.InstancedMesh; total: number }[] = [];
   private readonly terreno: THREE.Object3D[];
+  /** Malhas da orla regional, quando chegam (carregarOrla). */
+  readonly orla: THREE.Mesh[] = [];
   private readonly raio = new THREE.Raycaster();
   private readonly linhaAnel = new LineMaterial({ color: 0x2b2e1e, linewidth: 1.6, transparent: true, opacity: 0.7, depthWrite: false });
 
@@ -92,6 +107,31 @@ export class Entorno {
     ]);
     if (!resposta.ok) throw Error('Não foi possível carregar a vegetação');
     return new Entorno(cenario.scene, modelos.scene, (await resposta.json()) as Vegetacao, centro, raios, fracao);
+  }
+
+  /** A orla regional (Pecém a Iracema), num GLB à parte: chega depois, e o entorno já está na tela. */
+  static async carregarOrla(loader: GLTFLoader, base: URL): Promise<THREE.Group> {
+    return (await loader.loadAsync(new URL('modelos/orla.glb', base).href)).scene;
+  }
+
+  /**
+   * Põe a orla na cena. A borda de terra desbota pelo alfa dos vértices (COLOR_0): o que aparece
+   * por trás é o céu, na cor do solo, a mesma da névoa. Sob o entorno detalhado ela fica abaixo.
+   */
+  adicionarOrla(cena: THREE.Group): void {
+    cena.traverse(o => {
+      const malha = o as THREE.Mesh;
+      if (!malha.isMesh) return;
+      for (const m of ([] as THREE.Material[]).concat(malha.material)) {
+        m.transparent = true;
+        (m as THREE.MeshStandardMaterial).vertexColors = true;
+        m.needsUpdate = true;
+      }
+      this.orla.push(malha);
+    });
+    this.grupo.add(cena);
+    this.terreno.push(cena);
+    cena.updateMatrixWorld(true);
   }
 
   /** Cota do terreno do entorno em (x leste, y norte), por um raio vertical; 0 se não acertar. */

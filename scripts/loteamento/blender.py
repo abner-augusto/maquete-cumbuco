@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from scripts.comum.ambiente import RAIZ, ler_env, terreno_dir
+from scripts.entorno import orla
 from scripts.entorno.preparar import DETALHE, MAPA_JSON
 from scripts.entorno.vegetacao import DESTINO as VEGETACAO_JSON
 
@@ -39,6 +40,7 @@ def conferir_glb(nomes: list[str], ids: list[str]) -> list[str]:
 
 LIMITE_ENTORNO_MB = 11.0  # bruto, antes do meshopt do front (servido: ~4 MB); a faixa da orla pôs 5 mil prédios
 LIMITE_VEGETACAO_MB = 0.5
+LIMITE_ORLA_MB = 6.0  # bruto, antes do meshopt do front
 SCRIPT_VEGETACAO = RAIZ / "scripts" / "blender" / "gerar_vegetacao.py"
 OBJETOS_ENTORNO = ("Entorno_00", "Entorno_01", "Entorno_10", "Entorno_11", "Mar", "ViasPrincipais", "Predios")
 
@@ -90,6 +92,13 @@ def main() -> int:
     ent_glb = destino / "entorno.glb"
     ent = rodar_blender(blender, SCRIPT, str(cena_entorno), str(destino / "entorno.blend"), str(ent_glb))
     erros_ent = conferir_entorno(nos_do_glb(ent_glb), ent["glb_mb"])
+    if orla.DESTINO.exists():
+        cena_orla = RAIZ / "cache" / "cena" / "orla-completa.json"
+        cena_orla.write_text(json.dumps(com_tiles(ler(orla.DESTINO), ler(orla.MAPA_JSON)["tiles"], ("Orla",))), encoding="utf-8")
+        orl = rodar_blender(blender, SCRIPT, str(cena_orla), str(destino / "orla.blend"), str(destino / "orla.glb"))
+        if orl["glb_mb"] > LIMITE_ORLA_MB:
+            erros_ent.append(f"orla.glb com {orl['glb_mb']} MB (alvo {LIMITE_ORLA_MB} MB)")
+        print("orla " + json.dumps(orl, ensure_ascii=False))
     veg = rodar_blender(blender, SCRIPT_VEGETACAO, str(destino / "vegetacao.glb"))
     if veg["glb_mb"] > LIMITE_VEGETACAO_MB:
         erros_ent.append(f"vegetacao.glb com {veg['glb_mb']} MB (alvo {LIMITE_VEGETACAO_MB} MB)")
