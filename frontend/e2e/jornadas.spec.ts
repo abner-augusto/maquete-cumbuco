@@ -110,3 +110,17 @@ test('9. o clube abre a galeria com todas as fotos do JSON', async ({ page }) =>
   await page.getByRole('button', { name: 'Clube: abrir galeria' }).click();
   await expect(page.getByRole('region', { name: 'Galeria: Clube' }).getByRole('button', { name: /Ampliar foto/ })).toHaveCount(clube.galeria.length);
 });
+
+test('10. o entorno lista os pontos do JSON e abre a ficha do ponto', async ({ page }) => {
+  const { pontos } = JSON.parse(readFileSync(new URL('../public/dados/pontos.json', import.meta.url), 'utf8'));
+  const primeiro = [...pontos].sort((a: { km: number }, b: { km: number }) => a.km - b.km)[0];
+  await jaVisitou(page);
+  await page.goto('./');
+  await page.getByRole('button', { name: 'Entorno e pontos de referência' }).click();
+  const lista = page.getByRole('region', { name: 'Pontos de referência' });
+  await expect(lista.getByRole('listitem')).toHaveCount(pontos.length);
+  await lista.getByRole('button', { name: new RegExp(primeiro.nome) }).click();
+  const ficha = page.getByRole('region', { name: `Ponto: ${primeiro.nome}` });
+  await expect(ficha).toContainText(`${primeiro.minutos_carro} min`);
+  await expect(ficha.getByRole('link', { name: 'Abrir no Google Maps' })).toHaveAttribute('href', /google\.com\/maps/);
+});

@@ -1,19 +1,23 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import { criarCena, type Cena, type Tela } from './lib/cena/cena';
+  import { criarCena, type Cena, type QuadroEntorno, type Tela } from './lib/cena/cena';
   import { carregarDados, type Dados, type Lote } from './lib/dados';
-  import { modoCor, primeiraVisita } from './lib/dispositivo';
+  import { modoCor, primeiraVisita, vegetacao } from './lib/dispositivo';
+  import { prepararPontos } from './lib/pontos';
   import { buscar, loteDaUrl, precosVisiveis, rotuloCurto } from './lib/lotes';
   import { trocarCorComTransicao } from './lib/transicao-cor';
   import BoasVindas from './componentes/BoasVindas.svelte';
   import Busca from './componentes/Busca.svelte';
   import Controles from './componentes/Controles.svelte';
   import Ficha from './componentes/Ficha.svelte';
+  import FichaPonto from './componentes/FichaPonto.svelte';
   import Folha, { type Batente } from './componentes/Folha.svelte';
   import Legenda from './componentes/Legenda.svelte';
+  import ListaEntorno from './componentes/ListaEntorno.svelte';
   import Galeria from './componentes/Galeria.svelte';
   import Marca from './componentes/Marca.svelte';
   import Marcos from './componentes/Marcos.svelte';
+  import PontosEntorno from './componentes/PontosEntorno.svelte';
 
   type Fase = 'carregando' | 'pronto' | 'erro';
   type Conteudo = 'busca' | 'ficha' | 'boas-vindas' | 'marco' | 'entorno' | 'ponto';
@@ -38,12 +42,20 @@
   let precos = $state(false);
   let marcoAberto = $state<string | null>(null);
   let telasMarcos = $state<{ id: string; tela: Tela | null }[]>([]);
+  // Modo entorno: carrega no primeiro toque e fica guardado para as próximas vezes.
+  let modoEntorno = $state(false);
+  let carregandoEntorno = $state(false);
+  let erroEntorno = $state(false);
+  let quadroEntorno = $state<QuadroEntorno | null>(null);
+  let pontoSelecionado = $state<number | null>(null);
 
   // ---- dados derivados ----
   const porId = $derived(new Map((dados?.lotes ?? []).map(l => [l.id, l])));
   const loteAberto = $derived(selecionado ? porId.get(selecionado) ?? null : null);
   const loteHover = $derived(hover ? porId.get(hover.id) ?? null : null);
   const marco = $derived(marcoAberto ? dados?.marcos.find(m => m.id === marcoAberto) ?? null : null);
+  const pontos = $derived(dados ? prepararPontos(dados.pontos) : []);
+  const pontoAberto = $derived(pontoSelecionado !== null ? pontos.find(p => p.id === pontoSelecionado) ?? null : null);
   const resultados = $derived(dados ? buscar(dados.lotes, consulta) : []);
   const temStatus = $derived((dados?.lotes ?? []).some(l => l.status));
   const espiarPx = $derived(conteudo === 'boas-vindas' ? 404 : 320);
@@ -53,6 +65,10 @@
       ? `Ficha do lote ${rotuloCurto(loteAberto)}`
       : conteudo === 'marco' && marco
         ? `Galeria: ${marco.nome}`
+        : conteudo === 'ponto' && pontoAberto
+        ? `Ponto: ${pontoAberto.nome}`
+        : conteudo === 'entorno'
+        ? 'Pontos de referência'
         : conteudo === 'boas-vindas'
         ? 'Como explorar'
         : 'Busca de lote',
@@ -74,6 +90,8 @@
         aoMoverEtiqueta: t => (etiqueta = t),
         aoGirar: g => (rumo = g),
         aoMoverMarcos: t => (telasMarcos = t),
+        aoMoverEntorno: q => (quadroEntorno = q),
+        vegetacao: vegetacao.ler(),
       });
     } catch (e) {
       console.error(e);
@@ -129,9 +147,54 @@
   function fecharFicha() {
     if (conteudo !== 'ficha') return;
     selecionado = null;
-    conteudo = 'busca';
-    batente = 'some';
+    // No modo entorno, fechar a ficha devolve a lista dos pontos.
+    conteudo = modoEntorno ? 'entorno' : 'busca';
+    batente = modoEntorno ? 'espiar' : 'some';
     atualizarUrl(null);
+  }
+
+  async function alternarEntorno() {
+    if (!cena) return;
+    erroEntorno = false;
+    if (modoEntorno || carregandoEntorno) {
+      modoEntorno = carregandoEntorno = false;
+      pontoSelecionado = null;
+      quadroEntorno = null;
+      if (conteudo === 'entorno' || conteudo === 'ponto') {
+        conteudo = 'busca';
+        batente = 'some';
+      }
+      await cena.entorno(false, []);
+      return;
+    }
+    carregandoEntorno = true;
+    try {
+      await cena.entorno(true, pontos);
+    } catch (e) {
+      console.error(e);
+      if (carregandoEntorno) erroEntorno = true;
+      carregandoEntorno = false;
+      return;
+    }
+    // Desligado durante o carregamento.
+    if (!carregandoEntorno) return;
+    carregandoEntorno = false;
+    modoEntorno = true;
+    if (conteudo === 'boas-vindas') primeiraVisita.concluir();
+    if (conteudo === 'ficha') fecharFicha();
+    conteudo = 'entorno';
+    batente = 'espiar';
+  }
+
+  function escolherPonto(id: number) {
+    pontoSelecionado = id;
+    conteudo = 'ponto';
+    if (batente === 'some') batente = 'espiar';
+  }
+
+  function voltarALista() {
+    pontoSelecionado = null;
+    conteudo = 'entorno';
   }
 
   function abrirMarco(id: string) {
@@ -145,8 +208,8 @@
 
   function fecharMarco() {
     marcoAberto = null;
-    conteudo = 'busca';
-    batente = 'some';
+    conteudo = modoEntorno ? 'entorno' : 'busca';
+    batente = modoEntorno ? 'espiar' : 'some';
   }
 
   function concluirBoasVindas() {
@@ -189,17 +252,25 @@
     <p class="carregando" role="alert">Não foi possível abrir a maquete. Recarregue a página.</p>
   {:else if dados && cena}
     <!-- Antes do chrome no DOM: os ícones ficam atrás da marca, dos controles e da folha. -->
+    {#if modoEntorno && quadroEntorno}
+      <PontosEntorno {pontos} quadro={quadroEntorno} selecionado={pontoSelecionado} aoEscolher={escolherPonto} />
+    {/if}
     <Marcos marcos={dados.marcos} telas={telasMarcos} aoEscolher={abrirMarco} />
+    {#if carregandoEntorno}
+      <p class="carregando" role="status">Carregando o entorno…</p>
+    {:else if erroEntorno}
+      <p class="carregando" role="status">Não foi possível carregar o entorno. Tente de novo.</p>
+    {/if}
     <Marca escuro={cor === 'escuro'} />
 
     <Controles
       {rumo}
       buscaAtiva={batente !== 'some' && conteudo === 'busca'}
-      entorno={null}
+      entorno={{ ativo: modoEntorno, carregando: carregandoEntorno }}
       escuro={cor === 'escuro'}
       aoBuscar={alternarBusca}
       aoEnquadrar={() => cena?.inicio()}
-      aoEntorno={() => {}}
+      aoEntorno={alternarEntorno}
       aoAproximar={() => cena?.aproximar(0.7)}
       aoAfastar={() => cena?.aproximar(1.4)}
       aoAjuda={ajuda}
@@ -222,6 +293,10 @@
       {#snippet corpo()}
         {#if conteudo === 'ficha' && loteAberto}
           <Ficha lote={loteAberto as Lote} config={dados!.config} {precos} aoFechar={fecharFicha} />
+        {:else if conteudo === 'ponto' && pontoAberto}
+          <FichaPonto ponto={pontoAberto} aoVoltar={voltarALista} />
+        {:else if conteudo === 'entorno'}
+          <ListaEntorno {pontos} fontes={dados!.fontesPontos} selecionado={pontoSelecionado} aoEscolher={escolherPonto} />
         {:else if conteudo === 'marco' && marco}
           <Galeria {marco} aoFechar={fecharMarco} />
         {:else if conteudo === 'boas-vindas'}

@@ -5,10 +5,28 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { Dados, Lote, Vista } from '../dados';
+import type { Ponto } from '../pontos';
 import { Ceu } from './ceu';
+import { Entorno } from './entorno';
 
 export type Tela = { x: number; y: number };
 export type Formato = 'retrato' | 'paisagem';
+
+/** Quanto um marcador pode sair da tela antes de sumir: é a faixa em que ele esmaece. */
+export const MARGEM_FADE = 48;
+
+/**
+ * Onde cada coisa do entorno cai na tela, em pixels. Ponto perto: a posição, ou `null` além de
+ * `MARGEM_FADE` fora da tela. Ponto distante: o rumo na tela (radianos, y para baixo) e a posição
+ * real quando ela cai dentro da tela.
+ */
+export interface QuadroEntorno {
+  origem: Tela;
+  /** Distância da câmera ao alvo, em metros: de perto, as setas da borda saem. */
+  alcance: number;
+  pontos: (Tela | { angulo: number; tela: Tela | null } | null)[];
+  aneis: { raio: number; tela: Tela | null }[];
+}
 export interface Cena {
   montar(el: HTMLElement): void;
   inicio(): void;
@@ -17,6 +35,8 @@ export interface Cena {
   selecionar(id: string | null): void;      // realce de seleção
   aproximar(fator: number): void;
   ceu(modo: 'claro' | 'escuro'): void;
+  /** Liga o entorno (carrega na primeira vez) com os pontos de referência, ou desliga. */
+  entorno(ativo: boolean, pontos: Ponto[]): Promise<void>;
   cores(): Record<Lote['tipo'], string>;    // cor de cada tipo, lida dos materiais do GLB (legenda)
   descartar(): void;
 }
@@ -26,6 +46,9 @@ export interface Opcoes {
   aoPassar(rotulo: { id: string; tela: Tela } | null): void; // hover no desktop
   aoMoverEtiqueta(tela: Tela | null): void;       // topo do lote selecionado
   aoGirar(graus: number): void;                   // rumo da câmera, para a bússola
+  aoMoverEntorno(q: QuadroEntorno | null): void;
+  /** Fração da vegetação desenhada (0 a 1), pela faixa do aparelho. */
+  vegetacao: number;
   aoMoverMarcos(telas: { id: string; tela: Tela | null }[]): void; // âncora do ícone de cada marco
 }
 
@@ -243,6 +266,13 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     // near acompanha a altura: a placa a 0,25 m do terreno não briga na profundidade de longe.
     const perto = THREE.MathUtils.clamp((camera.position.y - centro.y) * 0.2, 1, 200);
     if (Math.abs(perto - camera.near) > 0.5) { camera.near = perto; camera.updateProjectionMatrix(); }
+    if (entornoAtivo()) {
+      // A borda do entorno some na névoa, na cor do solo do céu.
+      const alcance = camera.position.distanceTo(controles.target);
+      nevoa.near = alcance * 0.9 + 600;
+      nevoa.far = alcance + 5000;
+      nevoa.color.copy(ceu.corSolo());
+    }
     ceu.malha.position.copy(camera.position);
     renderer.render(cena, camera);
     const m = selecionado ? lotes.get(selecionado) : undefined;
@@ -255,7 +285,111 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     const marcos = ancoras.map(a => ({ id: a.id, tela: projetarSempre(a.p) }));
     const chaveMarcos = marcos.map(x => (x.tela ? `${Math.round(x.tela.x)},${Math.round(x.tela.y)}` : '-')).join(';');
     if (chaveMarcos !== ultimosMarcos) { ultimosMarcos = chaveMarcos; o.aoMoverMarcos(marcos); }
+    if (entornoAtivo() && pontosEntorno.length) {
+      const quadro = quadroEntorno();
+      const chaveEntorno = JSON.stringify(quadro);
+      if (chaveEntorno !== ultimoEntorno) { ultimoEntorno = chaveEntorno; o.aoMoverEntorno(quadro); }
+    }
   });
+
+  // ---- entorno ----
+  const RAIOS = [1000, 3000];
+  let entorno: Entorno | null = null;
+  let carregandoEntorno: Promise<Entorno> | null = null;
+  let pedidoEntorno = 0;
+  let pontosEntorno: { p: Ponto; posicao: THREE.Vector3 }[] = [];
+  let ultimoEntorno = '';
+  const nevoa = new THREE.Fog(0xffffff, 1000, 6000);
+  const entornoAtivo = () => entorno?.grupo.visible === true;
+
+  async function mostrarEntorno(ativo: boolean, pontos: Ponto[]) {
+    const pedido = ++pedidoEntorno;
+    if (!ativo) {
+      if (entorno) entorno.grupo.visible = false;
+      pontosEntorno = [];
+      cena.fog = null;
+      controles.maxDistance = 2500;
+      ultimoEntorno = '';
+      o.aoMoverEntorno(null);
+      abertura = true;
+      inicio();
+      sujo = true;
+      return;
+    }
+    carregandoEntorno ??= Entorno.carregar(gltf, o.base, centro, RAIOS, o.vegetacao);
+    try {
+      entorno = await carregandoEntorno;
+    } catch (erro) {
+      carregandoEntorno = null;
+      throw erro;
+    }
+    // Desligado enquanto carregava: fica carregado, mas escondido.
+    if (pedido !== pedidoEntorno) return;
+    if (!entorno.grupo.parent) cena.add(entorno.grupo);
+    entorno.grupo.visible = true;
+    // A cota de cada ponto vem do terreno do entorno, uma vez.
+    const e = entorno;
+    pontosEntorno = pontos.map(p => ({ p, posicao: new THREE.Vector3(p.x, e.cotaEm(p.x, p.y), -p.y) }));
+    cena.fog = nevoa;
+    controles.maxDistance = 9000;
+    // Do alto, pelo mesmo rumo de agora, com o anel de 3 km inteiro na largura da tela.
+    abertura = false;
+    const rumo = camera.position.clone().sub(controles.target).setY(0);
+    if (rumo.lengthSq() < 1e-6) rumo.set(0, 0, 1);
+    rumo.normalize();
+    const elevacao = THREE.MathUtils.degToRad(55);
+    const meioFov = THREE.MathUtils.degToRad(camera.fov) / 2;
+    const distancia = THREE.MathUtils.clamp(3000 / (Math.tan(meioFov) * Math.min(1, camera.aspect)), 3600, 9000);
+    controles.target.copy(centro);
+    camera.position.copy(centro).addScaledVector(rumo, Math.cos(elevacao) * distancia).setY(centro.y + Math.sin(elevacao) * distancia);
+    controles.update();
+    sujo = true;
+  }
+
+  const v = new THREE.Vector3();
+  const lado = new THREE.Vector3();
+  /**
+   * Pixels da tela sem arredondar, ou `null` atrás da câmera. "Atrás" sai do espaço da câmera, não
+   * da profundidade projetada: um ponto a 30 km passa do `far` e ainda está à vista no horizonte.
+   */
+  function projetarLonge(ponto: THREE.Vector3): Tela | null {
+    v.copy(ponto).applyMatrix4(camera.matrixWorldInverse);
+    if (v.z > -camera.near) return null;
+    v.applyMatrix4(camera.projectionMatrix);
+    return { x: ((v.x + 1) / 2) * el.clientWidth, y: ((1 - v.y) / 2) * el.clientHeight };
+  }
+  /** Pixels inteiros, ou `null` atrás da câmera ou a mais de `margem` px fora da tela. */
+  function naTela(ponto: THREE.Vector3, margem = Infinity): Tela | null {
+    const p = projetarLonge(ponto);
+    if (!p || p.x < -margem || p.y < -margem || p.x > el.clientWidth + margem || p.y > el.clientHeight + margem) return null;
+    return { x: Math.round(p.x), y: Math.round(p.y) };
+  }
+  function quadroEntorno(): QuadroEntorno {
+    const origem = naTela(centro) ?? { x: el.clientWidth / 2, y: el.clientHeight / 2 };
+    const pontos = pontosEntorno.map(({ p, posicao }) => {
+      // Um pouco além da borda, para o marcador esmaecer ao sair da tela em vez de sumir.
+      if (!p.distante) return naTela(posicao, MARGEM_FADE);
+      // Distante: a posição real só se estiver na tela; o rumo da seta sai de um passo da origem
+      // na direção dele (a reta projeta numa reta, e perto da origem a projeção não explode).
+      const tela = naTela(posicao, 0);
+      const rumoPonto = posicao.clone().sub(centro).setY(0);
+      const c = projetarLonge(centro);
+      const passo = projetarLonge(centro.clone().add(rumoPonto.clone().setLength(200)));
+      let angulo: number;
+      if (c && passo) angulo = Math.atan2(passo.y - c.y, passo.x - c.x);
+      else {
+        // Origem atrás da câmera: o rumo sai do espaço da câmera, sem perspectiva.
+        v.copy(rumoPonto).transformDirection(camera.matrixWorldInverse);
+        angulo = Math.atan2(-v.y, v.x);
+      }
+      return { angulo: Number(angulo.toFixed(3)), tela };
+    });
+    // O rótulo de cada anel fica à direita da origem, de quem olha.
+    lado.setFromMatrixColumn(camera.matrixWorld, 0).setY(0).normalize();
+    const aneis = RAIOS.map(raio => ({ raio, tela: naTela(centro.clone().addScaledVector(lado, raio), 0) }));
+    const alcance = Math.round(camera.position.distanceTo(controles.target) / 10) * 10;
+    return { origem, alcance, pontos, aneis };
+  }
 
   const corDo = (tipo: Lote['tipo']) => {
     const exemplo = o.dados.lotes.find(l => l.tipo === tipo && !l.status);
@@ -276,12 +410,14 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
       controles.update();
     },
     ceu(modo) { ceu.cor(modo); sujo = true; },
+    entorno: mostrarEntorno,
     cores: () => ({ residencial: corDo('residencial'), uso_misto: corDo('uso_misto') }),
     descartar() {
       redimensionar.disconnect();
       renderer.setAnimationLoop(null);
       controles.dispose();
       ceu.descartar();
+      entorno?.descartar();
       renderer.dispose();
       el.remove();
     },
