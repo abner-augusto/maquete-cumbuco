@@ -27,7 +27,7 @@
   button.marca:focus-visible { outline: 2px solid var(--tema-acento); outline-offset: 2px; }
   img { display: block; height: 38px; width: auto; }
   @container maquete (min-width: 900px) {
-    .marca { top: 16px; height: 62px; }
-    img { height: 42px; }
+    .marca { top: 16px; height: 71px; padding: 0 16px; }
+    img { height: 48px; }
   }
 </style>
