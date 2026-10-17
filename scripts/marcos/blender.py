@@ -12,6 +12,8 @@ from PIL import Image
 from scripts.comum.ambiente import RAIZ, ler_env, terreno_dir
 from scripts.loteamento.blender import BLENDER_PADRAO, PASTA_MAQUETE, nos_do_glb, rodar_blender
 
+from .cores import DESTINO as CORES
+from .planta import DESTINO as PLANTA
 from .encaixe import DESTINO as MARCOS_JSON
 from .encaixe import MarcosCfg
 
@@ -75,6 +77,13 @@ def main() -> int:
     dados = json.loads(MARCOS_JSON.read_text(encoding="utf-8"))
     for m in dados["marcos"].values():
         m["fonte"] = str(pasta / m["fonte"])
+    if CORES.exists():
+        dados["cores"] = str(CORES)
+        if PLANTA.exists():  # a vista de topo só cobre o clube
+            dados["planta"] = str(PLANTA)
+            dados["marcos"]["Clube"]["planta"] = True
+    else:
+        print(f"sem {CORES.name}: cores de categoria (rode scripts.marcos.cores)")
     temp = RAIZ / "cache" / "cena" / "marcos-abs.json"
     temp.write_text(json.dumps(dados), encoding="utf-8")
     glb = terreno_dir() / PASTA_MAQUETE / "marcos.glb"
