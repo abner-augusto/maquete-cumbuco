@@ -16,7 +16,8 @@ import ezdxf
 import numpy as np
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
 from scipy.spatial import cKDTree
-from shapely.geometry import Polygon
+from shapely.geometry import LineString, Polygon, mapping
+from shapely.ops import unary_union
 
 from scripts.comum.ambiente import RAIZ, terreno_dir
 from scripts.loteamento.cena import DXF as DXF_VENDA
@@ -31,8 +32,14 @@ PAGINA = 4  # a 5ª, "MASTERPLAN"
 DXF_R05 = RAIZ / "cache" / "dxf" / "masterplan-r05.dxf"
 PNG = CACHE / "masterplan.png"
 META = CACHE / "masterplan.json"
+ACESSO = RAIZ / "cache" / "cena" / "acesso.json"
 PX_POR_M = 2.0  # resolução do raster: 0,5 m/px, o dobro dos tiles
 RESIDUO_MAX = 2.0  # m, mediana
+CAMADA_RIO = "POLIGONAL"  # a hachura da lagoa que contorna o masterplan (a maior hachura da camada na cópia da gleba)
+CAMADAS_VIAS = ["AR-CNT-VIA-EXT", "TOP-BORDO DE TERRA"]  # bordas das avenidas que ligam a Fase 1 às próximas
+DESLOC_FASE1 = (15000.0, 5000.0)  # m: a cópia do R05 com as avenidas está deslocada da cópia georreferenciada
+FECHO_VIAS = 7.0  # m: fechamento morfológico das bordas; preenche pista e canteiro, mantém as ilhas das rotatórias
+RAIO_VIAS = 3000.0  # m em torno da origem: só as bordas desta cópia, não as das outras
 
 
 @dataclass(frozen=True)
@@ -192,6 +199,49 @@ def poligonal_gleba(msp, e0: float, n0: float, ref: Ponto) -> list[Ponto]:
     return dentro[0]
 
 
+def rio_da_gleba(doc, e0: float, n0: float, gleba: Polygon):
+    """A lagoa que contorna o masterplan: a maior hachura de CAMADA_RIO que encosta na gleba georreferenciada."""
+    from ezdxf import path as zpath
+
+    cands = []
+    for h in doc.modelspace().query(f'HATCH[layer=="{CAMADA_RIO}"]'):
+        aneis = [[(v.x - e0, v.y - n0) for v in c.flattening(0.5)] for c in zpath.from_hatch(h)]
+        g = unary_union([Polygon(a).buffer(0) for a in aneis if len(a) >= 3])
+        if not g.is_empty and g.intersects(gleba):
+            cands.append(g)
+    if not cands:
+        raise SystemExit(f"nenhuma hachura de {CAMADA_RIO} encosta na gleba: a lagoa sumiu do R05?")
+    return max(cands, key=lambda g: g.area)
+
+
+def vias_das_fases(msp, e0: float, n0: float, rotatoria: Ponto):
+    """Pista das avenidas que ligam a Fase 1 às próximas: as bordas de CAMADAS_VIAS na cópia deslocada de
+    DESLOC_FASE1, fechadas (buffer +r, −r) até virar superfície. Confere o deslocamento pela rotatória da Fase 1."""
+    from ezdxf import path as zpath
+
+    dx, dy = DESLOC_FASE1
+    linhas, centros = [], []
+    for e in msp:
+        if e.dxf.layer not in CAMADAS_VIAS or e.dxftype() not in ("LINE", "ARC", "LWPOLYLINE", "CIRCLE"):
+            continue
+        pts = [(v.x - e0 - dx, v.y - n0 - dy) for v in zpath.make_path(e).flattening(0.2)]
+        if len(pts) < 2 or math.hypot(*pts[0]) > RAIO_VIAS:
+            continue
+        linhas.append(LineString(pts))
+        if e.dxftype() == "CIRCLE":
+            centros.append((e.dxf.center.x - e0 - dx, e.dxf.center.y - n0 - dy))
+    if not any(math.dist(c, rotatoria) < 1.0 for c in centros):
+        raise SystemExit(f"nenhuma rotatória de {CAMADAS_VIAS} cai na da Fase 1: DESLOC_FASE1 mudou?")
+    return unary_union(linhas).buffer(FECHO_VIAS, quad_segs=4).buffer(-FECHO_VIAS, quad_segs=4)
+
+
+def pintar_por_cima(tile: Image.Image, ext_m, camadas: list[tuple[tuple[int, int, int], object]]) -> Image.Image:
+    """Camadas de cor chapada sobre o tile, de baixo para cima."""
+    for cor, geom in camadas:
+        tile.paste(cor, (0, 0, *tile.size), _mascara(geom, ext_m, tile.size))
+    return tile
+
+
 def _afim(f) -> tuple[float, ...]:
     """Coeficientes do Image.AFFINE a partir de f(u, v) → (x, y) no raster de entrada."""
     o = np.array(f(0.0, 0.0))
@@ -242,6 +292,10 @@ def main() -> int:
     pol_venda = aneis_da_layer(ezdxf.readfile(DXF_VENDA).modelspace(), ["AR-CNT-POL"], e0, n0)
     gleba = poligonal_gleba(ezdxf.readfile(DXF_R05).modelspace(), e0, n0, centroide(pol_venda[0]))
     alvo = np.array(gleba)
+    doc_r05 = ezdxf.readfile(DXF_R05)
+    rio = rio_da_gleba(doc_r05, e0, n0, Polygon(gleba).buffer(0))
+    vias = vias_das_fases(doc_r05.modelspace(), e0, n0, tuple(json.loads(ACESSO.read_text(encoding="utf-8"))["c0"]))
+    print(f"lagoa {rio.area / 1e4:.1f} ha · avenidas das fases {vias.area / 1e4:.1f} ha")
     pagina = pymupdf.open(terreno_dir() / PDF)[PAGINA]
     pagina.set_rotation(0)  # a página tem /Rotate 270: vetor e raster no espaço sem giro
     contorno = escolher_contorno(caminhos_fechados(pagina), alvo)
@@ -253,7 +307,8 @@ def main() -> int:
     img, clip = rasterizar_contorno(pagina, k, contorno)
     img.save(PNG)
     META.write_text(json.dumps({"arquivo": str(PNG), "clip": clip, "px_por_pt": k,
-                                "transf": asdict(T), "residuo_m": residuo, "gleba": [list(p) for p in gleba]}),
+                                "transf": asdict(T), "residuo_m": residuo, "gleba": [list(p) for p in gleba],
+                                "rio": mapping(rio), "vias": mapping(vias)}),
                     encoding="utf-8")
     print(f"raster {img.width}×{img.height} px ({1 / PX_POR_M:.1f} m/px) → {PNG}")
     return 0

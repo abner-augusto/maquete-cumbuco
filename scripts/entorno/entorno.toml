@@ -10,7 +10,7 @@ tile_px = 4096              # lado maior de cada um dos 4 tiles do chão (~1 m/p
 tile_margem_px = 2          # pixels a mais de borda: o filtro da GPU não abre costura entre tiles
 masterplan = true           # fases 2–10 pintadas em segundo plano (scripts/entorno/masterplan.py)
 masterplan_saturacao = 0.35
-masterplan_opacidade = 0.55
+masterplan_opacidade = 1.0   # opaco: as vias do OSM não aparecem por baixo do desenho
 
 # Orla regional (scripts/entorno/orla.py): faixa simplificada da costa, só com o mapa do OSM, para a
 # vista de longe. As pontas são pontos de referência de dados/pontos.json.

@@ -12,7 +12,7 @@ from pathlib import Path
 import ezdxf
 import numpy as np
 from PIL import Image
-from shapely.geometry import LineString, Point, Polygon
+from shapely.geometry import LineString, Point, Polygon, shape
 from shapely.ops import unary_union
 
 from scripts.comum.ambiente import RAIZ
@@ -23,7 +23,7 @@ from scripts.loteamento.acesso import Acesso, AcessoCfg, corredor, sem_faixa
 from scripts.loteamento.terreno import DESTINO_ENTORNO, DESTINO_LONGE, Relevo, TerrenoCfg, aneis_do_plato
 
 from .extrair import BASE, CACHE, EntornoCfg
-from .mapa import rasterizar
+from .mapa import CORES, rasterizar
 from .tiles import Ext, com_margem, janelas
 
 MAPA_JSON = CACHE / "mapa.json"
@@ -31,6 +31,7 @@ DETALHE = RAIZ / "cache" / "cena" / "entorno-detalhe.json"
 AREA_MINIMA_PREDIO_M2 = 8.0  # abaixo disso, ruído das pegadas por ML
 AREA_MINIMA_PREDIO_LONGE_M2 = 30.0  # na faixa da orla, além do raio_predios: some de longe
 OFFSET_FAIXA = 0.5  # m acima do relevo (0,3 deixava 0,9% da faixa sob o terreno)
+BORDA_GLEBA = 5.0  # m: via do OSM com 80% do traçado até essa distância da divisa da gleba sai
 MAX_ARESTA_FAIXA = 2.5  # m entre seções: segue o relevo de perto
 ALTURA_QUEBRA_MAR = 1.5  # m acima do plano da água
 
@@ -100,6 +101,14 @@ def extrudar(aneis: list, relevo, altura: float,
                          [round(b[0], 2), round(b[1], 2), round(topo, 2)], [round(a[0], 2), round(a[1], 2), round(topo, 2)]]
             faces += [[i, i + 1, i + 2], [i, i + 2, i + 3]]
     return vertices, faces
+
+
+def sem_vias_na_divisa(vias: list[dict], gleba: Polygon) -> list[dict]:
+    """Tira as vias do OSM que correm pela divisa da gleba: o masterplan desenha o acesso real ali, e a
+    metade de fora da faixa pintada aparecia como uma segunda estrada ao lado da CE."""
+    borda = gleba.exterior.buffer(BORDA_GLEBA)
+    return [v for v in vias if (l := LineString(v["pontos"])).length == 0
+            or l.intersection(borda).length < 0.8 * l.length]
 
 
 def faixas(vias: list[dict], grupo: str) -> object:
@@ -173,6 +182,15 @@ def main() -> int:
     ext = (longe["x0"], longe["y0"], longe["x0"] + longe["passo"] * (longe["nx"] - 1),
            longe["y0"] + longe["passo"] * (longe["ny"] - 1))
 
+    if cfg.masterplan:
+        from .masterplan import META
+
+        if not META.exists():
+            raise SystemExit("masterplan = true sem cache: rode uv run python -m scripts.entorno.masterplan")
+        n = len(base["vias"])
+        base["vias"] = sem_vias_na_divisa(base["vias"],
+                                          Polygon(json.loads(META.read_text(encoding="utf-8"))["gleba"]).buffer(0))
+        print(f"vias na divisa da gleba removidas: {n - len(base['vias'])}")
     camadas = []
     for tipo in ORDEM_AREAS:
         g = unary_union([_poligono(p).buffer(0) for a in base["areas"] if a["tipo"] == tipo for p in a["poligonos"]])
@@ -182,7 +200,7 @@ def main() -> int:
                 ("solo", plato)]  # o platô fica liso: o loteamento é desenhado por cima
     pos = None
     if cfg.masterplan:
-        from .masterplan import META, pintar
+        from .masterplan import META, pintar, pintar_por_cima
 
         if not META.exists():
             raise SystemExit("masterplan = true sem cache: rode uv run python -m scripts.entorno.masterplan")
@@ -190,12 +208,19 @@ def main() -> int:
         mp_img = Image.open(meta["arquivo"])
         tcfg = TerrenoCfg.carregar(CFG_TOML)
         mascara = Polygon(meta["gleba"]).buffer(0).difference(plato.buffer(tcfg.plato_folga + tcfg.talude))
-        pos = lambda img, ext_m: pintar(img, ext_m, mp_img, meta, mascara,  # noqa: E731
-                                        cfg.masterplan_saturacao, cfg.masterplan_opacidade)
+        rio = shape(meta["rio"])
+        # a avenida só fora do platô: dentro dele a Fase 1 já tem as suas, e as duas se encontram na borda
+        vias_fases = shape(meta["vias"]).intersection(Polygon(meta["gleba"]).buffer(0)).difference(plato)
+        por_cima = [(CORES["agua"], rio), (CORES["via_principal"], vias_fases)]
+        pos = lambda img, ext_m: pintar_por_cima(  # noqa: E731
+            pintar(img, ext_m, mp_img, meta, mascara, cfg.masterplan_saturacao, cfg.masterplan_opacidade),
+            ext_m, por_cima)
     tiles = gerar_tiles(camadas, ext, longe["passo"], cfg.tile_px, cfg.tile_margem_px, CACHE, pos)
     MAPA_JSON.write_text(json.dumps({"tiles": tiles}), encoding="utf-8")
 
     fora = plano.buffer(10).union(area_acesso)  # a CE encosta na boca do acesso: sem folga ali
+    if cfg.masterplan:
+        fora = fora.union(mascara).union(rio)  # sobre o masterplan e a lagoa, nem faixa nem prédio do OSM
     circulo = Point(centro).buffer(cfg.raio_faixas, 128)
     vf, ff = [], []
     for via in base["vias"]:
