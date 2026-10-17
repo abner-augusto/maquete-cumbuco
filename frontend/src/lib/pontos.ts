@@ -4,7 +4,7 @@ export interface Ponto extends PontoBruto { id: number; distante: boolean; maps:
 
 export const ROTULO_CATEGORIA: Record<string, string> = {
   compras: 'Compras', hotel: 'Hotel', kitesurf: 'Kitesurf', lagoa: 'Lagoa', lazer: 'Lazer',
-  natureza: 'Natureza', orla: 'Orla', porto: 'Porto', praia: 'Praia', saude: 'Saúde',
+  natureza: 'Natureza', orla: 'Orla', porto: 'Porto', praia: 'Praia', restaurante: 'Restaurante', saude: 'Saúde',
 };
 
 export function prepararPontos(pontos: PontoBruto[]): Ponto[] {

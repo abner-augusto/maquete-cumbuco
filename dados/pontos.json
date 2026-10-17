@@ -36,11 +36,11 @@
    "faixa": "distante",
    "fonte_coord": "satelite",
    "osm": null,
-   "foto": null,
-   "credito": null,
+   "foto": "pontos/fotos/cumbuco-acqua-beach.jpg",
+   "credito": "Cumbuco Acqua Beach (divulgação)",
    "licenca": null,
    "licenca_url": null,
-   "fonte_foto": null
+   "fonte_foto": "https://www.cumbucoacquabeach.com.br/"
   },
   {
    "nome": "Kitecabana",
@@ -126,11 +126,11 @@
    "faixa": "distante",
    "fonte_coord": "osm",
    "osm": "way/395135688",
-   "foto": null,
-   "credito": null,
+   "foto": "pontos/fotos/hospital-municipal-de-caucaia.jpg",
+   "credito": "Hospital Municipal de Caucaia (divulgação)",
    "licenca": null,
    "licenca_url": null,
-   "fonte_foto": null
+   "fonte_foto": "https://sites.diretasistemas.com.br/"
   },
   {
    "nome": "Hotel Vila Galé Cumbuco",
@@ -144,11 +144,11 @@
    "faixa": "distante",
    "fonte_coord": "osm",
    "osm": "relation/9248968",
-   "foto": null,
-   "credito": null,
+   "foto": "pontos/fotos/hotel-vila-gale-cumbuco.jpg",
+   "credito": "Vila Galé Cumbuco (divulgação)",
    "licenca": null,
    "licenca_url": null,
-   "fonte_foto": null
+   "fonte_foto": "https://www.vilagale.com/"
   },
   {
    "nome": "Outlet Premium Fortaleza",
@@ -257,6 +257,24 @@
    "licenca": "CC BY 2.0",
    "licenca_url": "https://creativecommons.org/licenses/by/2.0",
    "fonte_foto": "https://commons.wikimedia.org/wiki/File:Iracema_(2).jpg"
+  },
+  {
+   "nome": "Chico do Caranguejo Cumbuco",
+   "categoria": "restaurante",
+   "lat": -3.634821,
+   "lon": -38.710936,
+   "x": -2498.6,
+   "y": 3132.5,
+   "km": 4.0,
+   "minutos_carro": 9,
+   "faixa": "distante",
+   "fonte_coord": "osm",
+   "osm": "way/1043775287",
+   "foto": "pontos/fotos/chico-do-caranguejo-cumbuco.jpg",
+   "credito": "Chico do Caranguejo (via Tripadvisor)",
+   "licenca": null,
+   "licenca_url": null,
+   "fonte_foto": "https://www.tripadvisor.com.br/"
   }
  ]
 }

@@ -133,3 +133,30 @@ def test_credito_sem_prefixo_user():
     assert credito("User:Eduardo P") == "Eduardo P"
     assert credito("Boris Karpuk") == "Boris Karpuk"
     assert credito("") == ""
+
+
+def test_foto_externa_baixa_reduz_e_leva_o_credito(tmp_path, monkeypatch):
+    from io import BytesIO
+
+    from PIL import Image
+
+    from scripts.pontos import pontos
+
+    buf = BytesIO()
+    Image.new("RGB", (3200, 1600), (10, 20, 30)).save(buf, "JPEG")
+
+    class Resposta(BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    monkeypatch.setattr(pontos, "FOTOS", tmp_path)
+    monkeypatch.setattr(pontos.urllib.request, "urlopen", lambda req, timeout: Resposta(buf.getvalue()))
+    p = {"nome": "Hotel Teste", "foto_externa": {"url": "https://x/a.jpg", "credito": "Hotel Teste (divulgação)",
+                                                  "pagina": "https://x/"}}
+    r = pontos.baixar_externa(p)
+    assert Image.open(tmp_path / "hotel-teste.jpg").size == (1600, 800)
+    assert r == {"foto": "pontos/fotos/hotel-teste.jpg", "credito": "Hotel Teste (divulgação)", "licenca": None,
+                 "licenca_url": None, "fonte_foto": "https://x/"}

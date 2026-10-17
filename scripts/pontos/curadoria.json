@@ -1,5 +1,5 @@
 {
- "_leia": "Curadoria dos 15 pontos aprovada pelo Abner em 14/10/2026: busca no Google Places (Nearby + Text Search, raio de 22 km a partir do centro dos lotes, até o Pecém), escolha equilibrando proximidade, avaliações e categoria. place_id e ref_lat/ref_lon são do Google, só para rastreio e para casar o ponto no OSM; não vão ao dados/pontos.json (coordenada publicada vem do OSM). Fotos: Wikimedia Commons com licença livre, aprovadas à parte (campo foto). \"osm\" força o elemento quando o nome não casa no Nominatim (14/10/2026: Icaraí e Cumbuco pela praia natural=beach, Cauípe pela lagoa da Barra do Cauípe, RioMar pelo shop=mall). \"pendente\" deixa o ponto fora do site até decisão. \"satelite\" é a coordenada marcada sobre imagem de satélite (Esri World Imagery) para lugar que não está no OSM, como no Manoa (15/10/2026: Cumbuco Acqua Beach e Kitecabana); o script recusa leitura a mais de 500 m da referência.",
+ "_leia": "Curadoria dos 15 pontos aprovada pelo Abner em 14/10/2026: busca no Google Places (Nearby + Text Search, raio de 22 km a partir do centro dos lotes, até o Pecém), escolha equilibrando proximidade, avaliações e categoria. place_id e ref_lat/ref_lon são do Google, só para rastreio e para casar o ponto no OSM; não vão ao dados/pontos.json (coordenada publicada vem do OSM). Fotos: Wikimedia Commons com licença livre, aprovadas à parte (campo foto). \"osm\" força o elemento quando o nome não casa no Nominatim (14/10/2026: Icaraí e Cumbuco pela praia natural=beach, Cauípe pela lagoa da Barra do Cauípe, RioMar pelo shop=mall). \"pendente\" deixa o ponto fora do site até decisão. \"satelite\" é a coordenada marcada sobre imagem de satélite (Esri World Imagery) para lugar que não está no OSM, como no Manoa (15/10/2026: Cumbuco Acqua Beach e Kitecabana); o script recusa leitura a mais de 500 m da referência. \"foto_externa\" (url, credito, pagina) é a foto de divulgação indicada pelo Abner, sem licença livre, com crédito na legenda (17/10/2026: Cumbuco Acqua Beach, Vila Galé, Hospital Municipal e Chico do Caranguejo); o script a baixa e reduz a 1600 px. O Chico do Caranguejo entrou em 17/10/2026 pelo pino do link do Google Maps, casado no OSM.",
  "busca": {
   "centro": {
    "lat": -3.662751,
@@ -32,6 +32,11 @@
     "imagem": "Esri World Imagery, z18",
     "data": "2026-10-15",
     "nota": "meio do parque aquático (piscinas coloridas e toboáguas) entre a avenida da praia e a faixa de areia"
+   },
+   "foto_externa": {
+    "url": "https://www.cumbucoacquabeach.com.br/wp-content/uploads/2025/07/WhatsApp-Image-2020-12-21-at-12.09.20.jpeg",
+    "credito": "Cumbuco Acqua Beach (divulgação)",
+    "pagina": "https://www.cumbucoacquabeach.com.br/"
    }
   },
   {
@@ -84,7 +89,12 @@
    "google_place_id": "ChIJ_4XpdjNLxwcRVXYhqR84AEE",
    "google_nome": "Abelardo Gadelha da Rocha Caucaia Municipal Hospital",
    "ref_lat": -3.739183,
-   "ref_lon": -38.649946
+   "ref_lon": -38.649946,
+   "foto_externa": {
+    "url": "https://sites.diretasistemas.com.br/sites/1471/wp-content/uploads/2023/06/12160216/Hosp.-Abelardo-Gadelha-2.jpg",
+    "credito": "Hospital Municipal de Caucaia (divulgação)",
+    "pagina": "https://sites.diretasistemas.com.br/"
+   }
   },
   {
    "nome": "Hotel Vila Galé Cumbuco",
@@ -92,7 +102,12 @@
    "google_place_id": "ChIJj-0nPsLOwAcR9pX5jtgmhBM",
    "google_nome": "Hotel Vila Galé Cumbuco",
    "ref_lat": -3.609724,
-   "ref_lon": -38.763205
+   "ref_lon": -38.763205,
+   "foto_externa": {
+    "url": "https://d2h50f2ee3zau3.cloudfront.net/app/uploads/2026/03/11152841/vg-cumbuco-aerea-4_baixa.jpg",
+    "credito": "Vila Galé Cumbuco (divulgação)",
+    "pagina": "https://www.vilagale.com/"
+   }
   },
   {
    "nome": "Outlet Premium Fortaleza",
@@ -149,6 +164,19 @@
    "ref_lat": -3.722182,
    "ref_lon": -38.506366,
    "foto": "File:Iracema (2).jpg"
+  },
+  {
+   "nome": "Chico do Caranguejo Cumbuco",
+   "categoria": "restaurante",
+   "google_nome": "Chico Cumbuco",
+   "ref_lat": -3.6348175,
+   "ref_lon": -38.7109387,
+   "osm": "way/1043775287",
+   "foto_externa": {
+    "url": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1a/09/cb/3d/chico-do-caranguejo-cumbuco.jpg?w=1200&h=1200&s=1",
+    "credito": "Chico do Caranguejo (via Tripadvisor)",
+    "pagina": "https://www.tripadvisor.com.br/"
+   }
   }
  ]
 }

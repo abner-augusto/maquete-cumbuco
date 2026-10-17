@@ -252,6 +252,26 @@ def baixar_foto(p: dict, cand: list[dict]) -> dict:
             "licenca_url": escolhida["licenca_url"], "fonte_foto": escolhida["pagina"]}
 
 
+def baixar_externa(p: dict) -> dict:
+    """Foto de divulgação indicada na curadoria ("foto_externa"): baixa e reduz a 1600 px. Sem licença livre,
+    vai com o crédito de quem a divulga e a página de origem."""
+    from io import BytesIO
+
+    from PIL import Image
+
+    e = p["foto_externa"]
+    destino = FOTOS / f"{slug(p['nome'])}.jpg"
+    if not destino.exists():
+        FOTOS.mkdir(parents=True, exist_ok=True)
+        req = urllib.request.Request(e["url"], headers={"User-Agent": "Mozilla/5.0"})  # alguns CDNs recusam o AGENTE
+        with urllib.request.urlopen(req, timeout=120) as r:
+            img = Image.open(BytesIO(r.read())).convert("RGB")
+        img.thumbnail((1600, 1600))
+        img.save(destino, quality=85)
+    return {"foto": f"pontos/fotos/{destino.name}", "credito": e["credito"], "licenca": None, "licenca_url": None,
+            "fonte_foto": e.get("pagina") or e["url"]}
+
+
 def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8")
     georref = json.loads((RAIZ / "dados" / "georref.json").read_text(encoding="utf-8"))
@@ -272,8 +292,12 @@ def main() -> int:
         dist = math.dist((x, y), centro)
         cand = candidatos_commons(p["nome"], c["lat"], c["lon"])
         candidatos[p["nome"]] = cand
-        foto = baixar_foto(p, cand) if p.get("foto") else {k: None for k in
-                                                           ("foto", "credito", "licenca", "licenca_url", "fonte_foto")}
+        if p.get("foto_externa"):
+            foto = baixar_externa(p)
+        elif p.get("foto"):
+            foto = baixar_foto(p, cand)
+        else:
+            foto = {k: None for k in ("foto", "credito", "licenca", "licenca_url", "fonte_foto")}
         m = minutos(grafo, xy, centro, (x, y))
         if m is None:
             raise SystemExit(f"{p['nome']}: sem rota de carro no grafo")

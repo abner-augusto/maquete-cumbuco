@@ -12,7 +12,7 @@ test('ordena por km e marca os distantes pela faixa do JSON', () => {
 });
 
 test('toda categoria do pontos.json tem rótulo', () => {
-  for (const c of ['compras', 'hotel', 'kitesurf', 'lagoa', 'lazer', 'natureza', 'orla', 'porto', 'praia', 'saude'])
+  for (const c of ['compras', 'hotel', 'kitesurf', 'lagoa', 'lazer', 'natureza', 'orla', 'porto', 'praia', 'restaurante', 'saude'])
     expect(ROTULO_CATEGORIA[c]).toBeTruthy();
 });
 
