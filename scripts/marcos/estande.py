@@ -26,9 +26,11 @@ from shapely.ops import unary_union
 from scripts.comum.ambiente import RAIZ, ler_env, terreno_dir
 from scripts.entorno.osm import Projecao
 from scripts.loteamento.blender import BLENDER_PADRAO, PASTA_MAQUETE, rodar_blender
+from scripts.loteamento.cena import CFG_TOML
 from scripts.loteamento.converter_dwg import ACCORE_PADRAO, converter
 from scripts.loteamento.geometria import pontos_de
 from scripts.loteamento.malha import aninhar, triangular
+from scripts.loteamento.placa import PlacaCfg
 from scripts.loteamento.terreno import Relevo
 
 CACHE = RAIZ / "cache" / "estande"
@@ -353,7 +355,9 @@ def preparar(doc, pasta):
     # Centro e pegada atuais vêm da v10c, e não do volume antigo contido no KMZ.
     implantado = affinity.affine_transform(edificio, transf)
     relevo = Relevo.carregar()
-    z = relevo.cota(implantado.centroid.x, implantado.centroid.y)
+    # O estande assenta no topo do lote (a placa o ergue acima do platô); na cota do platô, o
+    # estacionamento e a rampa, de poucos centímetros, ficavam enterrados.
+    z = relevo.cota(implantado.centroid.x, implantado.centroid.y) + PlacaCfg.carregar(CFG_TOML).alturas["lote"]
     meta = {"versao": 1, "objeto": "Estande", "modelo": "estande.glb", "fonte": FONTE,
             "sha256_dwg": hashlib.sha256((pasta/FONTE).read_bytes()).hexdigest(),
             "implantacao": KMZ, "residuo_implantacao_m": round(residuo,4),
