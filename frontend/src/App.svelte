@@ -10,6 +10,7 @@
   import BoasVindas from './componentes/BoasVindas.svelte';
   import Busca from './componentes/Busca.svelte';
   import Controles from './componentes/Controles.svelte';
+  import DevAgua from './componentes/DevAgua.svelte';
   import DevCamera from './componentes/DevCamera.svelte';
   import Ficha from './componentes/Ficha.svelte';
   import FichaPonto from './componentes/FichaPonto.svelte';
@@ -51,6 +52,10 @@
   let erroEntorno = $state(false);
   let quadroEntorno = $state<QuadroEntorno | null>(null);
   let pontoSelecionado = $state<number | null>(null);
+  // Modo cinema: some toda a interface, menos a marca; anéis e pontos de referência também.
+  let cinema = $state(false);
+  // Projeção do masterplan no chão: desligada, o solo mostra só o mapa do OSM.
+  let masterplan = $state(true);
 
   // ---- dados derivados ----
   const porId = $derived(new Map((dados?.lotes ?? []).map(l => [l.id, l])));
@@ -131,6 +136,9 @@
   });
   $effect(() => {
     cena?.selecionar(selecionado);
+  });
+  $effect(() => {
+    cena?.cinema(cinema);
   });
 
   // ---- ações ----
@@ -222,6 +230,37 @@
     batente = modoEntorno ? 'espiar' : 'some';
   }
 
+  /** Entrar fecha ficha, galeria e folha; sair devolve a folha do modo em que a maquete estava. */
+  function alternarCinema() {
+    if (!cinema) {
+      if (conteudo === 'boas-vindas') primeiraVisita.concluir();
+      if (conteudo === 'ficha') fecharFicha();
+      selecionado = null;
+      marcoAberto = null;
+      pontoSelecionado = null;
+      hover = etiqueta = null;
+      conteudo = modoEntorno ? 'entorno' : 'busca';
+      batente = 'some';
+      cinema = true;
+      return;
+    }
+    cinema = false;
+    batente = modoEntorno ? 'espiar' : 'some';
+  }
+
+  async function alternarMasterplan() {
+    const ligado = !masterplan;
+    masterplan = ligado;
+    // Sem a imagem do OSM o chão não muda: o botão volta ao que a cena mostra.
+    if (!(await cena?.masterplan(ligado))) masterplan = !ligado;
+  }
+
+  function teclou(e: KeyboardEvent) {
+    if (e.ctrlKey || e.metaKey || e.altKey || (e.target as HTMLElement).closest('input, textarea')) return;
+    if (e.key === 'Escape' && cinema) alternarCinema();
+    else if (e.key.toLowerCase() === 'c' && fase === 'pronto') alternarCinema();
+  }
+
   function concluirBoasVindas() {
     primeiraVisita.concluir();
     if (conteudo === 'boas-vindas') {
@@ -252,6 +291,8 @@
   }
 </script>
 
+<svelte:window onkeydown={teclou} />
+
 <div class="maquete" data-tema="americas" data-cor={cor} style:--folha-h={folhaH}>
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="cena" bind:this={palco} onpointerdown={tocouCena}></div>
@@ -262,68 +303,76 @@
     <p class="carregando" role="alert">Não foi possível abrir a maquete. Recarregue a página.</p>
   {:else if dados && cena}
     <!-- Antes do chrome no DOM: os ícones ficam atrás da marca, dos controles e da folha. -->
-    {#if modoEntorno && quadroEntorno}
-      <PontosEntorno {pontos} quadro={quadroEntorno} selecionado={pontoSelecionado} aoEscolher={escolherPonto} />
+    {#if !cinema}
+      {#if modoEntorno && quadroEntorno}
+        <PontosEntorno {pontos} quadro={quadroEntorno} selecionado={pontoSelecionado} aoEscolher={escolherPonto} {masterplan} />
+      {/if}
+      <Marcos marcos={dados.marcos} telas={telasMarcos} aoEscolher={abrirMarco} />
+      {#if carregandoEntorno}
+        <p class="carregando" role="status">Carregando o entorno…</p>
+      {:else if erroEntorno}
+        <p class="carregando" role="status">Não foi possível carregar o entorno. Tente de novo.</p>
+      {/if}
     {/if}
-    <Marcos marcos={dados.marcos} telas={telasMarcos} aoEscolher={abrirMarco} />
-    {#if carregandoEntorno}
-      <p class="carregando" role="status">Carregando o entorno…</p>
-    {:else if erroEntorno}
-      <p class="carregando" role="status">Não foi possível carregar o entorno. Tente de novo.</p>
-    {/if}
-    <Marca escuro={cor === 'escuro'} />
+    <Marca escuro={cor === 'escuro'} aoClicar={cinema ? alternarCinema : undefined} />
 
-    {#if dev && cena}
-      <DevCamera camera={() => ({ ...cena!.camera(), entorno: modoEntorno })} />
-    {/if}
-    <Controles
-      {rumo}
-      buscaAtiva={batente !== 'some' && conteudo === 'busca'}
-      entorno={{ ativo: modoEntorno, carregando: carregandoEntorno }}
-      escuro={cor === 'escuro'}
-      aoBuscar={alternarBusca}
-      aoEnquadrar={() => cena?.inicio()}
-      aoEntorno={alternarEntorno}
-      aoAproximar={() => cena?.aproximar(0.7)}
-      aoAfastar={() => cena?.aproximar(1.4)}
-      aoAjuda={ajuda}
-      aoAlternarCor={origem => {
-        const nova = cor === 'escuro' ? 'claro' : 'escuro';
-        modoCor.gravar(nova);
-        trocarCorComTransicao(() => (corEscolhida = nova), origem);
-      }} />
+    {#if !cinema}
+      {#if dev && cena}
+        <DevCamera camera={() => ({ ...cena!.camera(), entorno: modoEntorno })} />
+        <DevAgua {cena} {cor} />
+      {/if}
+      <Controles
+        {rumo}
+        buscaAtiva={batente !== 'some' && conteudo === 'busca'}
+        entorno={{ ativo: modoEntorno, carregando: carregandoEntorno }}
+        escuro={cor === 'escuro'}
+        {masterplan}
+        aoBuscar={alternarBusca}
+        aoEnquadrar={() => cena?.inicio()}
+        aoEntorno={alternarEntorno}
+        aoMasterplan={alternarMasterplan}
+        aoAproximar={() => cena?.aproximar(0.7)}
+        aoAfastar={() => cena?.aproximar(1.4)}
+        aoAjuda={ajuda}
+        aoCinema={alternarCinema}
+        aoAlternarCor={origem => {
+          const nova = cor === 'escuro' ? 'claro' : 'escuro';
+          modoCor.gravar(nova);
+          trocarCorComTransicao(() => (corEscolhida = nova), origem);
+        }} />
 
-    {#if etiqueta && loteAberto}
-      <div class="etiqueta" style:left="{etiqueta.x}px" style:top="{etiqueta.y}px" aria-hidden="true">{rotuloCurto(loteAberto)}</div>
-    {/if}
-    {#if hover && loteHover && hover.id !== selecionado}
-      <div class="etiqueta leve" style:left="{hover.tela.x}px" style:top="{hover.tela.y}px" aria-hidden="true">{rotuloCurto(loteHover)}</div>
-    {/if}
+      {#if etiqueta && loteAberto}
+        <div class="etiqueta" style:left="{etiqueta.x}px" style:top="{etiqueta.y}px" aria-hidden="true">{rotuloCurto(loteAberto)}</div>
+      {/if}
+      {#if hover && loteHover && hover.id !== selecionado}
+        <div class="etiqueta leve" style:left="{hover.tela.x}px" style:top="{hover.tela.y}px" aria-hidden="true">{rotuloCurto(loteHover)}</div>
+      {/if}
 
-    <Legenda cores={cena.cores()} status={temStatus} />
+      <Legenda cores={cena.cores()} status={temStatus} />
 
-    <Folha bind:batente espiar={espiarPx} rotulo={rotuloFolha}>
-      {#snippet corpo()}
-        {#if conteudo === 'ficha' && loteAberto}
-          <Ficha lote={loteAberto as Lote} config={dados!.config} {precos} aoFechar={fecharFicha} />
-        {:else if conteudo === 'ponto' && pontoAberto}
-          <FichaPonto ponto={pontoAberto} aoVoltar={voltarALista} />
-        {:else if conteudo === 'entorno'}
-          <ListaEntorno {pontos} fontes={dados!.fontesPontos} selecionado={pontoSelecionado} aoEscolher={escolherPonto} />
-        {:else if conteudo === 'marco' && marco}
-          <Galeria {marco} aoFechar={fecharMarco} />
-        {:else if conteudo === 'boas-vindas'}
-          <BoasVindas escuro={cor === 'escuro'} />
-        {:else}
-          <Busca bind:consulta {resultados} aoEscolher={id => abrirFicha(id, true)} />
-        {/if}
-      {/snippet}
-      {#snippet rodape()}
-        {#if conteudo === 'boas-vindas'}
-          <button class="btn primario" onclick={concluirBoasVindas}>Começar</button>
-        {/if}
-      {/snippet}
-    </Folha>
+      <Folha bind:batente espiar={espiarPx} rotulo={rotuloFolha}>
+        {#snippet corpo()}
+          {#if conteudo === 'ficha' && loteAberto}
+            <Ficha lote={loteAberto as Lote} config={dados!.config} {precos} aoFechar={fecharFicha} />
+          {:else if conteudo === 'ponto' && pontoAberto}
+            <FichaPonto ponto={pontoAberto} aoVoltar={voltarALista} />
+          {:else if conteudo === 'entorno'}
+            <ListaEntorno {pontos} fontes={dados!.fontesPontos} selecionado={pontoSelecionado} aoEscolher={escolherPonto} />
+          {:else if conteudo === 'marco' && marco}
+            <Galeria {marco} aoFechar={fecharMarco} />
+          {:else if conteudo === 'boas-vindas'}
+            <BoasVindas escuro={cor === 'escuro'} />
+          {:else}
+            <Busca bind:consulta {resultados} aoEscolher={id => abrirFicha(id, true)} />
+          {/if}
+        {/snippet}
+        {#snippet rodape()}
+          {#if conteudo === 'boas-vindas'}
+            <button class="btn primario" onclick={concluirBoasVindas}>Começar</button>
+          {/if}
+        {/snippet}
+      </Folha>
+    {/if}
   {/if}
 </div>
 

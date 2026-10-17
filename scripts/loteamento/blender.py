@@ -60,6 +60,14 @@ def juntar_cenas(*cenas: dict) -> dict:
     return {"objetos": [o for c in cenas for o in c["objetos"]]}
 
 
+def copiar_mapas_osm(tiles: dict[str, dict], destino: Path) -> list[str]:
+    """Os tiles do chão sem o masterplan vão soltos para a pasta da maquete: o front os troca pelos do
+    GLB quando o botão do masterplan desliga. Nomes `mapa-osm_<k>.jpg`."""
+    for k, t in tiles.items():
+        shutil.copy2(t["arquivo"], destino / f"mapa-osm_{k}.jpg")
+    return sorted(tiles)
+
+
 def conferir_entorno(nomes: list[str], mb: float) -> list[str]:
     erros = [f"objeto do entorno faltando no GLB: {n}" for n in OBJETOS_ENTORNO if n not in nomes]
     if mb > LIMITE_ENTORNO_MB:
@@ -83,7 +91,9 @@ def main() -> int:
     blender = Path(ler_env(RAIZ / ".env").get("BLENDER", BLENDER_PADRAO))
     destino = terreno_dir() / PASTA_MAQUETE
     ler = lambda c: json.loads(c.read_text(encoding="utf-8"))  # noqa: E731
-    tiles = ler(MAPA_JSON)["tiles"]
+    mapa = ler(MAPA_JSON)
+    tiles = mapa["tiles"]
+    copiar_mapas_osm(mapa.get("osm", {}), destino)
     cena_entorno = RAIZ / "cache" / "cena" / "entorno-completo.json"
     cena_entorno.write_text(json.dumps(com_tiles(juntar_cenas(ler(ENTORNO_JSON), ler(DETALHE)), tiles, ("Entorno",))),
                             encoding="utf-8")

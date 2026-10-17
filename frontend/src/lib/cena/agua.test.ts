@@ -56,3 +56,24 @@ describe('desbotarDaAgua', () => {
     expect(d.y).toBeLessThanOrEqual(4000 * 2);  // a aresta reta do polígono do mar, logo depois da terra, já sumiu no céu
   });
 });
+
+describe('PARAMETROS_AGUA', () => {
+  test('cada parâmetro do painel é uniform do material e está declarado no shader', async () => {
+    const THREE = await import('three');
+    const { materialDaAgua, PARAMETROS_AGUA } = await import('./agua');
+    const cor = () => new THREE.Color();
+    const m = materialDaAgua({ zenite: cor(), faixa: cor(), horizonte: cor(), chao: cor(), horizonteQuente: cor(), sol: new THREE.Vector3(0, 1, 0) });
+    for (const p of PARAMETROS_AGUA) {
+      expect(m.uniforms[p.uniforme]?.value, p.uniforme).toBe(p.valor);
+      expect(m.fragmentShader).toContain(`uniform float ${p.uniforme};`);
+      expect(p.valor).toBeGreaterThanOrEqual(p.min);
+      expect(p.valor).toBeLessThanOrEqual(p.max);
+    }
+  });
+  test('o turquesa nunca passa do alcance do mapa da costa: senão o mar aberto todo ficaria raso', async () => {
+    const { PARAMETROS_AGUA } = await import('./agua');
+    const { ALCANCE_COSTA } = await import('./mapa-costa');
+    const max = (u: string) => PARAMETROS_AGUA.find(p => p.uniforme === u)!.max;
+    expect(max('uRaso') + max('uMistura')).toBeLessThan(ALCANCE_COSTA);
+  });
+});

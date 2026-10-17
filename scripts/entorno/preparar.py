@@ -28,6 +28,7 @@ from .mapa import CORES, rasterizar
 from .tiles import Ext, com_margem, janelas
 
 MAPA_JSON = CACHE / "mapa.json"
+PREFIXO_OSM = "mapa_osm"  # os tiles do chão sem o masterplan: mapa_osm_<k>.jpg
 DETALHE = RAIZ / "cache" / "cena" / "entorno-detalhe.json"
 AREA_MINIMA_PREDIO_M2 = 8.0  # abaixo disso, ruído das pegadas por ML
 AREA_MINIMA_PREDIO_LONGE_M2 = 30.0  # na faixa da orla, além do raio_predios: some de longe
@@ -148,7 +149,22 @@ def faixa_3d(pontos: list, largura: float, relevo, offset: float, passo: float =
     return vertices, faces
 
 
-def gerar_tiles(camadas, ext: Ext, passo: float, px: int, margem_px: int, pasta: Path, pos=None) -> dict[str, dict]:
+def camadas_do_chao(base: dict, vias: list[dict], plato, lagoa=None) -> list[tuple[str, object]]:
+    """As camadas do mapa do chão, de baixo para cima. Com `lagoa` (a do masterplan), a água do OSM
+    some em volta dela: a lagoa do R05 é pintada por cima."""
+    camadas = []
+    for tipo in ORDEM_AREAS:
+        g = unary_union([_poligono(p).buffer(0) for a in base["areas"] if a["tipo"] == tipo for p in a["poligonos"]])
+        if tipo == "agua" and lagoa is not None:
+            g = g.difference(lagoa[0].buffer(ZONA_LAGOA))
+        if not g.is_empty:
+            camadas.append((tipo, g))
+    return camadas + [("via_local", faixas(vias, "via_local")), ("via_principal", faixas(vias, "via_principal")),
+                      ("solo", plato)]  # o platô fica liso: o loteamento é desenhado por cima
+
+
+def gerar_tiles(camadas, ext: Ext, passo: float, px: int, margem_px: int, pasta: Path, pos=None,
+                prefixo: str = "mapa") -> dict[str, dict]:
     """Um JPEG por janela, com `margem_px` de borda; `pos(img, ext_m)` pinta por cima (o masterplan)."""
     tiles = {}
     for k, jan in janelas(ext, passo).items():
@@ -156,7 +172,7 @@ def gerar_tiles(camadas, ext: Ext, passo: float, px: int, margem_px: int, pasta:
         img = rasterizar(camadas, ext_m, px)
         if pos is not None:
             img = pos(img, ext_m)
-        arquivo = pasta / f"mapa_{k}.jpg"
+        arquivo = pasta / f"{prefixo}_{k}.jpg"
         img.save(arquivo, quality=85)
         tiles[k] = {"arquivo": str(arquivo), "ext": list(ext_m), "janela": list(jan), "px": list(img.size)}
     return tiles
@@ -183,6 +199,7 @@ def main() -> int:
     ext = (longe["x0"], longe["y0"], longe["x0"] + longe["passo"] * (longe["nx"] - 1),
            longe["y0"] + longe["passo"] * (longe["ny"] - 1))
 
+    vias_osm = base["vias"]  # inteiras: o chão só com OSM (botão do masterplan desligado) mostra todas
     if cfg.masterplan:
         from .masterplan import META
 
@@ -192,16 +209,8 @@ def main() -> int:
         base["vias"] = sem_vias_na_divisa(base["vias"],
                                           Polygon(json.loads(META.read_text(encoding="utf-8"))["gleba"]).buffer(0))
         print(f"vias na divisa da gleba removidas: {n - len(base['vias'])}")
-    lagoa = lagoa_do_masterplan() if cfg.masterplan else None
-    camadas = []
-    for tipo in ORDEM_AREAS:
-        g = unary_union([_poligono(p).buffer(0) for a in base["areas"] if a["tipo"] == tipo for p in a["poligonos"]])
-        if tipo == "agua" and lagoa is not None:  # perto do masterplan, a água é a lagoa do R05 (pintada por cima)
-            g = g.difference(lagoa[0].buffer(ZONA_LAGOA))
-        if not g.is_empty:
-            camadas.append((tipo, g))
-    camadas += [("via_local", faixas(base["vias"], "via_local")), ("via_principal", faixas(base["vias"], "via_principal")),
-                ("solo", plato)]  # o platô fica liso: o loteamento é desenhado por cima
+    lagoa = lagoa_do_masterplan() if cfg.masterplan else None  # perto do masterplan, a água é a lagoa do R05
+    camadas = camadas_do_chao(base, base["vias"], plato, lagoa)
     pos = None
     if cfg.masterplan:
         from .masterplan import META, pintar, pintar_por_cima
@@ -220,7 +229,11 @@ def main() -> int:
             pintar(img, ext_m, mp_img, meta, mascara, cfg.masterplan_saturacao, cfg.masterplan_opacidade),
             ext_m, por_cima)
     tiles = gerar_tiles(camadas, ext, longe["passo"], cfg.tile_px, cfg.tile_margem_px, CACHE, pos)
-    MAPA_JSON.write_text(json.dumps({"tiles": tiles}), encoding="utf-8")
+    dados_mapa = {"tiles": tiles}
+    if cfg.masterplan:  # mesmas janelas, sem o masterplan: o front troca a textura quando o botão desliga
+        dados_mapa["osm"] = gerar_tiles(camadas_do_chao(base, vias_osm, plato), ext, longe["passo"], cfg.tile_px,
+                                        cfg.tile_margem_px, CACHE, prefixo=PREFIXO_OSM)
+    MAPA_JSON.write_text(json.dumps(dados_mapa), encoding="utf-8")
 
     fora = plano.buffer(10).union(area_acesso)  # a CE encosta na boca do acesso: sem folga ali
     if cfg.masterplan:

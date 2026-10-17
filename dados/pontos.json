@@ -115,24 +115,6 @@
    "fonte_foto": "https://commons.wikimedia.org/wiki/File:SESC_Iparana_2.JPG"
   },
   {
-   "nome": "Iandê Caucaia Mall",
-   "categoria": "compras",
-   "lat": -3.734064,
-   "lon": -38.655873,
-   "x": 3612.3,
-   "y": -7839.6,
-   "km": 8.7,
-   "minutos_carro": 19,
-   "faixa": "distante",
-   "fonte_coord": "osm",
-   "osm": "way/548257183",
-   "foto": "pontos/fotos/iande-caucaia-mall.jpg",
-   "credito": "Joelkaula",
-   "licenca": "CC BY-SA 4.0",
-   "licenca_url": "https://creativecommons.org/licenses/by-sa/4.0",
-   "fonte_foto": "https://commons.wikimedia.org/wiki/File:Iand%C3%AA_Shopping_Caucaia_07.jpg"
-  },
-  {
    "nome": "Hospital Municipal de Caucaia",
    "categoria": "saude",
    "lat": -3.739177,

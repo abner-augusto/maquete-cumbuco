@@ -149,6 +149,21 @@ def aplicar_acesso(g: Grade, a: Acesso, acfg: AcessoCfg, area: BaseGeometry, tal
     return Grade(g.x0, g.y0, g.passo, g.nx, g.ny, np.round(z, 2).tolist())
 
 
+def costurar(perto: Grade, longe: Grade, aneis: int = 3) -> Grade:
+    """A borda do perto (10 m) vira a do longe (30 m): a malha do entorno liga ao perto pela linha do
+    buraco, e as duas só se encostam sem fresta se tiverem a mesma cota ao longo dela. A costa e o
+    acesso mexem no perto depois do Copernicus e deixavam a borda até metros fora da reta do longe
+    (a água aparecia por baixo, em frestas finas). A borda recebe o longe; os `aneis` nós de dentro
+    voltam ao perto aos poucos, sem degrau."""
+    gx, gy = _nos(perto)
+    alvo = amostrar_grade(longe, gx, gy)  # sobre a borda, a bilinear é a reta entre os nós do longe
+    z = np.array(perto.z, dtype=float)
+    j, i = np.indices(z.shape)
+    fundo = np.minimum.reduce([i, perto.nx - 1 - i, j, perto.ny - 1 - j])
+    peso = np.clip(1.0 - fundo / aneis, 0.0, 1.0)
+    return Grade(perto.x0, perto.y0, perto.passo, perto.nx, perto.ny, np.round(z + (alvo - z) * peso, 2).tolist())
+
+
 def malha_entorno(dem: Grade, buraco: tuple[float, float, float, float], centro: tuple[float, float],
                   raio: float, janela: tuple[float, float, float, float] | None = None
                   ) -> tuple[list[list[float]], list[list[int]]]:
@@ -303,6 +318,7 @@ def main() -> int:
                             celula=longe.passo, agua=agua, agua_fixa=rio)
     acesso = com_perfil(acesso, perto, cota, acfg)
     perto = aplicar_acesso(perto, acesso, acfg, corredor(acesso, acfg), cfg.talude)
+    perto = costurar(perto, longe)
     acesso.salvar()
     entorno = [{"nome": f"Entorno_{k}", "material": "entorno", "vertices": v, "faces": f}
                for k, jan in janelas(ext_da_grade(longe), longe.passo).items()

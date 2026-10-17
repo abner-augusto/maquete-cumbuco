@@ -1,0 +1,12 @@
+{
+  "_": "Fase 1 é a própria maquete: sem etiqueta. Pixels de masterplan-fases.png (x para a direita, y para baixo), no centro do número de cada fase, como o autor marcou.",
+  "fases": [
+    {"id": 2, "x": 357, "y": 327},
+    {"id": 3, "x": 625, "y": 585},
+    {"id": 4, "x": 553, "y": 657},
+    {"id": 5, "x": 694, "y": 744},
+    {"id": 6, "x": 505, "y": 489},
+    {"id": 7, "x": 163, "y": 537},
+    {"id": 8, "x": 330, "y": 657}
+  ]
+}

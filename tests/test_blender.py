@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.loteamento.blender import BLENDER_PADRAO, SCRIPT, com_tiles, conferir_entorno, conferir_glb, juntar_cenas, nos_do_glb, rodar_blender
+from scripts.loteamento.blender import BLENDER_PADRAO, SCRIPT, com_tiles, conferir_entorno, copiar_mapas_osm, conferir_glb, juntar_cenas, nos_do_glb, rodar_blender
 
 
 def _glb(caminho: Path, nomes: list[str]) -> None:
@@ -95,6 +95,16 @@ def test_com_tiles_poe_a_imagem_do_tile_pelo_sufixo():
     assert novo["objetos"][0]["material"] == "chao"
     assert "textura" not in novo["objetos"][1] and "textura" not in novo["objetos"][2]
     assert "textura" not in dados["objetos"][0]
+
+
+def test_copiar_mapas_osm_leva_um_jpeg_por_tile_com_o_nome_do_front(tmp_path):
+    origem = tmp_path / "mapa_osm_01.jpg"
+    origem.write_bytes(b"jpeg")
+    destino = tmp_path / "maquete"
+    destino.mkdir()
+    assert copiar_mapas_osm({"01": {"arquivo": str(origem)}}, destino) == ["01"]
+    assert (destino / "mapa-osm_01.jpg").read_bytes() == b"jpeg"
+    assert copiar_mapas_osm({}, destino) == []  # cache sem o masterplan: nada a copiar
 
 
 def test_conferir_entorno_exige_os_quatro_pedacos_e_o_peso():

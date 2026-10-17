@@ -10,7 +10,9 @@ export interface Marco { id: string; nome: string; x: number; y: number; z: numb
 export interface PontoBruto { nome: string; categoria: string; lat: number; lon: number; x: number; y: number;
   km: number; minutos_carro: number; faixa: 'proximo' | 'distante'; foto: string | null; credito: string | null;
   licenca: string | null; licenca_url: string | null; fonte_foto: string | null }
-export interface Dados { lotes: Lote[]; marcos: Marco[]; pontos: PontoBruto[]; fontesPontos: string; config: Config }
+/** Uma fase do projeto: o centro dela, em metros da origem da maquete (x leste, y norte). */
+export interface Fase { id: number; nome: string; x: number; y: number }
+export interface Dados { lotes: Lote[]; marcos: Marco[]; pontos: PontoBruto[]; fontesPontos: string; fases: Fase[]; config: Config }
 
 export async function carregarDados(base: URL): Promise<Dados> {
   const json = async <T>(n: string): Promise<T> => {
@@ -18,9 +20,9 @@ export async function carregarDados(base: URL): Promise<Dados> {
     if (!r.ok) throw Error(`dados/${n}`);
     return r.json() as Promise<T>;
   };
-  const [lotes, marcos, pontos, config] = await Promise.all([
+  const [lotes, marcos, pontos, fases, config] = await Promise.all([
     json<{ lotes: Lote[] }>('lotes.json'), json<{ marcos: Marco[] }>('marcos.json'),
-    json<{ pontos: PontoBruto[]; fontes: string }>('pontos.json'), json<Config>('config.json'),
+    json<{ pontos: PontoBruto[]; fontes: string }>('pontos.json'), json<{ fases: Fase[] }>('fases.json'), json<Config>('config.json'),
   ]);
-  return { lotes: lotes.lotes, marcos: marcos.marcos, pontos: pontos.pontos, fontesPontos: pontos.fontes, config };
+  return { lotes: lotes.lotes, marcos: marcos.marcos, pontos: pontos.pontos, fontesPontos: pontos.fontes, fases: fases.fases, config };
 }

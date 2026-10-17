@@ -3,7 +3,7 @@ import random
 import pytest
 from shapely.geometry import Point, Polygon
 
-from scripts.entorno.vegetacao import area_livre, canteiros, instancias, pontos_zona
+from scripts.entorno.vegetacao import area_livre, canteiros, instancias, plantar, pontos_zona
 
 
 class Plano:
@@ -53,3 +53,15 @@ def test_area_livre_tira_o_masterplan_e_o_plato():
     assert not livre.contains(Point(200, 0))    # fases do masterplan, sem árvore por cima
     assert livre.contains(Point(-200, 0))       # mata do entorno
     assert not livre.contains(Point(600, 0))    # fora do raio
+
+
+def test_mata_sob_o_masterplan_sai_so_de_dentro_da_gleba_e_nao_mexe_na_de_fora():
+    mata = {"tipo": "verde", "tags": {"landuse": "forest"}, "poligonos": [[[(-300, -100), (300, -100), (300, 100), (-300, 100), (-300, -100)]]]}
+    base = {"centro": [0.0, 0.0], "vias": [], "predios": [], "areas": [mata]}
+    plato = Polygon([(-10, -10), (10, -10), (10, 10), (-10, 10)])
+    gleba = Polygon([(100, -50), (300, -50), (300, 50), (100, 50)])
+    fora, _ = plantar(base, area_livre(base, 500.0, plato, gleba), random.Random(4))
+    sob, _ = plantar(base, area_livre(base, 500.0, plato).intersection(gleba), random.Random(5))
+    assert fora and sob
+    assert not any(gleba.contains(Point(x, y)) for x, y, _ in fora)  # a mata de sempre não cobre o desenho
+    assert all(gleba.contains(Point(x, y)) for x, y, _ in sob)       # a extra só existe onde ele está

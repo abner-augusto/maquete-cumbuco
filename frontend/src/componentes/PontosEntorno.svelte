@@ -16,7 +16,15 @@
     quadro,
     selecionado,
     aoEscolher,
-  }: { pontos: Ponto[]; quadro: QuadroEntorno; selecionado: number | null; aoEscolher: (id: number) => void } = $props();
+    masterplan,
+  }: {
+    pontos: Ponto[];
+    quadro: QuadroEntorno;
+    selecionado: number | null;
+    aoEscolher: (id: number) => void;
+    /** As etiquetas das fases são do masterplan: com a projeção desligada, somem junto. */
+    masterplan: boolean;
+  } = $props();
 
   let largura = $state(0);
   let altura = $state(0);
@@ -165,6 +173,12 @@
     <span class="anel" style:left="{anel.tela!.x}px" style:top="{anel.tela!.y}px" aria-hidden="true">{formatoRaio(anel.raio)}</span>
   {/each}
 
+  {#each masterplan ? quadro.fases : [] as fase (fase.id)}
+    {#if fase.tela}
+      <span class="fase" style:left="{fase.tela.x}px" style:top="{fase.tela.y}px" style:opacity={opacidade(fase.tela)}><b>{fase.nome}</b>Em breve</span>
+    {/if}
+  {/each}
+
   {#each camadas.marcadores as { ponto, x, y, opacidade, rotulo } (ponto.id)}
     <button
       class="marcador"
@@ -228,6 +242,14 @@
     font-size: 11.5px; font-weight: 600; color: var(--tema-tinta);
     text-shadow: 0 0 3px var(--tema-papel), 0 0 6px var(--tema-papel);
   }
+  /* Etiqueta no centro de cada fase ainda por vir: só informa, não recebe toque. */
+  .fase {
+    position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center;
+    padding: 5px 12px; border-radius: var(--raio-2); text-align: center; line-height: 1.2; white-space: nowrap;
+    background: color-mix(in srgb, var(--tema-papel) 80%, transparent); color: var(--tema-tinta-2);
+    border: 1px solid var(--tema-filete-forte); box-shadow: var(--tema-sombra-1); font-size: 10px;
+  }
+  .fase b { color: var(--tema-tinta); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
   .marcador {
     position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; padding: 0;
     border-radius: 50%; border: 2px solid var(--tema-papel); background: var(--tema-tinta);

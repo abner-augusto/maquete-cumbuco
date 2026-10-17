@@ -16,6 +16,7 @@ test('1. a maquete abre com a marca, a legenda e sem o nome guardado', async ({ 
   await page.goto('./');
   await expect(page.getByRole('img', { name: /Maquete 3D/ })).toBeVisible();
   await expect(page.getByRole('img', { name: /Cidade das Américas/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Legenda' }).click();
   await expect(page.getByLabel('Legenda')).toContainText('Residencial');
   expect((await page.content()).toLowerCase()).not.toContain('alternativa');
 });

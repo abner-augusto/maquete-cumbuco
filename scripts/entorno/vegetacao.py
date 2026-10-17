@@ -115,6 +115,19 @@ def area_livre(base: dict, raio: float, plato, gleba=None):
     return Point(base["centro"]).buffer(raio, 128).difference(unary_union(tirar))
 
 
+def plantar(base: dict, livre, sorte: random.Random) -> tuple[list[tuple[float, float, str]], dict[str, int]]:
+    """As árvores de cada zona do OSM dentro de `livre`; onde duas zonas se sobrepõem vale a primeira."""
+    pts, ja, por_zona = [], Polygon(), {}
+    for nome, regra, m2, mistura in ZONAS:
+        g = unary_union([_poligono(p) for a in base["areas"] if regra(a["tags"]) for p in a["poligonos"]])
+        zona = g.difference(ja).intersection(livre)
+        ja = ja.union(g)
+        novos = pontos_zona(zona, m2, mistura, sorte)
+        por_zona[nome] = len(novos)
+        pts += novos
+    return pts, por_zona
+
+
 def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8")
     cfg = EntornoCfg.carregar()
@@ -136,20 +149,19 @@ def main() -> int:
             gleba = Polygon(json.loads(META.read_text(encoding="utf-8"))["gleba"]).buffer(0)
     livre = area_livre(base, cfg.raio_vegetacao, plato, gleba)
     sorte = random.Random(4)
-    pts, ja, por_zona = [], Polygon(), {}
-    for nome, regra, m2, mistura in ZONAS:
-        g = unary_union([_poligono(p) for a in base["areas"] if regra(a["tags"]) for p in a["poligonos"]])
-        zona = g.difference(ja).intersection(livre)
-        ja = ja.union(g)
-        novos = pontos_zona(zona, m2, mistura, sorte)
-        por_zona[nome] = len(novos)
-        pts += novos
+    pts, por_zona = plantar(base, livre, sorte)
     if not pts:
         raise SystemExit("Nenhuma árvore nas zonas do OSM: áreas vazias no base.json? Rode o extrair com --refazer.")
     verdes = aneis_da_layer(msp, CenaCfg.carregar(CFG_TOML).camadas["Verdes"], e0, n0)
     inst = instancias(pts, relevo, nivel, sorte)
     cant = instancias([(x, y, "coqueiro") for x, y in canteiros(verdes)], relevo, nivel, sorte, offset=OFFSET_CANTEIRO)
     inst["coqueiro"] = cant["coqueiro"] + inst["coqueiro"]  # os da Fase 1 primeiro: sempre aparecem
+    # A mata do OSM sob o masterplan: o front só a mostra com a projeção desligada (o chão volta a ser o OSM).
+    sob_masterplan = {}
+    if gleba is not None:
+        sob = area_livre(base, cfg.raio_vegetacao, plato).intersection(gleba)
+        extra, _ = plantar(base, sob, random.Random(5))
+        sob_masterplan = instancias(extra, relevo, nivel, random.Random(6))
     DESTINO.write_text(json.dumps({
         "versao": 1,
         "referencial": "x = leste, y = norte em dm; z = cota em cm (sem exagero); no glTF, (x, z, -y)",
@@ -157,9 +169,10 @@ def main() -> int:
         "campos": ["x_dm", "y_dm", "z_cm", "escala_pct", "rotacao_graus"],
         "canteiros_fase1": len(cant["coqueiro"]) // 5,
         "especies": {e: {"n": len(v) // 5, "instancias": v} for e, v in inst.items()},
+        "sem_masterplan": {"especies": {e: {"n": len(v) // 5, "instancias": v} for e, v in sob_masterplan.items()}},
     }, separators=(",", ":")), encoding="utf-8")
     print(f"vegetação por zona {por_zona} · canteiros da Fase 1 {len(cant['coqueiro']) // 5} coqueiros · "
-          f"por espécie { {e: len(v) // 5 for e, v in inst.items()} } · {DESTINO.stat().st_size / 1e6:.2f} MB")
+          f"por espécie { {e: len(v) // 5 for e, v in inst.items()} } · sob o masterplan { {e: len(v) // 5 for e, v in sob_masterplan.items()} } · {DESTINO.stat().st_size / 1e6:.2f} MB")
     return 0
 
 

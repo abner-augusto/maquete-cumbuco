@@ -66,7 +66,7 @@ async function main() {
   }
 
   const json = n => JSON.parse(readFileSyncTexto(path.join(RAIZ, 'dados', n)));
-  for (const n of ['lotes.json', 'marcos.json', 'pontos.json', 'config.json'])
+  for (const n of ['lotes.json', 'marcos.json', 'pontos.json', 'fases.json', 'config.json'])
     await copyFile(path.join(RAIZ, 'dados', n), path.join(PUBLIC, 'dados', n));
   for (const foto of fotosCitadas(json('marcos.json'), json('pontos.json'))) {
     const origem = path.join(RAIZ, 'dados', foto);
@@ -80,6 +80,9 @@ async function main() {
     await comprimir(path.join(maquete, `${n}.glb`), path.join(PUBLIC, 'modelos', `${n}.glb`));
   await copyFile(path.join(maquete, 'marcos.glb'), path.join(PUBLIC, 'modelos', 'marcos.glb'));
   await copyFile(path.join(maquete, 'vegetacao.json'), path.join(PUBLIC, 'modelos', 'vegetacao.json'));
+  // O chão só com OSM, para o botão do masterplan: um JPEG por tile do mapa.
+  for (const k of ['00', '01', '10', '11'])
+    await copyFile(path.join(maquete, `mapa-osm_${k}.jpg`), path.join(PUBLIC, 'modelos', `mapa-osm_${k}.jpg`));
   await cp(path.join(FRONT, 'node_modules/three/examples/jsm/libs/draco/gltf'), path.join(PUBLIC, 'draco'), { recursive: true });
 
   const svgs = path.join(RAIZ, 'marca', 'svg', 'americas');

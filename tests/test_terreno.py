@@ -5,7 +5,7 @@ import pytest
 
 from scripts.loteamento.relevo import Grade
 from scripts.loteamento.terreno import (TerrenoCfg, ajustar_datum, amostrar_grade, compor_perto, cota_plato,
-                                        Relevo, disco_mar, encaixar, malha_entorno, reamostrar, separar_mar)
+                                        Relevo, costurar, disco_mar, encaixar, malha_entorno, reamostrar, separar_mar)
 
 CFG = TerrenoCfg(poligonal=["POL"], talude=20.0, sigma=25.0, alcance=100.0, transicao=50.0, raio=4000.0,
                  mar_rebaixo=1.0, passo_perto=10.0)
@@ -210,3 +210,15 @@ def test_corredor_do_acesso_desce_com_o_perfil_e_emenda_no_entorno():
     assert z[35, 30] == pytest.approx(zs(50) - 0.5, abs=0.01)  # nó (0, 50): chão sob a pista
     assert z[35, 35] == pytest.approx(10.0)  # nó (50, 50): longe, o chão de antes
     assert abs(np.diff(z, axis=1)).max() < 6.0  # talude, sem paredão
+
+
+def test_costurar_poe_a_borda_do_perto_na_reta_do_longe_e_deixa_o_miolo():
+    longe = _grade(lambda x, y: 0.05 * x + (3.0 if x == 30.0 else 0.0), passo=30.0, x0=-120.0, y0=-120.0, n=9)
+    perto = _grade(lambda x, y: 7.0, x0=0.0, y0=0.0, n=13)  # 10 m, de (0,0) a (120,120): nós do longe a cada 3
+    z = np.array(costurar(perto, longe).z)
+    for i in range(13):  # sul: a reta entre os nós do longe
+        x = i * 10.0
+        esperado = amostrar_grade(longe, np.array([x]), np.array([0.0]))[0]
+        assert z[0][i] == pytest.approx(esperado, abs=0.01)
+    assert z[6][6] == 7.0  # a 6 nós da borda, nada mudou
+    assert abs(np.diff(z[:, 6])).max() < abs(7.0 - amostrar_grade(longe, np.array([60.0]), np.array([0.0]))[0]) + 0.01

@@ -16,6 +16,7 @@
     claro: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.5 1.5M17.2 17.2l1.5 1.5M5.3 18.7l1.5-1.5M17.2 6.8l1.5-1.5"/>',
     camera: '<path d="M4 8.5h3l1.5-2h7l1.5 2h3v10H4z"/><circle cx="12" cy="13" r="3.2"/>',
     mapa: '<path d="M9 4.5l-5 2v13l5-2 6 2 5-2v-13l-5 2z"/><path d="M9 4.5v13M15 6.5v13"/>',
+    cinema: '<rect x="3.5" y="6" width="17" height="12" rx="1.5"/><path d="M7.5 6v12M16.5 6v12M3.5 10h4M3.5 14h4M16.5 10h4M16.5 14h4"/>',
     foto: '<rect x="3.5" y="5" width="17" height="14" rx="1.5"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8 8"/>',
   } as const;
   export type NomeIcone = keyof typeof ICONES;

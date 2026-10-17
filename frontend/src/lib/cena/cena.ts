@@ -7,9 +7,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { Dados, Lote, Vista } from '../dados';
 import type { Ponto } from '../pontos';
 import { Ceu } from './ceu';
-import { Entorno, raiosDosAneis } from './entorno';
+import { Entorno, RAIOS_ANEIS } from './entorno';
 import { duracaoDoVoo, poseDoVoo, vistaDeFrente, type Pose } from './enquadramento';
-import { COR_AGUA, alcanceDaAgua, desbotarDaAgua, materialDaAgua, quadroDaAgua } from './agua';
+import { COR_AGUA, alcanceDaAgua, corDaAgua, costaDaAgua, desbotarDaAgua, materialDaAgua, nivelDaAgua, quadroDaAgua, type CorDaAgua, type ModoCor } from './agua';
+import { mapaDaCosta, mapaDeCotas } from './mapa-costa';
+import { Chao } from './chao';
 
 export type Tela = { x: number; y: number };
 export type Formato = 'retrato' | 'paisagem';
@@ -28,7 +30,12 @@ export interface QuadroEntorno {
   alcance: number;
   pontos: (Tela | { angulo: number; tela: Tela | null } | null)[];
   aneis: { raio: number; tela: Tela | null }[];
+  /** O centro de cada fase do projeto; a posição vai um pouco além da borda, para a etiqueta esmaecer ao sair. */
+  fases: { id: number; nome: string; tela: Tela | null }[];
 }
+/** O sol da maquete: azimute em graus do norte (horário), altitude em graus, calor do céu (0 a 1) e halo do sol no céu (0 a 1). */
+export interface Sol { azimute: number; altitude: number; calor: number; brilho: number }
+
 export interface Cena {
   montar(el: HTMLElement): void;
   inicio(): void;
@@ -42,6 +49,14 @@ export interface Cena {
   ceu(modo: 'claro' | 'escuro'): void;
   /** Liga o entorno (carrega na primeira vez) com os pontos de referência, ou desliga. */
   entorno(ativo: boolean, pontos: Ponto[]): Promise<void>;
+  /** Modo cinema: esconde os anéis de distância e deixa os lotes sem realce nem toque. */
+  cinema(ativo: boolean): void;
+  /** Projeção do masterplan no chão: ligada, o mapa leva o desenho dele; desligada, só o OSM. `false` se a imagem do OSM não veio. */
+  masterplan(ligado: boolean): Promise<boolean>;
+  /** Modo dev (painel de ajuste): cada ajuste já pede o quadro novo. */
+  ajustarAgua(uniforme: string, valor: number): void;
+  ajustarCorAgua(modo: ModoCor, chave: keyof CorDaAgua, hex: string): void;
+  ajustarSol(sol: Sol): void;
   cores(): Record<Lote['tipo'], string>;    // cor de cada tipo, lida dos materiais do GLB (legenda)
   descartar(): void;
 }
@@ -60,7 +75,7 @@ export interface Opcoes {
 const LOTE = /^Q(\d{2}|[A-Z])L\d{2}$/;
 const STATUS: Record<NonNullable<Lote['status']>, string> = { disponivel: '#2E9E5B', reservado: '#E2B021', vendido: '#B0625A' };
 // Luz fixa de fim de tarde (spec §5): sol baixo a oeste-noroeste, quente.
-const SOL = { azimute: 285, altitude: 24 };
+export const SOL: Sol = { azimute: 352, altitude: 4, calor: 0.44, brilho: 0.64 };
 
 export function loader(base: URL): GLTFLoader {
   const draco = new DRACOLoader().setDecoderPath(new URL('draco/', base).href);
@@ -82,6 +97,8 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   ]);
   const cena = new THREE.Scene();
   cena.add(lot.scene, mar.scene);
+  const chao = new Chao(o.base);
+  chao.adicionar(lot.scene);
 
   // Estande: não tem modelo; o volume simplificado é a pegada do KMZ extrudada (spec §7.1).
   const volumes = new THREE.Group();
@@ -130,7 +147,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   const sol = new THREE.DirectionalLight(0xffd2a0, 2.6);
   sol.position.copy(direcao(SOL.azimute, SOL.altitude).multiplyScalar(1000));
   const ceu = new Ceu(15000);
-  ceu.sol(direcao(SOL.azimute, SOL.altitude), 0.55, 0);
+  ceu.sol(direcao(SOL.azimute, SOL.altitude), SOL.calor, SOL.brilho);
   cena.add(ceuLuz, sol, ceu.malha);
 
   // Caixa dos lotes: centro e distância justa da vista inicial.
@@ -232,14 +249,14 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   let pendente: PointerEvent | null = null;
   el.addEventListener('pointermove', e => {
     if (gesto && Math.hypot(e.clientX - gesto.x, e.clientY - gesto.y) > 6) gesto.moveu = true;
-    if (e.pointerType === 'mouse' && !ponteiros.size) pendente = e; // hover: resolvido no quadro
+    if (e.pointerType === 'mouse' && !ponteiros.size && !cinema) pendente = e; // hover: resolvido no quadro
   });
   el.addEventListener('pointerleave', () => { pendente = null; if (passando) { passando = null; aplicarRealces(); o.aoPassar(null); } });
   el.addEventListener('pointerup', e => {
     ponteiros.delete(e.pointerId);
     const g = gesto;
     gesto = null;
-    if (ponteiros.size || !g || g.id !== e.pointerId || g.moveu) return;
+    if (cinema || ponteiros.size || !g || g.id !== e.pointerId || g.moveu) return;
     o.aoEscolher(loteEm(e.clientX, e.clientY));
   });
   el.addEventListener('pointercancel', e => { ponteiros.delete(e.pointerId); gesto = null; });
@@ -344,11 +361,12 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   });
 
   // ---- entorno ----
-  const RAIOS = raiosDosAneis(600, 3000);
+  const RAIOS = RAIOS_ANEIS;
   let entorno: Entorno | null = null;
   let carregandoEntorno: Promise<Entorno> | null = null;
   let pedidoEntorno = 0;
   let pontosEntorno: { p: Ponto; posicao: THREE.Vector3 }[] = [];
+  let fasesEntorno: { id: number; nome: string; posicao: THREE.Vector3 }[] = [];
   let alcanceAgua = 0;
   let raioTerra = 0;
   /** Alcance da orla regional a partir do centro (0 até ela chegar): abre a névoa e o afastamento. */
@@ -356,6 +374,11 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   let carregandoOrla: Promise<void> | null = null;
   const afastamentoEntorno = () => Math.max(9000, raioOrla * 1.3);
   let ultimoEntorno = '';
+  let cinema = false;
+  /** Projeção do masterplan no chão; a mata do OSM sob ele só aparece desligada. */
+  let masterplanLigado = true;
+  let costaPronta = false;
+  let cor: ModoCor = 'claro';
   const nevoa = new THREE.Fog(0xffffff, 1000, 6000);
   const entornoAtivo = () => entorno?.grupo.visible === true;
 
@@ -396,29 +419,61 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
         agua.uniforms.uDesbotar.value.copy(desbotarDaAgua(raioTerra || alcanceAgua));
       }
       entorno.tela(el.clientWidth, el.clientHeight);
+      chao.adicionar(entorno.grupo);
+      entorno.masterplan(masterplanLigado);
       cena.add(entorno.grupo);
     }
     camera.far = Math.max(FAR, alcanceAgua * 1.2);
     camera.updateProjectionMatrix();
     entorno.grupo.visible = true;
+    entorno.aneis.visible = !cinema;
+    if (!costaPronta) {
+      costaPronta = true;
+      gerarCosta('fina', Math.min(raioTerra, 6000));
+      montarAneis();
+    }
     // A cota de cada ponto vem do terreno do entorno, uma vez.
     const e = entorno;
     pontosEntorno = pontos.map(p => ({ p, posicao: new THREE.Vector3(p.x, e.cotaEm(p.x, p.y), -p.y) }));
+    fasesEntorno = o.dados.fases.map(f => ({ id: f.id, nome: f.nome, posicao: new THREE.Vector3(f.x, e.cotaEm(f.x, f.y), -f.y) }));
     cena.fog = nevoa;
     controles.maxDistance = afastamentoEntorno();
     carregandoOrla ??= carregarOrla(e);
-    // Do alto, pelo mesmo rumo de agora, com o anel de 3 km inteiro na largura da tela.
+    // Do alto, pelo mesmo rumo de agora, com o anel de 4 km inteiro na largura da tela.
     abertura = false;
     const rumo = camera.position.clone().sub(controles.target).setY(0);
     if (rumo.lengthSq() < 1e-6) rumo.set(0, 0, 1);
     rumo.normalize();
     const elevacao = THREE.MathUtils.degToRad(55);
     const meioFov = THREE.MathUtils.degToRad(camera.fov) / 2;
-    const distancia = THREE.MathUtils.clamp(3000 / (Math.tan(meioFov) * Math.min(1, camera.aspect)), 3600, 9000);
+    const distancia = THREE.MathUtils.clamp(4000 / (Math.tan(meioFov) * Math.min(1, camera.aspect)), 4800, 9000);
     controles.target.copy(centro);
     camera.position.copy(centro).addScaledVector(rumo, Math.cos(elevacao) * distancia).setY(centro.y + Math.sin(elevacao) * distancia);
     controles.update();
     sujo = true;
+  }
+
+  /** De que distância da praia cada ponto do mar está (turquesa rasa e espuma), num quadrado de meio lado `meio`. */
+  function gerarCosta(alcance: 'fina' | 'longe', meio: number) {
+    const marDoEntorno = entorno?.grupo.getObjectByName('Mar') as THREE.Mesh | undefined;
+    if (!entorno || !marDoEntorno) return;
+    try {
+      costaDaAgua(agua, mapaDaCosta(renderer, cena, entorno.terreno, centro, nivelDaAgua(marDoEntorno), meio), alcance);
+      sujo = true;
+    } catch (erro) {
+      console.warn('mapa da costa não saiu', erro);  // a água segue como estava
+    }
+  }
+
+  /** Os anéis de distância ficam sobre o terreno de agora: o entorno e, quando já chegou, a orla. */
+  function montarAneis() {
+    if (!entorno) return;
+    try {
+      entorno.montarAneis(mapaDeCotas(renderer, cena, entorno.terreno, centro, Math.max(...RAIOS) + 400));
+      sujo = true;
+    } catch (erro) {
+      console.warn('anéis de distância não saíram', erro);
+    }
   }
 
   async function carregarOrla(e: Entorno) {
@@ -431,6 +486,9 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     }
     e.adicionarOrla(orla);
     for (const m of e.orla) raioOrla = Math.max(raioOrla, alcanceDaAgua(m, centro));
+    // Com a orla, o mapa cobre toda a costa do OSM, de Pecém a Iracema: o turquesa não para no meio dela.
+    gerarCosta('longe', (Math.max(raioTerra, raioOrla) / 0.96) * 1.02);
+    montarAneis();
     agua.uniforms.uDesbotar.value.copy(desbotarDaAgua(Math.max(raioTerra, raioOrla) || alcanceAgua));
     // Os pontos de longe estavam na cota 0, sem terreno sob eles: agora pousam na orla.
     pontosEntorno = pontosEntorno.map(({ p }) => ({ p, posicao: new THREE.Vector3(p.x, e.cotaEm(p.x, p.y), -p.y) }));
@@ -480,8 +538,9 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
     // O rótulo de cada anel fica à direita da origem, de quem olha.
     lado.setFromMatrixColumn(camera.matrixWorld, 0).setY(0).normalize();
     const aneis = RAIOS.map(raio => ({ raio, tela: naTela(centro.clone().addScaledVector(lado, raio), 0) }));
+    const fases = fasesEntorno.map(({ id, nome, posicao }) => ({ id, nome, tela: naTela(posicao, MARGEM_FADE) }));
     const alcance = Math.round(camera.position.distanceTo(controles.target) / 10) * 10;
-    return { origem, alcance, pontos, aneis };
+    return { origem, alcance, pontos, aneis, fases };
   }
 
   const corDo = (tipo: Lote['tipo']) => {
@@ -509,8 +568,42 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
       camera.position.fromArray(posicao);
       controles.update();
     },
-    ceu(modo) { ceu.cor(modo); agua.uniforms.uAgua.value.set(COR_AGUA[modo]); sujo = true; },
+    ceu(modo) { cor = modo; ceu.cor(modo); corDaAgua(agua, modo); sujo = true; },
     entorno: mostrarEntorno,
+    async masterplan(ligado) {
+      const ok = await chao.masterplan(ligado);
+      if (ok) {
+        masterplanLigado = ligado;
+        entorno?.masterplan(ligado);
+      }
+      sujo = true;
+      return ok;
+    },
+    ajustarAgua(uniforme, valor) {
+      const u = agua.uniforms[uniforme];
+      if (u) { u.value = valor; sujo = true; }
+    },
+    ajustarCorAgua(modo, chave, hex) {
+      COR_AGUA[modo][chave] = hex;
+      corDaAgua(agua, cor);
+      sujo = true;
+    },
+    ajustarSol(s) {
+      const d = direcao(s.azimute, s.altitude);
+      sol.position.copy(d).multiplyScalar(1000);
+      ceu.sol(d, s.calor, s.brilho);  // copia na mesma instância que a água lê
+      sujo = true;
+    },
+    cinema(ativo) {
+      cinema = ativo;
+      if (entorno) entorno.aneis.visible = !ativo;
+      if (ativo) {
+        pendente = null;
+        el.style.cursor = '';
+        if (passando) { passando = null; aplicarRealces(); }
+      }
+      sujo = true;
+    },
     cores: () => ({ residencial: corDo('residencial'), uso_misto: corDo('uso_misto') }),
     descartar() {
       redimensionar.disconnect();
@@ -518,6 +611,7 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
       controles.dispose();
       ceu.descartar();
       entorno?.descartar();
+      chao.descartar();
       agua.dispose();
       renderer.dispose();
       el.remove();
