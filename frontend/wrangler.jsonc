@@ -3,7 +3,9 @@
   // Só assets: sem backend, sem CRM (spec §1). Nome neutro: nada publicado cita o nome guardado.
   "name": "cidade-americas-maquete",
   "compatibility_date": "2026-10-01",
-  "workers_dev": false,
+  "workers_dev": true,
+  // Sem URLs de preview por versão: só o workers.dev e o domínio próprio ficam no ar.
+  "preview_urls": false,
   // O domínio vem do DOMINIO no .env: `npm run publicar` monta a rota (scripts/publicar.mjs).
   "assets": { "directory": "./dist", "not_found_handling": "single-page-application" }
 }

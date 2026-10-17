@@ -19,16 +19,16 @@ export function lerEnv(arquivo) {
 export const normalizarDominio = d => (d ?? '').trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
 
 /**
- * O wrangler.jsonc com a rota do domínio e, se pedido, outro nome de Worker. Sem domínio vale o
- * workers.dev.
+ * O wrangler.jsonc com a rota do domínio e, se pedido, outro nome de Worker. O endereço cru
+ * (workers.dev) fica sempre ligado, com ou sem domínio: serve de link de reserva.
  */
 export function configurar(base, { dominio = '', nome = '' } = {}) {
   const config = JSON.parse(base.replace(/^\s*\/\/.*$/gm, ''));
   delete config.$schema;
   const host = normalizarDominio(dominio);
   if (nome.trim()) config.name = nome.trim();
+  config.workers_dev = true;
   if (host) config.routes = [{ pattern: host, custom_domain: true }];
-  else config.workers_dev = true;
   return config;
 }
 
@@ -40,7 +40,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const final = configurar(readFileSync(path.join(FRONT, 'wrangler.jsonc'), 'utf8'), { dominio, nome: env.WORKER_NOME ?? '' });
   writeFileSync(config, JSON.stringify(final, null, 2));
   try {
-    console.log(`Worker ${final.name}: ${dominio ? `publicando em ${dominio}` : 'DOMINIO vazio, publicando no workers.dev'}`);
+    console.log(`Worker ${final.name}: ${dominio ? `publicando em ${dominio} e no workers.dev` : 'DOMINIO vazio, publicando só no workers.dev'}`);
     const r = spawnSync('npx', ['wrangler', 'deploy', '--config', config], { cwd: FRONT, stdio: 'inherit', shell: true });
     process.exitCode = r.status ?? 1;
   } finally {
