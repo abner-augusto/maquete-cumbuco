@@ -91,16 +91,19 @@ export function direcao(azimute: number, altura: number): THREE.Vector3 {
 
 export async function criarCena(o: Opcoes): Promise<Cena> {
   const gltf = loader(o.base);
-  const [lot, mar] = await Promise.all([
+  const [lot, mar, estande] = await Promise.all([
     gltf.loadAsync(new URL('modelos/loteamento.glb', o.base).href),
     gltf.loadAsync(new URL('modelos/marcos.glb', o.base).href),
+    o.dados.marcos.some(m => m.objeto === 'Estande')
+      ? gltf.loadAsync(new URL('modelos/estande.glb', o.base).href) : Promise.resolve(null),
   ]);
   const cena = new THREE.Scene();
   cena.add(lot.scene, mar.scene);
+  if (estande) cena.add(estande.scene);
   const chao = new Chao(o.base);
   chao.adicionar(lot.scene);
 
-  // Estande: não tem modelo; o volume simplificado é a pegada do KMZ extrudada (spec §7.1).
+  // Marcos sem GLB continuam representados pela extrusão da pegada.
   const volumes = new THREE.Group();
   for (const m of o.dados.marcos) {
     if (m.objeto || !m.pegada) continue;
@@ -230,12 +233,13 @@ export async function criarCena(o: Opcoes): Promise<Cena> {
   }
 
   const raio = new THREE.Raycaster();
-  const alvos = [...lotes.values()];
+  const alvos: THREE.Object3D[] = [...lotes.values(), mar.scene, volumes];
+  if (estande) alvos.push(estande.scene);
   function loteEm(x: number, y: number): string | null {
     const r = el.getBoundingClientRect();
     raio.setFromCamera(new THREE.Vector2(((x - r.left) / r.width) * 2 - 1, 1 - ((y - r.top) / r.height) * 2), camera);
     // Só o que está na frente vale: um marco ou o terreno à frente do lote bloqueia.
-    const acerto = raio.intersectObjects([...alvos, mar.scene, volumes], true)[0];
+    const acerto = raio.intersectObjects(alvos, true)[0];
     return acerto && LOTE.test(acerto.object.name) ? acerto.object.name : null;
   }
 

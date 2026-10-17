@@ -18,6 +18,7 @@ from scripts.entorno.osm import Projecao
 
 from .encaixe import DESTINO as MARCOS_JSON
 from .encaixe import MarcosCfg
+from .estande import DESTINO as ESTANDE_JSON
 
 CURADORIA = RAIZ / "scripts" / "marcos" / "curadoria.json"
 DESTINO = RAIZ / "dados" / "marcos.json"
@@ -59,10 +60,13 @@ def main() -> int:
         kml = z.read(next(n for n in z.namelist() if n.endswith(".kml"))).decode("utf-8")
         planta = z.read(PLANTA_KMZ)
     estande = Polygon([proj.xy(lon, lat) for lon, lat in estande_do_kmz(kml)])
+    modelo_estande = json.loads(ESTANDE_JSON.read_text(encoding="utf-8")) if ESTANDE_JSON.exists() else None
     shutil.rmtree(FOTOS, ignore_errors=True)
     saida = []
     for id_, m in curadoria.items():
-        if m["objeto"]:
+        if id_ == "estande" and modelo_estande:
+            x, y, z = (modelo_estande[k] for k in ("x", "y", "z"))
+        elif m["objeto"]:
             e = encaixe["marcos"][m["objeto"]]
             c = Polygon(e["pegada"]).centroid
             x, y, z = c.x, c.y, e["z"]
@@ -79,11 +83,14 @@ def main() -> int:
                 "objeto": m["objeto"], "galeria": galeria, "planta": None,
                 "lat": round(lat, 7), "lon": round(lon, 7)}
         if id_ == "estande":
+            if modelo_estande:
+                item["objeto"] = modelo_estande["objeto"]
             (FOTOS / "estande").mkdir(parents=True, exist_ok=True)
             (FOTOS / "estande" / "planta.jpg").write_bytes(planta)
             reduzir(FOTOS / "estande" / "planta.jpg", FOTOS / "estande" / "planta.jpg")
             item["planta"] = "marcos/estande/planta.jpg"
-            item["pegada"] = [[round(px, 2), round(py, 2)] for px, py in estande.exterior.coords[:-1]]
+            item["pegada"] = (modelo_estande["pegada"] if modelo_estande else
+                              [[round(px, 2), round(py, 2)] for px, py in estande.exterior.coords[:-1]])
         saida.append(item)
     DESTINO.write_text(json.dumps({"versao": 1, "marcos": saida}, ensure_ascii=False, indent=1), encoding="utf-8")
     mb = sum(p.stat().st_size for p in FOTOS.rglob("*.jpg")) / 1e6

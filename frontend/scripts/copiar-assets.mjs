@@ -83,7 +83,7 @@ async function main() {
 
   if (terreno) {
     const maquete = path.join(terreno, '6-PROJETOS', '10-MAQUETE INTERATIVA');
-    for (const n of ['loteamento', 'entorno', 'vegetacao', 'orla'])
+    for (const n of ['loteamento', 'entorno', 'vegetacao', 'orla', 'estande'])
       await comprimir(path.join(maquete, `${n}.glb`), path.join(PUBLIC, 'modelos', `${n}.glb`));
     await copyFile(path.join(maquete, 'marcos.glb'), path.join(PUBLIC, 'modelos', 'marcos.glb'));
     await copyFile(path.join(maquete, 'rotatoria.glb'), path.join(PUBLIC, 'modelos', 'rotatoria.glb'));

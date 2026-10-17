@@ -32,7 +32,9 @@ em `modelos-finais/`: o `npm run assets` os regrava a cada vez que roda com `TER
 (quem só clonou o repositório) copia dali. Assim `npm ci && npm run build` funciona sem o Blender. Depois
 de regerar o pipeline, commite o `modelos-finais/` junto.
 
-Ajustes de apresentação (vista inicial, altura do volume do estande) ficam em `../dados/config.json`.
+A vista inicial fica em `../dados/config.json`. O estande usa `modelos/estande.glb`, gerado pela planta
+v10c com `uv run python -m scripts.marcos.estande` na raiz. Depois, rode `scripts.marcos.dados` e o
+build. A altura em `config.estande` só se aplica à extrusão de uma pegada sem GLB.
 
 ## Verificar o `dist/`
 
