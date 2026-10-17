@@ -91,7 +91,7 @@ pythonpath = ["."]
 `.env.example`:
 ```
 # Pasta do terreno (raiz das fontes de verdade)
-TERRENO_DIR=<caminho da pasta do terreno>
+TERRENO_DIR=$TERRENO_DIR
 ACCORE=C:\Program Files\Autodesk\AutoCAD 2018\accoreconsole.exe
 ```
 

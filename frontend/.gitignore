@@ -6,3 +6,4 @@ playwright-report/
 public/*
 !public/_headers
 src/estilos/temas/
+wrangler.publicar.json

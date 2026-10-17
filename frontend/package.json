@@ -12,6 +12,7 @@
     "test": "playwright test",
     "verificar": "node scripts/verificar-dist.mjs",
     "pacote": "node scripts/pacote.mjs",
+    "publicar": "npm run build && node scripts/publicar.mjs",
     "test:leve": ".\\e2e-leve.cmd"
   },
   "dependencies": {

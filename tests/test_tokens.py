@@ -1,15 +1,18 @@
+import os
 import re
 from pathlib import Path
 
 import pytest
 
+from scripts.comum.ambiente import RAIZ, ler_env
 from scripts.marca.cores import contraste, hex_para_rgb
 from scripts.marca.paleta import Paleta
 from scripts.marca.tokens import CHAVES, FONTES_PADRAO, css, tema
 
 # Paleta próxima da real, com ouro claro demais para texto sobre o creme.
 P = Paleta(ouro_claro="#E8C77A", ouro="#C9A45C", bronze="#8A6A2E", creme="#F3EBDD", preto="#0E0C0A")
-MANOA = Path.home() / "_repos/cv_espelho_vendas/frontend/src/estilos/temas/manoa.css"
+_REPOS = ler_env(RAIZ / ".env").get("REPOS_DIR") or os.environ.get("REPOS_DIR")
+MANOA = Path(_REPOS or "") / "cv_espelho_vendas/frontend/src/estilos/temas/manoa.css"
 
 
 def _c(t, modo, a, b):
@@ -43,7 +46,7 @@ def test_css_tem_os_dois_blocos_e_as_fontes():
     assert texto.count("--tema-papel:") == 2
 
 
-@pytest.mark.skipif(not MANOA.exists(), reason="repo do espelho ausente")
+@pytest.mark.skipif(not MANOA.exists(), reason="REPOS_DIR ausente ou sem o repo do espelho")
 def test_chaves_iguais_as_do_tema_manoa():
     bloco_claro = MANOA.read_text(encoding="utf-8").split("[data-cor=")[0]
     chaves_manoa = set(re.findall(r"--tema-([a-z0-9-]+):\s*#", bloco_claro))
