@@ -237,6 +237,24 @@ DESTINO_PERTO = RAIZ / "cache" / "cena" / "terreno.json"
 DESTINO_ENTORNO = RAIZ / "cache" / "cena" / "entorno.json"
 
 
+ZONA_LAGOA = 300.0  # m além da gleba do masterplan em que a água do OSM dá lugar à lagoa do R05
+
+
+def lagoa_do_masterplan():
+    """(gleba, lagoa) do cache do masterplan (scripts.entorno.masterplan), ou None sem ele."""
+    from shapely.geometry import Polygon, shape
+
+    from scripts.entorno.masterplan import META
+
+    if not META.exists():
+        print("sem cache/entorno/masterplan.json: a água em volta do masterplan fica a do OSM")
+        return None
+    meta = json.loads(META.read_text(encoding="utf-8"))
+    if "rio" not in meta:
+        return None
+    return Polygon(meta["gleba"]).buffer(0), shape(meta["rio"])
+
+
 def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8")
     cfg = TerrenoCfg.carregar(CFG_TOML)
@@ -265,8 +283,14 @@ def main() -> int:
     # o arco do disco fica bem fora do entorno; o plano da água vai até lá do lado do mar
     mar = mar_da_costa(costa, centro, cfg.mar_alcance) if costa else None
     agua = agua_do_osm(e0, n0)
+    lagoa = lagoa_do_masterplan()
+    if lagoa is not None and agua is not None:
+        gleba, rio = lagoa
+        agua = agua.difference(gleba.buffer(ZONA_LAGOA))  # perto do masterplan, a água é a do projeto
+    rio = lagoa[1] if lagoa is not None else None
     if mar is not None:
-        com_mar = costa_suave(com_mar, mar, 0.0, cfg.praia_inclinacao, cfg.fundo_inclinacao, cfg.mar_rebaixo, agua=agua)
+        com_mar = costa_suave(com_mar, mar, 0.0, cfg.praia_inclinacao, cfg.fundo_inclinacao, cfg.mar_rebaixo, agua=agua,
+                              agua_fixa=rio)
     else:
         print("sem cache/entorno/osm-areas.json: costa em escada do Copernicus (rode scripts.entorno.extrair)")
     delta = ajustar_datum(perto_lev, com_mar, fora)
@@ -276,7 +300,7 @@ def main() -> int:
     perto = compor_perto(perto_lev, longe, plato, cota, cfg, livre=livre)
     if mar is not None:  # o levantamento chega à boca da barra: a costa dele também segue a linha
         perto = costa_suave(perto, mar, delta, cfg.praia_inclinacao, cfg.fundo_inclinacao, cfg.mar_rebaixo,
-                            celula=longe.passo, agua=agua)
+                            celula=longe.passo, agua=agua, agua_fixa=rio)
     acesso = com_perfil(acesso, perto, cota, acfg)
     perto = aplicar_acesso(perto, acesso, acfg, corredor(acesso, acfg), cfg.talude)
     acesso.salvar()

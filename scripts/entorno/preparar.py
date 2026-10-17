@@ -20,7 +20,8 @@ from scripts.loteamento.cena import CFG_TOML, DXF
 from scripts.loteamento.malha import drapear, triangular
 from scripts.loteamento.placa import ccw, aneis_orientados
 from scripts.loteamento.acesso import Acesso, AcessoCfg, corredor, sem_faixa
-from scripts.loteamento.terreno import DESTINO_ENTORNO, DESTINO_LONGE, Relevo, TerrenoCfg, aneis_do_plato
+from scripts.loteamento.terreno import (DESTINO_ENTORNO, DESTINO_LONGE, ZONA_LAGOA, Relevo, TerrenoCfg, aneis_do_plato,
+                                        lagoa_do_masterplan)
 
 from .extrair import BASE, CACHE, EntornoCfg
 from .mapa import CORES, rasterizar
@@ -191,9 +192,12 @@ def main() -> int:
         base["vias"] = sem_vias_na_divisa(base["vias"],
                                           Polygon(json.loads(META.read_text(encoding="utf-8"))["gleba"]).buffer(0))
         print(f"vias na divisa da gleba removidas: {n - len(base['vias'])}")
+    lagoa = lagoa_do_masterplan() if cfg.masterplan else None
     camadas = []
     for tipo in ORDEM_AREAS:
         g = unary_union([_poligono(p).buffer(0) for a in base["areas"] if a["tipo"] == tipo for p in a["poligonos"]])
+        if tipo == "agua" and lagoa is not None:  # perto do masterplan, a água é a lagoa do R05 (pintada por cima)
+            g = g.difference(lagoa[0].buffer(ZONA_LAGOA))
         if not g.is_empty:
             camadas.append((tipo, g))
     camadas += [("via_local", faixas(base["vias"], "via_local")), ("via_principal", faixas(base["vias"], "via_principal")),

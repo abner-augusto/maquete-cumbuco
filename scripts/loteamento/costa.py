@@ -89,12 +89,13 @@ def mar_da_costa(linhas: list[LineString], centro: tuple[float, float], raio: fl
 
 
 def costa_suave(g: Grade, mar: BaseGeometry, nivel: float, praia: float, fundo: float, rebaixo: float,
-                celula: float | None = None, agua: BaseGeometry | None = None) -> Grade:
+                celula: float | None = None, agua: BaseGeometry | None = None,
+                agua_fixa: BaseGeometry | None = None) -> Grade:
     """Cota de `g` com a costa de `mar`: rampa de `praia` (m/m) dos dois lados até 1,5 célula da
     linha; além disso o fundo desce a `fundo` até `nivel − rebaixo` e a terra volta ao relevo até
     4,5 células (a duna além disso fica como está). Abaixo do nível terra adentro só fica o que
     está em `agua` (rios e lagoas do OSM): o resto é a costa em escada do Copernicus e vira terra.
-    A água que fica (a lagoa da foz) entra no mar da conta: a margem dela segue o polígono do OSM. `celula` (m) mede as faixas; uma grade fina que encosta numa grossa
+    `agua_fixa` entra sempre, sem depender da cota. A água que fica (a lagoa da foz) entra no mar da conta: a margem dela segue o polígono do OSM. `celula` (m) mede as faixas; uma grade fina que encosta numa grossa
     usa a célula da grossa, e as duas coincidem perto da costa (sem dente na emenda)."""
     gx, gy = np.meshgrid(g.x0 + g.passo * np.arange(g.nx), g.y0 + g.passo * np.arange(g.ny))
     z0 = np.array(g.z, dtype=float)
@@ -103,6 +104,8 @@ def costa_suave(g: Grade, mar: BaseGeometry, nivel: float, praia: float, fundo: 
         partes = [p for p in getattr(agua, "geoms", [agua])
                   if shapely.contains_xy(p, gx[baixo], gy[baixo]).any()]
         mar = unary_union([mar, *partes])
+    if agua_fixa is not None:  # água desenhada no projeto: fica mesmo onde o Copernicus está acima do nível
+        mar = unary_union([mar, agua_fixa])
     no_mar = shapely.contains_xy(mar, gx, gy)
     linha = mar.boundary
     d = shapely.distance(linha, shapely.points(gx, gy))
