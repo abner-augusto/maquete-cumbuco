@@ -6,6 +6,10 @@ Maquete interativa 3D (Three.js) do loteamento Cidade das Américas — Residenc
 
 Docs, `GLOSSARY.md`, UI text, and commit messages are Brazilian Portuguese.
 
+## Commits
+
+Use Conventional Commits: `tipo(escopo opcional): descrição`. Mantenha os tipos convencionais em inglês (`feat`, `fix`, `docs`, `refactor`, `chore`) e escreva a descrição em português brasileiro. Exemplo: `feat(rotatoria): adiciona monumento com praça central`.
+
 ## Design
 
 The design spec lives in `docs/superpowers/specs/`. Read it before changing scope, data rules, or the pipeline.
