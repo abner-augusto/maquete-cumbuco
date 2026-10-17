@@ -10,6 +10,7 @@ from pathlib import Path
 from PIL import Image
 
 from scripts.comum.ambiente import RAIZ, ler_env, terreno_dir
+from scripts.loteamento.acesso import Acesso
 from scripts.loteamento.blender import BLENDER_PADRAO, PASTA_MAQUETE, nos_do_glb, rodar_blender
 
 from .cores import DESTINO as CORES
@@ -75,6 +76,10 @@ def main() -> int:
     blender = Path(ler_env(RAIZ / ".env").get("BLENDER", BLENDER_PADRAO))
     pasta = terreno_dir() / cfg.pasta
     dados = json.loads(MARCOS_JSON.read_text(encoding="utf-8"))
+    acesso = Acesso.carregar()
+    if acesso is None:
+        raise FileNotFoundError("Gere o terreno e o eixo do acesso antes dos marcos.")
+    dados["marcos"]["Rotatoria"]["frente"] = list(acesso.d)
     for m in dados["marcos"].values():
         m["fonte"] = str(pasta / m["fonte"])
     if CORES.exists():

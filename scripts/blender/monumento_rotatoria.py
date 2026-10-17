@@ -184,7 +184,13 @@ def gerar_rotatoria(m, destino):
     destino.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.export_scene.gltf(filepath=str(destino), export_format='GLB', use_selection=True,
                               export_yup=True, export_apply=True)
+    # No modelo local, a frente é -Y; na implantação, ela olha para a chegada pela CE.
+    dx, dy = m.get('frente', (0, -1))
+    theta = math.atan2(dx, -dy)
+    co, si = math.cos(theta), math.sin(theta)
     for v in ob.data.vertices:
+        x, y = v.co.x, v.co.y
+        v.co.x, v.co.y = co*x-si*y, si*x+co*y
         v.co += Vector((cx, cy, m['z']))
     m['planos_apagados'] = 0
     m['pintadas'] = [0, 0]

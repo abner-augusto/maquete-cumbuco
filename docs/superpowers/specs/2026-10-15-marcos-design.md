@@ -16,6 +16,7 @@ Antecedentes: GLBs convertidos e aprovados (`scripts/marcos/conversao/README.md`
 
 - A implantação do SketchUp (clube, portaria e rotatória juntos) vale; o DXF exportado dela (650 MB) não é usado. A imagem `10-MAQUETE INTERATIVA/maqueteclubeplanta.jpg` (vista de cima da mesma maquete) serve só de conferência visual.
 - Em 17/10/2026, o usuário pediu que o volume simples do estande fosse substituído por um modelo mais detalhado, baseado na planta e nas imagens de `08-ESTANDE/`.
+- O monumento procedural da rotatória tem a frente voltada à chegada pela CE-090. O script lê a direção `d` do eixo em `cache/cena/acesso.json` e gira o conjunto no próprio centro, preservando raio e cota. O GLB separado mantém o referencial local, com frente em -Y.
 
 ## Encaixe
 
