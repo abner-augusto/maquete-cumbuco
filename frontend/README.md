@@ -55,6 +55,6 @@ por agente. Rode o Wrangler com `WRANGLER_SEND_METRICS=false`.
 ## Publicar no Cloudflare
 
 `npm run publicar` faz o build e sobe o `dist/` como Worker de assets (`wrangler login` antes). O domínio
-vem de `DOMINIO` no `.env` da raiz (ou do ambiente); vazio, publica no `workers.dev`. O `wrangler.jsonc`
+vem de `DOMINIO` no `.env` da raiz (ou do ambiente); vazio, publica no `workers.dev`. `WORKER_NOME` troca o nome do Worker. O `wrangler.jsonc`
 não guarda domínio. Todos os caminhos e nomes da máquina ficam no `.env` (modelo em `.env.example`), e o
 `tests/test_anonimo.py` falha se algum aparecer num arquivo versionado.

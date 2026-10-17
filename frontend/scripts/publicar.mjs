@@ -1,5 +1,5 @@
-// Publica o dist/ como Worker de assets no Cloudflare. O domínio vem de DOMINIO (.env da raiz ou
-// ambiente): nada da máquina de quem publica fica no repositório. Roda depois do build.
+// Publica o dist/ como Worker de assets no Cloudflare. Domínio e nome do Worker vêm do .env da raiz
+// (ou do ambiente): nada de quem publica fica no repositório. Roda depois do build.
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -15,22 +15,32 @@ export function lerEnv(arquivo) {
     .map(l => { const i = l.indexOf('='); return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^"|"$/g, '')]; }));
 }
 
-/** O wrangler.jsonc com a rota do domínio; sem domínio, vale o workers.dev. */
-export function configurar(base, dominio) {
+/** `https://exemplo.com/` e `exemplo.com` dão o mesmo domínio. */
+export const normalizarDominio = d => (d ?? '').trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+
+/**
+ * O wrangler.jsonc com a rota do domínio e, se pedido, outro nome de Worker. Sem domínio vale o
+ * workers.dev.
+ */
+export function configurar(base, { dominio = '', nome = '' } = {}) {
   const config = JSON.parse(base.replace(/^\s*\/\/.*$/gm, ''));
   delete config.$schema;
-  if (dominio) config.routes = [{ pattern: dominio, custom_domain: true }];
+  const host = normalizarDominio(dominio);
+  if (nome.trim()) config.name = nome.trim();
+  if (host) config.routes = [{ pattern: host, custom_domain: true }];
   else config.workers_dev = true;
   return config;
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) ===fileURLToPath(import.meta.url)) {
-  const dominio = process.env.DOMINIO ?? lerEnv(path.join(RAIZ, '.env')).DOMINIO ?? '';
-  if (!existsSync(path.join(FRONT, 'dist', 'index.html'))) throw Error('dist/ ausente: rode npm run build antes');
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const env = { ...lerEnv(path.join(RAIZ, '.env')), ...process.env };
+  const dominio = normalizarDominio(env.DOMINIO);
   const config = path.join(FRONT, 'wrangler.publicar.json');
-  writeFileSync(config, JSON.stringify(configurar(readFileSync(path.join(FRONT, 'wrangler.jsonc'), 'utf8'), dominio), null, 2));
+  if (!existsSync(path.join(FRONT, 'dist', 'index.html'))) throw Error('dist/ ausente: rode npm run build antes');
+  const final = configurar(readFileSync(path.join(FRONT, 'wrangler.jsonc'), 'utf8'), { dominio, nome: env.WORKER_NOME ?? '' });
+  writeFileSync(config, JSON.stringify(final, null, 2));
   try {
-    console.log(dominio ? `publicando em ${dominio}` : 'DOMINIO vazio: publicando no workers.dev');
+    console.log(`Worker ${final.name}: ${dominio ? `publicando em ${dominio}` : 'DOMINIO vazio, publicando no workers.dev'}`);
     const r = spawnSync('npx', ['wrangler', 'deploy', '--config', config], { cwd: FRONT, stdio: 'inherit', shell: true });
     process.exitCode = r.status ?? 1;
   } finally {
