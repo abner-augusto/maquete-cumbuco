@@ -1,17 +1,23 @@
 {
   "clube": {"nome": "Clube", "objeto": "Clube", "fotos": [
-    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/Clube_Alta/Alta 01.jpg", "legenda": ""},
-    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/Clube_Alta/Alta 02.jpg", "legenda": ""},
-    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/Clube_Alta/Alta 03.jpg", "legenda": ""},
-    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/Clube_Alta/Alta 04.jpg", "legenda": ""},
-    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/Clube_Alta/Alta 05.jpg", "legenda": ""},
-    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/Clube_Alta/Alta 06.jpg", "legenda": ""}]},
+    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/2025-03-07 clube 16.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/2025-03-07 clube 20.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/2025-03-07 clube 21.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/2025-03-07 clube 22.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/2025-03-07 clube 24.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/2025-03-07 clube 37.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/2025-03-07 clube 38.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/04-CLUBE/Julho 25/2025-03-07 clube 47.jpg", "legenda": ""}]},
   "portaria": {"nome": "Portaria", "objeto": "Portaria", "fotos": [
     {"arquivo": "6-PROJETOS/05-PORTARIA/Artes Portaria/2025-03-07 portaria 01.jpg", "legenda": ""},
     {"arquivo": "6-PROJETOS/05-PORTARIA/Artes Portaria/2025-03-07 portaria 02.jpg", "legenda": ""},
     {"arquivo": "6-PROJETOS/05-PORTARIA/Artes Portaria/2025-03-07 portaria 03.jpg", "legenda": ""},
     {"arquivo": "6-PROJETOS/05-PORTARIA/Artes Portaria/2025-03-07 portaria 04.jpg", "legenda": ""},
     {"arquivo": "6-PROJETOS/05-PORTARIA/Artes Portaria/2025-03-07 portaria 05.jpg", "legenda": ""}]},
-  "estande": {"nome": "Estande de vendas", "objeto": null, "fotos": [
-    {"arquivo": "6-PROJETOS/08-ESTANDE/2026-10-09 estande v10c - humanizada Gemini (editado).png", "legenda": ""}]}
+  "estande": {"nome": "Estande de vendas", "objeto": null,
+    "planta": "6-PROJETOS/08-ESTANDE/2026-10-09 estande v10c - humanizada Gemini (editado).png",
+    "fotos": [
+    {"arquivo": "6-PROJETOS/08-ESTANDE/IMAGENS/Estande Cidade das Americas Frente.jpg", "legenda": ""},
+    {"arquivo": "6-PROJETOS/08-ESTANDE/IMAGENS/Bar tropical luxuoso ao pôr do sol.png", "legenda": ""},
+    {"arquivo": "6-PROJETOS/08-ESTANDE/IMAGENS/Lobby Tropical do Residencial Cumbuco ao Entardecer.png", "legenda": ""}]}
 }

@@ -32,10 +32,18 @@
     {
      "foto": "marcos/clube/06.jpg",
      "legenda": ""
+    },
+    {
+     "foto": "marcos/clube/07.jpg",
+     "legenda": ""
+    },
+    {
+     "foto": "marcos/clube/08.jpg",
+     "legenda": ""
     }
    ],
    "planta": null,
-   "lat": -3.6645529,
+   "lat": -3.664553,
    "lon": -38.6889424
   },
   {
@@ -76,11 +84,19 @@
    "nome": "Estande de vendas",
    "x": 146.63,
    "y": 193.24,
-   "z": 21.0,
+   "z": 21.4,
    "objeto": "Estande",
    "galeria": [
     {
      "foto": "marcos/estande/01.jpg",
+     "legenda": ""
+    },
+    {
+     "foto": "marcos/estande/02.jpg",
+     "legenda": ""
+    },
+    {
+     "foto": "marcos/estande/03.jpg",
      "legenda": ""
     }
    ],

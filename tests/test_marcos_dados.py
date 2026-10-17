@@ -26,3 +26,8 @@ def test_faltantes_lista_todos(tmp_path):
     cur = {"clube": {"fotos": [{"arquivo": "ok.jpg"}, {"arquivo": "nao1.jpg"}]},
            "portaria": {"fotos": [{"arquivo": "nao2.jpg"}]}}
     assert faltantes(cur, tmp_path) == ["nao1.jpg", "nao2.jpg"]
+
+
+def test_faltantes_inclui_a_planta(tmp_path):
+    cur = {"estande": {"fotos": [], "planta": "sem-planta.png"}, "clube": {"fotos": []}}
+    assert faltantes(cur, tmp_path) == ["sem-planta.png"]

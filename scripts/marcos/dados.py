@@ -24,6 +24,7 @@ CURADORIA = RAIZ / "scripts" / "marcos" / "curadoria.json"
 DESTINO = RAIZ / "dados" / "marcos.json"
 FOTOS = RAIZ / "dados" / "marcos"
 PLANTA_KMZ = "files/planta_humanizada.jpg"
+LADO_PLANTA = 2400  # a planta é ampliada na tela: mais lado que as fotos (1600)
 
 
 def estande_do_kmz(kml: str) -> list[tuple[float, float]]:
@@ -43,7 +44,8 @@ def reduzir(origem: Path, destino: Path, lado: int = 1600) -> None:
 
 
 def faltantes(curadoria: dict, raiz: Path) -> list[str]:
-    return [f["arquivo"] for m in curadoria.values() for f in m["fotos"] if not (raiz / f["arquivo"]).exists()]
+    arquivos = [a for m in curadoria.values() for a in [*(f["arquivo"] for f in m["fotos"]), m.get("planta")] if a]
+    return [a for a in arquivos if not (raiz / a).exists()]
 
 
 def main() -> int:
@@ -86,8 +88,11 @@ def main() -> int:
             if modelo_estande:
                 item["objeto"] = modelo_estande["objeto"]
             (FOTOS / "estande").mkdir(parents=True, exist_ok=True)
-            (FOTOS / "estande" / "planta.jpg").write_bytes(planta)
-            reduzir(FOTOS / "estande" / "planta.jpg", FOTOS / "estande" / "planta.jpg")
+            if m.get("planta"):  # a planta humanizada da curadoria vale mais que a do KMZ
+                reduzir(raiz / m["planta"], FOTOS / "estande" / "planta.jpg", LADO_PLANTA)
+            else:
+                (FOTOS / "estande" / "planta.jpg").write_bytes(planta)
+                reduzir(FOTOS / "estande" / "planta.jpg", FOTOS / "estande" / "planta.jpg", LADO_PLANTA)
             item["planta"] = "marcos/estande/planta.jpg"
             item["pegada"] = (modelo_estande["pegada"] if modelo_estande else
                               [[round(px, 2), round(py, 2)] for px, py in estande.exterior.coords[:-1]])
