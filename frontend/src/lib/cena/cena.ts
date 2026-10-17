@@ -75,7 +75,7 @@ export interface Opcoes {
 const LOTE = /^Q(\d{2}|[A-Z])L\d{2}$/;
 const STATUS: Record<NonNullable<Lote['status']>, string> = { disponivel: '#2E9E5B', reservado: '#E2B021', vendido: '#B0625A' };
 // Luz fixa de fim de tarde (spec §5): sol baixo a oeste-noroeste, quente.
-export const SOL: Sol = { azimute: 352, altitude: 4, calor: 0.44, brilho: 0.64 };
+export const SOL: Sol = { azimute: 93, altitude: 4, calor: 0.44, brilho: 0.64 };
 
 export function loader(base: URL): GLTFLoader {
   const draco = new DRACOLoader().setDecoderPath(new URL('draco/', base).href);
