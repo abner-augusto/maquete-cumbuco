@@ -86,6 +86,7 @@ async function main() {
     for (const n of ['loteamento', 'entorno', 'vegetacao', 'orla'])
       await comprimir(path.join(maquete, `${n}.glb`), path.join(PUBLIC, 'modelos', `${n}.glb`));
     await copyFile(path.join(maquete, 'marcos.glb'), path.join(PUBLIC, 'modelos', 'marcos.glb'));
+    await copyFile(path.join(maquete, 'rotatoria.glb'), path.join(PUBLIC, 'modelos', 'rotatoria.glb'));
     await copyFile(path.join(maquete, 'vegetacao.json'), path.join(PUBLIC, 'modelos', 'vegetacao.json'));
     // O chão só com OSM, para o botão do masterplan: um JPEG por tile do mapa.
     for (const k of ['00', '01', '10', '11'])

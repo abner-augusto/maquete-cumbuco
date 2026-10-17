@@ -24,6 +24,9 @@ from mathutils.bvhtree import BVHTree
 from mathutils.geometry import closest_point_on_tri
 from mathutils.kdtree import KDTree
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from monumento_rotatoria import gerar_rotatoria
+
 args = sys.argv[sys.argv.index("--") + 1:]
 MARCOS, GLB = Path(args[0]), Path(args[1])
 PREVIA = Path(args[2]) if len(args) > 2 else None
@@ -287,9 +290,19 @@ def marco(nome: str, m: dict, cores: Cores | None, planta: Planta | None) -> bpy
 def main() -> None:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     dados = json.loads(MARCOS.read_text(encoding="utf-8"))
-    cores = Cores(Path(dados["cores"])) if dados.get("cores") else None
-    planta = Planta(Path(dados["planta"])) if dados.get("planta") and dados.get("cores") else None
-    obs = [marco(n, m, cores, planta) for n, m in dados["marcos"].items()]
+    substituir = dados.get('marcos_existentes')
+    cores = Cores(Path(dados["cores"])) if dados.get("cores") and not substituir else None
+    planta = Planta(Path(dados["planta"])) if dados.get("planta") and dados.get("cores") and not substituir else None
+    if substituir:
+        bpy.ops.import_scene.gltf(filepath=substituir)
+        antigos = [o for o in bpy.data.objects if o.type == 'MESH' and o.name == 'Rotatoria']
+        for o in antigos:
+            bpy.data.objects.remove(o, do_unlink=True)
+        obs = [o for o in bpy.data.objects if o.type == 'MESH']
+        obs.append(gerar_rotatoria(dados['marcos']['Rotatoria'], GLB.with_name('rotatoria.glb')))
+    else:
+        obs = [gerar_rotatoria(m, GLB.with_name('rotatoria.glb')) if n == 'Rotatoria'
+               else marco(n, m, cores, planta) for n, m in dados["marcos"].items()]
     cor_de_categoria()
     bpy.ops.object.select_all(action="DESELECT")
     for o in obs:
@@ -326,7 +339,7 @@ def main() -> None:
                           "triangulos": sum(len(p.vertices) - 2 for p in o.data.polygons)}
     if cores:
         resumo["cores"] = {n: m["pintadas"] for n, m in dados["marcos"].items()}
-    resumo["planos_apagados"] = {n: m["planos_apagados"] for n, m in dados["marcos"].items()}
+    resumo["planos_apagados"] = {n: m.get("planos_apagados", 0) for n, m in dados["marcos"].items()}
     resumo["glb_mb"] = round(GLB.stat().st_size / 1e6, 2)
     print("RESUMO " + json.dumps(resumo))
 

@@ -87,6 +87,11 @@ def main() -> int:
     temp = RAIZ / "cache" / "cena" / "marcos-abs.json"
     temp.write_text(json.dumps(dados), encoding="utf-8")
     glb = terreno_dir() / PASTA_MAQUETE / "marcos.glb"
+    if "--rotatoria" in sys.argv:
+        if not glb.exists():
+            raise FileNotFoundError("Gere os marcos completos antes de substituir a rotatória.")
+        dados["marcos_existentes"] = str(glb)
+        temp.write_text(json.dumps(dados), encoding="utf-8")
     resumo = rodar_geracao(blender, temp, glb, PREVIA)
     lado_a_lado(PREVIA, pasta / "maqueteclubeplanta.jpg", PREVIA.with_name("previa-marcos-lado-a-lado.jpg"))
     erros = conferir_marcos(nos_do_glb(glb), resumo["glb_mb"])
