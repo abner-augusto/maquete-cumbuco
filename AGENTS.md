@@ -24,4 +24,4 @@ The design spec lives in `docs/superpowers/specs/`. Read it before changing scop
 
 ## Confidentiality
 
-The active brand name is "Cidade das Américas" (`FAMILIAS`/`ATIVA` in `scripts/marca/familias.py`). The "Alternativa" family is kept only for marketing validation until the name is registered: it must not appear in the site, the active brandbook, or anything published. Do not publish a public, indexable URL without the user's explicit go-ahead.
+The active brand name is "Cidade das Américas" (`FAMILIAS`/`ATIVA` in `scripts/marca/familias.py`). The "alternativa" family (a placeholder for the held name) is kept only for marketing validation until the name is registered: the real name must not appear in the site, the active brandbook, or anything published, and it is not in this repository. `NOME_PROIBIDO` in `.env` lists the held name(s); `npm run build` (verificar-dist) fails if one shows up in `dist/`. Do not publish a public, indexable URL without the user's explicit go-ahead.

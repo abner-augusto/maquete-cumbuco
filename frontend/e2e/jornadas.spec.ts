@@ -18,7 +18,8 @@ test('1. a maquete abre com a marca, a legenda e sem o nome guardado', async ({ 
   await expect(page.getByRole('img', { name: /Cidade das Américas/ })).toBeVisible();
   await page.getByRole('button', { name: 'Legenda' }).click();
   await expect(page.getByLabel('Legenda')).toContainText('Residencial');
-  expect((await page.content()).toLowerCase()).not.toContain('alternativa');
+  for (const termo of (process.env.NOME_PROIBIDO ?? '').split(',').map(t => t.trim().toLowerCase()).filter(Boolean))
+    expect((await page.content()).toLowerCase()).not.toContain(termo);
 });
 
 test('2. a primeira visita mostra como explorar, uma vez só', async ({ page }) => {

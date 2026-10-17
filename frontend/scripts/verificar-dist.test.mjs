@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { verificar } from './verificar-dist.mjs';
+import { nomeProibido, verificar } from './verificar-dist.mjs';
 
 function pasta(arquivos) {
   const raiz = mkdtempSync(path.join(tmpdir(), 'dist-'));
@@ -20,8 +20,13 @@ test('arquivo acima de 15 MB é erro', () => {
 });
 
 test('o nome guardado no conteúdo ou no caminho é erro, sem diferenciar maiúsculas', () => {
-  const r = verificar(pasta({ 'index.html': '<title>ALTERNATIVA</title>', 'marca/alternativa/x.svg': '<svg/>' }));
+  const r = verificar(pasta({ 'index.html': '<title>SEGREDO</title>', 'marca/segredo/x.svg': '<svg/>' }), nomeProibido('segredo, outro.nome'));
   assert.equal(r.erros.length, 2);
+});
+
+test('sem nome configurado a checagem do nome é pulada, e termos com pontuação valem ao pé da letra', () => {
+  assert.deepEqual(verificar(pasta({ 'index.html': 'segredo' }), nomeProibido('')).erros, []);
+  assert.equal(nomeProibido('a.b').test('axb'), false);
 });
 
 test('pasta limpa passa e soma o primeiro carregamento sem o entorno', () => {
