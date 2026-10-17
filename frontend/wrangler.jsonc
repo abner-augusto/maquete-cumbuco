@@ -4,5 +4,7 @@
   "name": "cidade-americas-maquete",
   "compatibility_date": "2026-10-01",
   "workers_dev": false,
+  // Domínio próprio (pedido do usuário em 17/10/2026); a página já sai com noindex.
+  "routes": [{ "pattern": "cumbuco.integrarte.arq.br", "custom_domain": true }],
   "assets": { "directory": "./dist", "not_found_handling": "single-page-application" }
 }
