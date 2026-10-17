@@ -1,0 +1,54 @@
+Copyright (c) 2026 Abner Augusto Souza. Todos os direitos reservados.
+Copyright (c) 2026 Abner Augusto Souza. All rights reserved.
+
+LICENÇA DE CÓDIGO DISPONÍVEL, COM REUSO MEDIANTE AUTORIZAÇÃO
+SOURCE-AVAILABLE LICENSE, REUSE ONLY WITH PERMISSION
+
+PORTUGUÊS
+
+1. O que é permitido sem pedir autorização
+   Qualquer pessoa pode ler este repositório, cloná-lo e executá-lo na própria máquina para avaliação,
+   estudo e uso pessoal não comercial, e bifurcá-lo (fork) no GitHub, nos termos dos Termos de Serviço
+   do GitHub.
+
+2. O que exige autorização prévia, por escrito, do autor
+   Qualquer outro uso, em especial: copiar, modificar, incorporar a outro projeto, redistribuir,
+   sublicenciar, hospedar publicamente (inclusive publicar o site gerado), usar comercialmente ou
+   treinar modelos com o código, os scripts, os modelos 3D (GLB), a documentação ou qualquer outra
+   parte deste repositório, no todo ou em parte.
+   O pedido de autorização deve ser feito ao autor, que pode concedê-la, negá-la ou condicioná-la.
+   A autorização só vale se for dada por escrito (e-mail ou mensagem) e dentro do que ela disser.
+
+3. O que esta licença não cobre
+   Dados do empreendimento, imagens, logotipos, marcas e nomes (por exemplo "Cidade das Américas" e
+   "Cumbuco") pertencem aos seus titulares e não são licenciados aqui. Dados de terceiros (OpenStreetMap,
+   Copernicus, Overture, Google Places e outros) seguem as licenças e os termos de cada fonte.
+   Bibliotecas de terceiros (Three.js, Svelte, Vite e demais dependências) continuam sob as suas
+   próprias licenças.
+
+4. Sem garantia
+   O material é fornecido "como está", sem garantia de qualquer tipo. O autor não responde por danos
+   decorrentes do seu uso.
+
+ENGLISH
+
+1. Allowed without asking
+   Anyone may read this repository, clone it and run it on their own machine for evaluation, study
+   and personal non-commercial use, and fork it on GitHub under the GitHub Terms of Service.
+
+2. Requires the author's prior written permission
+   Any other use, in particular copying, modifying, incorporating into another project,
+   redistributing, sublicensing, publicly hosting (including publishing the generated site), using
+   commercially, or training models on the code, scripts, 3D models (GLB), documentation or any other
+   part of this repository, in whole or in part. Permission may be granted, refused or made
+   conditional by the author, and is valid only if given in writing and within its stated terms.
+
+3. Not covered
+   Project data, images, logos, trademarks and names (e.g. "Cidade das Américas" and "Cumbuco") belong
+   to their owners and are not licensed here. Third-party data (OpenStreetMap, Copernicus, Overture,
+   Google Places and others) follow each source's own terms. Third-party libraries (Three.js, Svelte,
+   Vite and other dependencies) remain under their own licenses.
+
+4. No warranty
+   The material is provided "as is", without warranty of any kind. The author is not liable for any
+   damages arising from its use.
