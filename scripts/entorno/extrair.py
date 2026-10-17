@@ -58,6 +58,7 @@ class EntornoCfg:
     orla_desbote: float = 1500.0
     orla_afundar: float = 0.5
     orla_tile_px: int = 2048
+    sem_coqueiro: tuple = ()        # [x, y] de coqueiros de canteiro a tirar (curadoria visual, ver entorno.toml)
 
     @property
     def raio_download_predios(self) -> float:

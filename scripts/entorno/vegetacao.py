@@ -81,6 +81,16 @@ def canteiros(aneis: list[list[tuple[float, float]]], largura_max: float = 8.0, 
     return pts
 
 
+def sem_perto(pontos: list[tuple[float, float]], retirar, raio: float = 1.5) -> list[tuple[float, float]]:
+    """Tira de `pontos` o ponto mais perto de cada (x, y) de `retirar`, se estiver a até `raio` m."""
+    resto = list(pontos)
+    for alvo in retirar:
+        perto = min(resto, key=lambda p: math.dist(p, alvo), default=None)
+        if perto is not None and math.dist(perto, alvo) <= raio:
+            resto.remove(perto)
+    return resto
+
+
 def instancias(pontos: list[tuple[float, float, str]], relevo, nivel_mar: float, sorte: random.Random,
                offset: float = 0.0) -> dict[str, list[int]]:
     """Planos [x_dm, y_dm, z_cm, escala_pct, rotacao_graus] por espécie, embaralhados (as N
@@ -154,7 +164,7 @@ def main() -> int:
         raise SystemExit("Nenhuma árvore nas zonas do OSM: áreas vazias no base.json? Rode o extrair com --refazer.")
     verdes = aneis_da_layer(msp, CenaCfg.carregar(CFG_TOML).camadas["Verdes"], e0, n0)
     inst = instancias(pts, relevo, nivel, sorte)
-    cant = instancias([(x, y, "coqueiro") for x, y in canteiros(verdes)], relevo, nivel, sorte, offset=OFFSET_CANTEIRO)
+    cant = instancias([(x, y, "coqueiro") for x, y in sem_perto(canteiros(verdes), cfg.sem_coqueiro)], relevo, nivel, sorte, offset=OFFSET_CANTEIRO)
     inst["coqueiro"] = cant["coqueiro"] + inst["coqueiro"]  # os da Fase 1 primeiro: sempre aparecem
     # A mata do OSM sob o masterplan: o front só a mostra com a projeção desligada (o chão volta a ser o OSM).
     sob_masterplan = {}

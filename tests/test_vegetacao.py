@@ -3,7 +3,7 @@ import random
 import pytest
 from shapely.geometry import Point, Polygon
 
-from scripts.entorno.vegetacao import area_livre, canteiros, instancias, plantar, pontos_zona
+from scripts.entorno.vegetacao import area_livre, canteiros, instancias, plantar, pontos_zona, sem_perto
 
 
 class Plano:
@@ -26,6 +26,13 @@ def test_canteiros_so_em_faixa_estreita():
     assert pts and all(0 <= x <= 120 and 1.0 <= y <= 3.0 for x, y in pts)  # no eixo do canteiro
     assert 8 <= len(pts) <= 12  # um coqueiro a cada ~12 m
     assert min(abs(a[0] - b[0]) for a in pts for b in pts if a != b) >= 6.0
+
+
+def test_sem_perto_tira_so_o_mais_perto_e_so_dentro_do_raio():
+    pts = [(0.0, 0.0), (12.0, 0.0), (24.0, 0.0)]
+    assert sem_perto(pts, [(12.5, 0.4)]) == [(0.0, 0.0), (24.0, 0.0)]
+    assert sem_perto(pts, [(40.0, 0.0)]) == pts  # nada a menos de 1,5 m: não tira ninguém
+    assert sem_perto([], [(0.0, 0.0)]) == []
 
 
 def test_instancias_com_cota_e_sem_mar():

@@ -22,3 +22,8 @@ orla_passo = 60.0           # m da grade do relevo (o dobro do Copernicus)
 orla_desbote = 1500.0       # m em que a borda de terra desbota até sumir (alfa dos vértices)
 orla_afundar = 0.5          # m abaixo do entorno detalhado, onde as duas malhas se sobrepõem
 orla_tile_px = 2048         # lado maior de cada um dos 4 tiles do mapa da orla
+
+# Coqueiros de canteiro retirados à mão (x, y locais em m; sai o mais perto, até 1,5 m). Cada um com o motivo.
+sem_coqueiro = [
+    [117.4, 49.3],  # dentro da envoltória da portaria: atravessava o telhado
+]
