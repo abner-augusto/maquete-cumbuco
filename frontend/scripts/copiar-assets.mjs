@@ -20,12 +20,16 @@ export function fotosCitadas(marcos, pontos) {
 
 export const ativa = caminho => caminho.replaceAll('\\', '/').includes('/svg/americas/');
 
+/** A pasta do terreno do .env, ou null sem ela (quem clona o repositório não tem o pipeline). */
 function terrenoDir() {
-  const env = readFileSyncTexto(path.join(RAIZ, '.env'));
-  const linha = env.split(/\r?\n/).find(l => l.startsWith('TERRENO_DIR='));
-  if (!linha) throw Error('TERRENO_DIR ausente no .env da raiz');
-  return linha.slice('TERRENO_DIR='.length).trim().replace(/^"|"$/g, '');
+  const arquivo = path.join(RAIZ, '.env');
+  if (!existsSync(arquivo)) return null;
+  const linha = readFileSyncTexto(arquivo).split(/\r?\n/).find(l => l.startsWith('TERRENO_DIR='));
+  return linha ? linha.slice('TERRENO_DIR='.length).trim().replace(/^"|"$/g, '') || null : null;
 }
+
+/** Os modelos finais (já comprimidos), versionados: com eles o build roda sem o pipeline Blender. */
+const MODELOS_FINAIS = path.join(FRONT, 'modelos-finais');
 
 const readFileSyncTexto = p => readFileSync(p, 'utf8');
 
@@ -58,7 +62,8 @@ async function webp(origem, base) {
 }
 
 async function main() {
-  const maquete = path.join(terrenoDir(), '6-PROJETOS', '10-MAQUETE INTERATIVA');
+  const terreno = terrenoDir();
+  if (!terreno && !existsSync(MODELOS_FINAIS)) throw Error('TERRENO_DIR ausente no .env da raiz e sem frontend/modelos-finais');
   // Só as pastas geradas: o _headers do public/ é versionado e fica.
   for (const pasta of ['dados', 'modelos', 'draco', 'marca']) {
     await rm(path.join(PUBLIC, pasta), { recursive: true, force: true });
@@ -76,13 +81,21 @@ async function main() {
     await webp(origem, base);
   }
 
-  for (const n of ['loteamento', 'entorno', 'vegetacao', 'orla'])
-    await comprimir(path.join(maquete, `${n}.glb`), path.join(PUBLIC, 'modelos', `${n}.glb`));
-  await copyFile(path.join(maquete, 'marcos.glb'), path.join(PUBLIC, 'modelos', 'marcos.glb'));
-  await copyFile(path.join(maquete, 'vegetacao.json'), path.join(PUBLIC, 'modelos', 'vegetacao.json'));
-  // O chão só com OSM, para o botão do masterplan: um JPEG por tile do mapa.
-  for (const k of ['00', '01', '10', '11'])
-    await copyFile(path.join(maquete, `mapa-osm_${k}.jpg`), path.join(PUBLIC, 'modelos', `mapa-osm_${k}.jpg`));
+  if (terreno) {
+    const maquete = path.join(terreno, '6-PROJETOS', '10-MAQUETE INTERATIVA');
+    for (const n of ['loteamento', 'entorno', 'vegetacao', 'orla'])
+      await comprimir(path.join(maquete, `${n}.glb`), path.join(PUBLIC, 'modelos', `${n}.glb`));
+    await copyFile(path.join(maquete, 'marcos.glb'), path.join(PUBLIC, 'modelos', 'marcos.glb'));
+    await copyFile(path.join(maquete, 'vegetacao.json'), path.join(PUBLIC, 'modelos', 'vegetacao.json'));
+    // O chão só com OSM, para o botão do masterplan: um JPEG por tile do mapa.
+    for (const k of ['00', '01', '10', '11'])
+      await copyFile(path.join(maquete, `mapa-osm_${k}.jpg`), path.join(PUBLIC, 'modelos', `mapa-osm_${k}.jpg`));
+    // O que acabou de sair do pipeline vira a versão final versionada.
+    await rm(MODELOS_FINAIS, { recursive: true, force: true });
+    await cp(path.join(PUBLIC, 'modelos'), MODELOS_FINAIS, { recursive: true });
+  } else {
+    await cp(MODELOS_FINAIS, path.join(PUBLIC, 'modelos'), { recursive: true });
+  }
   await cp(path.join(FRONT, 'node_modules/three/examples/jsm/libs/draco/gltf'), path.join(PUBLIC, 'draco'), { recursive: true });
 
   const svgs = path.join(RAIZ, 'marca', 'svg', 'americas');

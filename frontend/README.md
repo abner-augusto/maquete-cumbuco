@@ -27,6 +27,11 @@ pasta do terreno (`TERRENO_DIR` no `.env` da raiz; meshopt nos GLBs, Draco manti
 decoder do Draco. Nada do `public/` é editado à mão, salvo o `_headers`. Depois de regerar o pipeline
 Python, rode `npm run assets` (o `dev` e o `build` já rodam).
 
+Os modelos finais (GLBs já comprimidos, `vegetacao.json` e os `mapa-osm_XX.jpg`, 15 MB) ficam versionados
+em `modelos-finais/`: o `npm run assets` os regrava a cada vez que roda com `TERRENO_DIR`, e sem ele
+(quem só clonou o repositório) copia dali. Assim `npm ci && npm run build` funciona sem o Blender. Depois
+de regerar o pipeline, commite o `modelos-finais/` junto.
+
 Ajustes de apresentação (vista inicial, altura do volume do estande) ficam em `../dados/config.json`.
 
 ## Verificar o `dist/`
