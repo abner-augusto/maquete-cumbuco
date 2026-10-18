@@ -66,7 +66,7 @@
   const pontoAberto = $derived(pontoSelecionado !== null ? pontos.find(p => p.id === pontoSelecionado) ?? null : null);
   const resultados = $derived(dados ? buscar(dados.lotes, consulta) : []);
   const temStatus = $derived((dados?.lotes ?? []).some(l => l.status));
-  const espiarPx = $derived(conteudo === 'boas-vindas' ? 404 : 320);
+  const espiarPx = $derived(conteudo === 'boas-vindas' ? 520 : 320);
   const folhaH = $derived(batente === 'some' ? '0px' : batente === 'espiar' ? `${espiarPx}px` : 'calc(100cqh - 80px)');
   const rotuloFolha = $derived(
     conteudo === 'ficha' && loteAberto
@@ -141,34 +141,84 @@
     cena?.cinema(cinema);
   });
 
+  interface EstadoPopup {
+    popup?: 'ficha' | 'marco' | 'ponto' | 'entorno' | 'busca' | 'boas-vindas' | 'cinema';
+    id?: string | number;
+    batente?: Batente;
+  }
+
+  // Sincroniza a maximização da folha ('cheia') com a History API para permitir minimizar ao voltar
+  let batenteAnterior: Batente | undefined;
+  $effect(() => {
+    const atual = batente;
+    const anterior = batenteAnterior;
+    batenteAnterior = atual;
+
+    if (anterior === undefined) return;
+
+    if (atual === 'cheia' && anterior === 'espiar' && batente !== 'some') {
+      if (history.state?.batente !== 'cheia') {
+        history.pushState(
+          {
+            popup: conteudo,
+            id: selecionado ?? marcoAberto ?? pontoSelecionado ?? undefined,
+            batente: 'cheia',
+          },
+          '',
+          location.href,
+        );
+      }
+    } else if (atual === 'espiar' && anterior === 'cheia') {
+      if (history.state?.batente === 'cheia') {
+        history.back();
+      }
+    }
+  });
+
   // ---- ações ----
   /** `?lote=` reflete a ficha aberta; `precos=0`, se veio na URL, fica. */
-  function atualizarUrl(id: string | null) {
+  function atualizarUrl(id: string | null, empilhar = false) {
     const p = new URLSearchParams();
     if (id) p.set('lote', id);
     if (new URLSearchParams(location.search).get('precos') === '0') p.set('precos', '0');
     const busca = p.toString();
-    history.replaceState(null, '', busca ? `?${busca}` : location.pathname);
+    const url = busca ? `?${busca}` : location.pathname;
+    if (empilhar) {
+      history.pushState({ popup: 'ficha', id }, '', url);
+    } else {
+      history.replaceState(id ? { popup: 'ficha', id } : null, '', url);
+    }
   }
 
-  function abrirFicha(id: string, enquadrar: boolean) {
+  function abrirFicha(id: string, enquadrar: boolean, empilhar = true) {
     if (!porId.has(id)) return;
+    if (selecionado === id && conteudo === 'ficha') return;
     if (conteudo === 'boas-vindas') primeiraVisita.concluir();
     selecionado = id;
     conteudo = 'ficha';
     // No tablet/desktop a folha fica ao lado da cena e não cobre o lote: abre cheia.
     batente = (palco?.clientWidth ?? 0) >= 900 ? 'cheia' : 'espiar';
     if (enquadrar) cena?.enquadrar(id);
-    atualizarUrl(id);
+    atualizarUrl(id, empilhar);
   }
 
-  function fecharFicha() {
+  function fecharFichaInterno() {
     if (conteudo !== 'ficha') return;
     selecionado = null;
     // No modo entorno, fechar a ficha devolve a lista dos pontos.
     conteudo = modoEntorno ? 'entorno' : 'busca';
     batente = modoEntorno ? 'espiar' : 'some';
-    atualizarUrl(null);
+    atualizarUrl(null, false);
+  }
+
+  function fecharFicha() {
+    if (history.state?.batente === 'cheia') {
+      history.go(-2);
+    } else if (history.state?.popup === 'ficha') {
+      history.back();
+    } else {
+      fecharFichaInterno();
+    }
   }
 
   async function alternarEntorno() {
@@ -199,42 +249,72 @@
     carregandoEntorno = false;
     modoEntorno = true;
     if (conteudo === 'boas-vindas') primeiraVisita.concluir();
-    if (conteudo === 'ficha') fecharFicha();
+    if (conteudo === 'ficha') fecharFichaInterno();
     conteudo = 'entorno';
     batente = 'espiar';
+    history.pushState({ popup: 'entorno' }, '', location.pathname);
   }
 
-  function escolherPonto(id: number) {
+  function escolherPonto(id: number, empilhar = true) {
+    if (pontoSelecionado === id && conteudo === 'ponto') return;
     pontoSelecionado = id;
     conteudo = 'ponto';
+    if (batente === 'some') batente = 'espiar';
+    if (empilhar) {
+      history.pushState({ popup: 'ponto', id }, '', location.pathname);
+    }
+  }
+
+  function voltarAListaInterno() {
+    pontoSelecionado = null;
+    conteudo = 'entorno';
     if (batente === 'some') batente = 'espiar';
   }
 
   function voltarALista() {
-    pontoSelecionado = null;
-    conteudo = 'entorno';
+    if (history.state?.batente === 'cheia') {
+      history.go(-2);
+    } else if (history.state?.popup === 'ponto') {
+      history.back();
+    } else {
+      voltarAListaInterno();
+    }
   }
 
-  function abrirMarco(id: string) {
+  function abrirMarco(id: string, empilhar = true) {
+    if (marcoAberto === id && conteudo === 'marco') return;
     if (conteudo === 'boas-vindas') primeiraVisita.concluir();
-    if (conteudo === 'ficha') fecharFicha();
+    if (conteudo === 'ficha') fecharFichaInterno();
     marcoAberto = id;
     conteudo = 'marco';
     batente = (palco?.clientWidth ?? 0) >= 900 ? 'cheia' : 'espiar';
     cena?.enquadrarMarco(id);
+    if (empilhar) {
+      history.pushState({ popup: 'marco', id }, '', location.pathname);
+    }
   }
 
-  function fecharMarco() {
+  function fecharMarcoInterno() {
     marcoAberto = null;
     conteudo = modoEntorno ? 'entorno' : 'busca';
     batente = modoEntorno ? 'espiar' : 'some';
   }
 
+  function fecharMarco() {
+    if (history.state?.batente === 'cheia') {
+      history.go(-2);
+    } else if (history.state?.popup === 'marco') {
+      history.back();
+    } else {
+      fecharMarcoInterno();
+    }
+  }
+
   /** Entrar fecha ficha, galeria e folha; sair devolve a folha do modo em que a maquete estava. */
-  function alternarCinema() {
+  function alternarCinema(empilhar = true) {
     if (!cinema) {
       if (conteudo === 'boas-vindas') primeiraVisita.concluir();
-      if (conteudo === 'ficha') fecharFicha();
+      if (conteudo === 'ficha') fecharFichaInterno();
       selecionado = null;
       marcoAberto = null;
       pontoSelecionado = null;
@@ -242,6 +322,9 @@
       conteudo = modoEntorno ? 'entorno' : 'busca';
       batente = 'some';
       cinema = true;
+      if (empilhar) {
+        history.pushState({ popup: 'cinema' }, '', location.pathname);
+      }
       return;
     }
     cinema = false;
@@ -261,37 +344,128 @@
     else if (e.key.toLowerCase() === 'c' && fase === 'pronto') alternarCinema();
   }
 
-  function concluirBoasVindas() {
+  function concluirBoasVindasInterno() {
     primeiraVisita.concluir();
     if (conteudo === 'boas-vindas') {
-      conteudo = 'busca';
-      batente = 'some';
+      conteudo = modoEntorno ? 'entorno' : 'busca';
+      batente = modoEntorno ? 'espiar' : 'some';
     }
   }
 
-  function alternarBusca() {
+  function concluirBoasVindas() {
+    if (history.state?.batente === 'cheia') {
+      history.go(-2);
+    } else if (history.state?.popup === 'boas-vindas') {
+      history.back();
+    } else {
+      concluirBoasVindasInterno();
+    }
+  }
+
+  function alternarBusca(empilhar = true) {
     if (batente !== 'some' && conteudo === 'busca') {
-      batente = 'some';
+      if (history.state?.batente === 'cheia') {
+        history.go(-2);
+      } else if (history.state?.popup === 'busca') {
+        history.back();
+      } else {
+        batente = 'some';
+      }
       return;
     }
-    if (conteudo === 'ficha') fecharFicha();
+    if (conteudo === 'ficha') fecharFichaInterno();
     conteudo = 'busca';
     batente = 'espiar';
+    if (empilhar) {
+      history.pushState({ popup: 'busca' }, '', location.pathname);
+    }
   }
 
-  function ajuda() {
-    if (conteudo === 'ficha') fecharFicha();
+  function ajuda(empilhar = true) {
+    if (conteudo === 'ficha') fecharFichaInterno();
     conteudo = 'boas-vindas';
     batente = 'espiar';
+    if (empilhar) {
+      history.pushState({ popup: 'boas-vindas' }, '', location.pathname);
+    }
   }
 
   // Quem mexe na cena durante a primeira visita já entendeu o gesto.
   function tocouCena() {
     if (conteudo === 'boas-vindas' && primeiraVisita.pendente()) concluirBoasVindas();
   }
+
+  function aoPopState(e: PopStateEvent) {
+    const estado = e.state as EstadoPopup | null;
+    const popup = estado?.popup;
+    const estadoBatente = estado?.batente;
+
+    // Se a folha estava maximizada ('cheia') e o novo estado no histórico não é 'cheia':
+    // apenas minimiza a janela para 'espiar', mantendo o popup/POI aberto!
+    if (batente === 'cheia' && estadoBatente !== 'cheia') {
+      batente = 'espiar';
+      return;
+    }
+
+    if (popup === 'ficha' && typeof estado?.id === 'string') {
+      abrirFicha(estado.id, true, false);
+      return;
+    }
+    if (popup === 'marco' && typeof estado?.id === 'string') {
+      abrirMarco(estado.id, false);
+      return;
+    }
+    if (popup === 'ponto' && typeof estado?.id === 'number') {
+      escolherPonto(estado.id, false);
+      return;
+    }
+    if (popup === 'entorno') {
+      if (conteudo === 'ficha') fecharFichaInterno();
+      if (conteudo === 'marco') fecharMarcoInterno();
+      pontoSelecionado = null;
+      conteudo = 'entorno';
+      batente = 'espiar';
+      return;
+    }
+    if (popup === 'busca') {
+      if (conteudo === 'ficha') fecharFichaInterno();
+      conteudo = 'busca';
+      batente = 'espiar';
+      return;
+    }
+    if (popup === 'boas-vindas') {
+      conteudo = 'boas-vindas';
+      batente = 'espiar';
+      return;
+    }
+    if (popup === 'cinema') {
+      if (!cinema) alternarCinema(false);
+      return;
+    }
+
+    // Estado sem popup (ou popup fechado pelo botão voltar / swipe):
+    if (cinema) {
+      cinema = false;
+      batente = modoEntorno ? 'espiar' : 'some';
+    } else if (conteudo === 'ficha') {
+      fecharFichaInterno();
+    } else if (conteudo === 'marco') {
+      fecharMarcoInterno();
+    } else if (conteudo === 'ponto') {
+      voltarAListaInterno();
+    } else if (conteudo === 'entorno' && batente !== 'some') {
+      batente = 'some';
+    } else if (conteudo === 'boas-vindas') {
+      concluirBoasVindasInterno();
+    } else if (conteudo === 'busca' && batente !== 'some') {
+      batente = 'some';
+    }
+
+    // REGRA EXPLÍCITA: NÃO fechar o modoEntorno no botão voltar. O entorno permanece aberto.
+  }
 </script>
 
-<svelte:window onkeydown={teclou} />
+<svelte:window onkeydown={teclou} onpopstate={aoPopState} />
 
 <div class="maquete" data-tema="americas" data-cor={cor} style:--folha-h={folhaH}>
   <!-- svelte-ignore a11y_no_static_element_interactions -->
