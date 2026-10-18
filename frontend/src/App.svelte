@@ -276,7 +276,7 @@
   <div class="cena" bind:this={palco} onpointerdown={tocouCena}></div>
 
   {#if fase === 'carregando'}
-    <p class="carregando" role="status">Carregando a maqueteââ‚¬¦</p>
+    <p class="carregando" role="status">Carregando a maquete…</p>
   {:else if fase === 'erro'}
     <p class="carregando" role="alert">Não foi possível abrir a maquete. Recarregue a página.</p>
   {:else if dados && cena}
@@ -287,7 +287,7 @@
       {/if}
       <Marcos marcos={dados.marcos} telas={telasMarcos} aoEscolher={abrirMarco} />
       {#if carregandoEntorno}
-        <p class="carregando" role="status">Carregando o entornoââ‚¬¦</p>
+        <p class="carregando" role="status">Carregando o entorno…</p>
       {:else if erroEntorno}
         <p class="carregando" role="status">Não foi possível carregar o entorno. Tente de novo.</p>
       {/if}
