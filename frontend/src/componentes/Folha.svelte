@@ -3,18 +3,25 @@
 </script>
 
 <script lang="ts">
-  import type { Snippet } from 'svelte';
+  import { tick, type Snippet } from 'svelte';
 
   let {
-    batente = $bindable(),
+    batente,
+    aoMudarBatente,
+    rolagem = $bindable(0),
     rotulo,
     espiar = 320,
     corpo,
     rodape,
-  }: { batente: Batente; rotulo: string; espiar?: number; corpo: Snippet; rodape?: Snippet } = $props();
+  }: { batente: Batente; aoMudarBatente: (batente: Batente) => void; rolagem?: number; rotulo: string; espiar?: number; corpo: Snippet; rodape?: Snippet } = $props();
 
   let folha: HTMLElement | undefined = $state();
   let arrasto = $state(0);
+  let corpoEl: HTMLDivElement | undefined = $state();
+  $effect(() => {
+    const destino = rolagem;
+    void tick().then(() => { if (corpoEl && corpoEl.scrollTop !== destino) corpoEl.scrollTop = destino; });
+  });
   let inicio: { y: number; id: number; moveu: boolean } | null = null;
 
   // Arrasto de verdade na borda superior: a folha acompanha o dedo e encaixa no batente mais próximo.
@@ -33,7 +40,7 @@
     inicio = null;
     if (!moveu) {
       arrasto = 0;
-      batente = batente === 'cheia' ? 'espiar' : 'cheia';
+      aoMudarBatente(batente === 'cheia' ? 'espiar' : 'cheia');
       return;
     }
     const altura = folha.offsetHeight;
@@ -41,7 +48,7 @@
     const alvos: [Batente, number][] = [['some', 0], ['espiar', espiar], ['cheia', cheia]];
     alvos.sort((a, b) => Math.abs(a[1] - altura) - Math.abs(b[1] - altura));
     arrasto = 0;
-    batente = alvos[0]![0];
+    aoMudarBatente(alvos[0]![0]);
   }
 </script>
 
@@ -64,10 +71,10 @@
       onkeydown={e => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          batente = batente === 'cheia' ? 'espiar' : 'cheia';
+          aoMudarBatente(batente === 'cheia' ? 'espiar' : 'cheia');
         }
       }}></div>
-    <div class="corpo">{@render corpo()}</div>
+    <div class="corpo" bind:this={corpoEl} onscroll={() => { if (corpoEl) rolagem = corpoEl.scrollTop; }}>{@render corpo()}</div>
     {#if rodape}<div class="rodape">{@render rodape()}</div>{/if}
   </section>
 {/if}
