@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icone from './Icone.svelte';
+  import { criarToqueDuplo } from '../lib/toque-duplo';
 
   let { src, alt, aoFechar }: { src: string; alt: string; aoFechar: () => void } = $props();
 
@@ -21,9 +22,33 @@
   let panInicial = { x: 0, y: 0 };
   let ultimoPanPonto = { x: 0, y: 0 };
 
-  // Detecção de toque duplo
-  let ultimoToqueTempo = 0;
-  let ultimoToquePos = { x: 0, y: 0 };
+  const toqueDuplo = criarToqueDuplo();
+  const ESCALA_MAXIMA = 8;
+  let ultimoEventoTouch = -Infinity;
+  let temporizadorAnimacao: ReturnType<typeof setTimeout> | undefined;
+
+  function pararAnimacao() {
+    clearTimeout(temporizadorAnimacao);
+    animando = false;
+  }
+
+  function iniciarAnimacao() {
+    pararAnimacao();
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    animando = true;
+    temporizadorAnimacao = setTimeout(() => { animando = false; }, 240);
+  }
+
+  function limparGestos() {
+    const ids = Array.from(ponteiros.keys());
+    ponteiros.clear();
+    toqueDuplo.limpar();
+    distanciaInicial = 0;
+    arrastando = false;
+    for (const id of ids) {
+      if (areaImg?.hasPointerCapture(id)) areaImg.releasePointerCapture(id);
+    }
+  }
 
   function obterDoisPonteiros(): [{ x: number; y: number }, { x: number; y: number }] | null {
     const lista = Array.from(ponteiros.values());
@@ -34,6 +59,7 @@
   // Reseta estado quando a imagem muda
   $effect(() => {
     void src;
+    limparGestos();
     resetarZoom(false);
   });
 
@@ -52,10 +78,8 @@
   }
 
   function resetarZoom(animar = true) {
-    if (animar) {
-      animando = true;
-      setTimeout(() => (animando = false), 240);
-    }
+    if (animar) iniciarAnimacao();
+    else pararAnimacao();
     escala = 1;
     panX = 0;
     panY = 0;
@@ -65,7 +89,7 @@
     if (!areaImg || !imgEl || !imgEl.offsetHeight) return 2.5;
     const rect = areaImg.getBoundingClientRect();
     const proporcao = rect.height / imgEl.offsetHeight;
-    return Math.max(1.8, Number(proporcao.toFixed(2)));
+    return Math.min(ESCALA_MAXIMA, Math.max(1.8, Number(proporcao.toFixed(2))));
   }
 
   function tratarDuploToque(clientX: number, clientY: number) {
@@ -78,20 +102,20 @@
   }
 
   function ajustarZoom(delta: number) {
-    animando = true;
-    const nova = Math.min(Math.max(1, escala + delta), 8);
+    limparGestos();
+    iniciarAnimacao();
+    const nova = Math.min(Math.max(1, escala + delta), ESCALA_MAXIMA);
     if (nova === 1) {
       resetarZoom(true);
     } else {
       escala = Number(nova.toFixed(2));
       limitarPan();
-      setTimeout(() => (animando = false), 240);
     }
   }
 
   function zoomNoPonto(clientX: number, clientY: number, novaEscala: number) {
     if (!areaImg || !imgEl) return;
-    animando = true;
+    iniciarAnimacao();
     const rect = areaImg.getBoundingClientRect();
     const centroX = rect.left + rect.width / 2;
     const centroY = rect.top + rect.height / 2;
@@ -101,97 +125,76 @@
     panY = -dy * (novaEscala - 1);
     escala = novaEscala;
     limitarPan();
-    setTimeout(() => (animando = false), 240);
+  }
+
+  function prepararGesto() {
+    arrastando = false;
+    distanciaInicial = 0;
+    if (ponteiros.size === 1) {
+      ultimoPanPonto = Array.from(ponteiros.values())[0]!;
+      arrastando = escala > 1;
+    } else if (ponteiros.size === 2) {
+      const [p1, p2] = obterDoisPonteiros()!;
+      distanciaInicial = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+      escalaInicial = escala;
+      centroPinchInicial = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+      panInicial = { x: panX, y: panY };
+    }
   }
 
   function aoBaixarPonteiro(e: PointerEvent) {
-    if (!areaImg) return;
+    if (!areaImg || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    pararAnimacao();
+    if (e.pointerType === 'touch') ultimoEventoTouch = e.timeStamp;
+    toqueDuplo.baixar(e);
     ponteiros.set(e.pointerId, { x: e.clientX, y: e.clientY });
     areaImg.setPointerCapture(e.pointerId);
-
-    // Toque duplo em dispositivos touch: alterna entre altura da tela e 100%
-    if (e.pointerType === 'touch') {
-      const agora = Date.now();
-      const distToque = Math.hypot(e.clientX - ultimoToquePos.x, e.clientY - ultimoToquePos.y);
-      if (agora - ultimoToqueTempo < 300 && distToque < 30) {
-        tratarDuploToque(e.clientX, e.clientY);
-        ultimoToqueTempo = 0;
-        ponteiros.clear();
-        return;
-      }
-      ultimoToqueTempo = agora;
-      ultimoToquePos = { x: e.clientX, y: e.clientY };
-    }
-
-    if (ponteiros.size === 1) {
-      arrastando = escala > 1;
-      ultimoPanPonto = { x: e.clientX, y: e.clientY };
-    } else if (ponteiros.size === 2) {
-      arrastando = false;
-      const dois = obterDoisPonteiros();
-      if (dois) {
-        const [p1, p2] = dois;
-        distanciaInicial = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-        escalaInicial = escala;
-        centroPinchInicial = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
-        panInicial = { x: panX, y: panY };
-      }
-    }
+    prepararGesto();
   }
 
   function aoMoverPonteiro(e: PointerEvent) {
     if (!ponteiros.has(e.pointerId)) return;
+    toqueDuplo.mover(e);
     ponteiros.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-    // Pinça com dois dedos
-    if (ponteiros.size === 2 && distanciaInicial > 0) {
-      const dois = obterDoisPonteiros();
-      if (dois) {
-        const [p1, p2] = dois;
-        const d = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-        const fator = d / distanciaInicial;
-        const novaEscala = Math.min(Math.max(1, escalaInicial * fator), 8);
-        const centroAtual = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
-        const dx = centroAtual.x - centroPinchInicial.x;
-        const dy = centroAtual.y - centroPinchInicial.y;
-        escala = Number(novaEscala.toFixed(3));
-        panX = panInicial.x + dx;
-        panY = panInicial.y + dy;
-        limitarPan();
-      }
+    if (ponteiros.size === 2 && distanciaInicial > 0 && areaImg) {
+      const [p1, p2] = obterDoisPonteiros()!;
+      const d = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+      const novaEscala = Math.min(Math.max(1, escalaInicial * d / distanciaInicial), ESCALA_MAXIMA);
+      const centroAtual = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+      const rect = areaImg.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+      const razao = novaEscala / escalaInicial;
+      // Preserva o ponto da imagem sob o centro da pinça ao variar a escala.
+      panX = centroAtual.x - cx - (centroPinchInicial.x - cx - panInicial.x) * razao;
+      panY = centroAtual.y - cy - (centroPinchInicial.y - cy - panInicial.y) * razao;
+      escala = Number(novaEscala.toFixed(3));
+      limitarPan();
     } else if (ponteiros.size === 1 && escala > 1 && arrastando) {
-      const dx = e.clientX - ultimoPanPonto.x;
-      const dy = e.clientY - ultimoPanPonto.y;
-      panX += dx;
-      panY += dy;
+      panX += e.clientX - ultimoPanPonto.x;
+      panY += e.clientY - ultimoPanPonto.y;
       ultimoPanPonto = { x: e.clientX, y: e.clientY };
       limitarPan();
     }
   }
 
-  function aoSubirPonteiro(e: PointerEvent) {
+  function finalizarPonteiro(e: PointerEvent, cancelado = false) {
+    if (!ponteiros.has(e.pointerId)) return;
+    if (e.pointerType === 'touch') ultimoEventoTouch = e.timeStamp;
+    if (cancelado) toqueDuplo.cancelar(e.pointerId);
+    const duplo = !cancelado && toqueDuplo.subir(e);
     ponteiros.delete(e.pointerId);
-    if (ponteiros.size < 2) {
-      distanciaInicial = 0;
-    }
-    if (ponteiros.size === 1) {
-      const lista = Array.from(ponteiros.values());
-      const p = lista[0];
-      if (p) {
-        ultimoPanPonto = { x: p.x, y: p.y };
-        arrastando = escala > 1;
-      }
-    } else if (ponteiros.size === 0) {
-      arrastando = false;
-      if (escala <= 1.05) {
-        resetarZoom(true);
-      } else {
-        limitarPan();
-      }
-    }
+    if (areaImg?.hasPointerCapture(e.pointerId)) areaImg.releasePointerCapture(e.pointerId);
+    prepararGesto();
+    if (duplo) tratarDuploToque(e.clientX, e.clientY);
+    else if (ponteiros.size === 0 && escala <= 1.05) resetarZoom(true);
+    else limitarPan();
   }
 
   function aoDuploClique(e: MouseEvent) {
+    const origem = e as MouseEvent & { pointerType?: string; sourceCapabilities?: { firesTouchEvents: boolean } };
+    if (origem.pointerType === 'touch' || origem.sourceCapabilities?.firesTouchEvents
+      || (e.timeStamp >= ultimoEventoTouch && e.timeStamp - ultimoEventoTouch < 700)) return;
+    limparGestos();
     tratarDuploToque(e.clientX, e.clientY);
   }
 
@@ -214,16 +217,22 @@
       } else if (e.key === '-' || e.key === '_') {
         ajustarZoom(-0.5);
       } else if (e.key === '0') {
+        limparGestos();
         resetarZoom(true);
       }
     };
     addEventListener('keydown', tecla);
+    addEventListener('blur', limparGestos);
+    const aoOcultar = () => { if (document.hidden) limparGestos(); };
+    document.addEventListener('visibilitychange', aoOcultar);
 
     const el = areaImg;
     const tratarRoda = (e: WheelEvent) => {
       e.preventDefault();
+      limparGestos();
+      pararAnimacao();
       const delta = -e.deltaY * 0.002;
-      const nova = Math.min(Math.max(1, escala + delta), 8);
+      const nova = Math.min(Math.max(1, escala + delta), ESCALA_MAXIMA);
       if (nova === 1) {
         resetarZoom(false);
       } else if (el) {
@@ -244,6 +253,10 @@
 
     return () => {
       removeEventListener('keydown', tecla);
+      removeEventListener('blur', limparGestos);
+      document.removeEventListener('visibilitychange', aoOcultar);
+      limparGestos();
+      pararAnimacao();
       if (el) el.removeEventListener('wheel', tratarRoda);
       anterior?.focus();
     };
@@ -260,8 +273,9 @@
     bind:this={areaImg}
     onpointerdown={aoBaixarPonteiro}
     onpointermove={aoMoverPonteiro}
-    onpointerup={aoSubirPonteiro}
-    onpointercancel={aoSubirPonteiro}
+    onpointerup={e => finalizarPonteiro(e)}
+    onpointercancel={e => finalizarPonteiro(e, true)}
+    onlostpointercapture={e => finalizarPonteiro(e, true)}
     ondblclick={aoDuploClique}
   >
     <img
@@ -269,7 +283,7 @@
       {src}
       {alt}
       draggable="false"
-      onload={() => { resetarZoom(false); }}
+      onload={() => { limparGestos(); resetarZoom(false); }}
       style:transform="translate3d({panX}px, {panY}px, 0) scale({escala})"
       class:transicao={animando}
     />
@@ -284,7 +298,7 @@
       class="btn-zoom"
       aria-label="Aproximar zoom"
       onclick={() => ajustarZoom(0.5)}
-      disabled={escala >= 8}
+      disabled={escala >= ESCALA_MAXIMA}
     >
       <Icone nome="mais" tamanho={18} />
     </button>
@@ -301,7 +315,7 @@
       <button
         class="btn-zoom reset"
         aria-label="Redefinir zoom"
-        onclick={() => resetarZoom(true)}
+        onclick={() => { limparGestos(); resetarZoom(true); }}
       >
         <Icone nome="enquadrar" tamanho={18} />
       </button>
