@@ -1,6 +1,8 @@
 export type Batente = 'some' | 'espiar' | 'cheia';
 export type Conteudo = 'busca' | 'ficha' | 'boas-vindas' | 'marco' | 'entorno' | 'ponto';
 
+export interface ImagemAmpliada { src: string; alt: string }
+
 export interface EstadoNavegacao {
   conteudo: Conteudo;
   batente: Batente;
@@ -10,6 +12,7 @@ export interface EstadoNavegacao {
   consulta: string;
   cinema: boolean;
   rolagem: number;
+  imagem: ImagemAmpliada | null;
 }
 interface Entrada {
   maquete: 1;
@@ -22,7 +25,7 @@ type Historico = Pick<History, 'state' | 'pushState' | 'replaceState' | 'go'>;
 
 export function estadoInicial(): EstadoNavegacao {
   return { conteudo: 'busca', batente: 'some', selecionado: null, marcoAberto: null,
-    pontoSelecionado: null, consulta: '', cinema: false, rolagem: 0 };
+    pontoSelecionado: null, consulta: '', cinema: false, rolagem: 0, imagem: null };
 }
 
 function entrada(valor: unknown): valor is Entrada {
@@ -45,7 +48,7 @@ export function criarHistorico(historico: Historico, endereco: () => string,
   }
   function restaurar(valor: unknown) {
     pendente = false;
-    aplicar(structuredClone(entrada(valor) ? valor.estado : estadoInicial()));
+    aplicar(structuredClone(entrada(valor) ? { ...estadoInicial(), ...valor.estado } : estadoInicial()));
   }
   function iniciar() {
     if (entrada(historico.state)) {

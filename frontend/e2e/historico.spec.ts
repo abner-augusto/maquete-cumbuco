@@ -56,3 +56,46 @@ test('voltar recupera consulta e recarregar não empilha outra ficha', async ({ 
   await expect(page.getByRole('textbox', { name: 'Quadra e lote' })).toHaveValue('7 4');
   await expect(page).toHaveURL(/precos=0/);
 });
+
+for (const fechamento of ['voltar', 'escape', 'botão'] as const) {
+  test(`imagem: ${fechamento} fecha só o visualizador e avançar reabre a mídia`, async ({ page }) => {
+    await page.goto('./');
+    await page.getByRole('button', { name: 'Clube: abrir galeria' }).click();
+    const galeria = page.getByRole('region', { name: 'Galeria: Clube' });
+    await galeria.getByRole('button', { name: /Ampliar foto 1 de/ }).click();
+    const imagem = page.getByRole('dialog');
+    await expect(imagem).toBeVisible();
+    const src = await imagem.locator('img').getAttribute('src');
+    if (fechamento === 'voltar') await page.goBack();
+    else if (fechamento === 'escape') await page.keyboard.press('Escape');
+    else await imagem.getByRole('button', { name: 'Fechar visualizador' }).click();
+    await expect(imagem).toHaveCount(0);
+    await expect(galeria).toBeVisible();
+    await page.goForward();
+    await expect(imagem).toBeVisible();
+    await expect(imagem.locator('img')).toHaveAttribute('src', src!);
+    await page.goBack();
+    await expect(imagem).toHaveCount(0);
+    await page.goBack();
+    await expect(galeria).toHaveCount(0);
+  });
+}
+
+test('a planta ampliada sobrevive ao reload e devolve o foco ao fechar', async ({ page }) => {
+  await page.goto('./');
+  await page.getByRole('button', { name: 'Estande de vendas: abrir galeria' }).click();
+  const abrir = page.getByRole('button', { name: 'Ampliar a planta humanizada' });
+  await abrir.click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  const tamanho = await page.evaluate(() => history.length);
+  await page.reload();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  expect(await page.evaluate(() => history.length)).toBe(tamanho);
+  await page.keyboard.press('c');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await abrir.click();
+  await page.getByRole('button', { name: 'Fechar visualizador' }).click();
+  await expect(abrir).toBeFocused();
+});

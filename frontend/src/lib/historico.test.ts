@@ -71,6 +71,20 @@ describe('navegação da maquete', () => {
     expect(new URL(a.entradas[1]!.url).searchParams.get('lote')).toBe('A');
     expect(new URL(a.entradas[2]!.url).searchParams.has('lote')).toBe(false);
   });
+  it('voltar fecha só a imagem e avançar reabre a mesma mídia', () => {
+    const a = ambiente();
+    a.abrir({ conteudo: 'marco', marcoAberto: 'clube', batente: 'espiar', rolagem: 150 });
+    a.nav.navegar({ ...a.ler(), batente: 'cheia' }, true);
+    a.abrir({ imagem: { src: '/foto.webp', alt: 'Clube, foto 2' } });
+    a.nav.fechar();
+    expect(a.ler()).toMatchObject({ conteudo: 'marco', marcoAberto: 'clube', batente: 'cheia', imagem: null, rolagem: 150 });
+    a.historico.go(1);
+    expect(a.ler().imagem).toEqual({ src: '/foto.webp', alt: 'Clube, foto 2' });
+    a.nav.fechar();
+    a.nav.fechar();
+    expect(a.ler().batente).toBe('some');
+  });
+
   it('inicializa uma entrada base e não repete entradas ao recarregar', () => {
     const a = ambiente();
     a.abrir({ conteudo: 'ficha', selecionado: 'A' });

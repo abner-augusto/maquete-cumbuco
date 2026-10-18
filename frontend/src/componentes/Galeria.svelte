@@ -2,10 +2,9 @@
   import type { Marco } from '../lib/dados';
   import { midia } from '../lib/midia';
   import Icone from './Icone.svelte';
-  import PlantaAmpliada from './PlantaAmpliada.svelte';
+  import type { ImagemAmpliada } from '../lib/historico';
 
-  let { marco, aoFechar }: { marco: Marco; aoFechar: () => void } = $props();
-  let ampliada = $state<{ src: string; alt: string } | null>(null);
+  let { marco, aoFechar, aoAmpliar }: { marco: Marco; aoFechar: () => void; aoAmpliar: (imagem: ImagemAmpliada) => void } = $props();
   const maps = $derived(`https://www.google.com/maps/search/?api=1&query=${marco.lat},${marco.lon}`);
 </script>
 
@@ -16,15 +15,14 @@
 {/if}
 <ul class="fotos">
   {#each marco.galeria as f, i (f.foto)}
-    <li><button class="miniatura" aria-label="Ampliar foto {i + 1} de {marco.galeria.length}" onclick={() => (ampliada = { src: midia(f.foto, 'cheia'), alt: f.legenda || `${marco.nome}, foto ${i + 1}` })}>
+    <li><button class="miniatura" aria-label="Ampliar foto {i + 1} de {marco.galeria.length}" onclick={() => aoAmpliar({ src: midia(f.foto, 'cheia'), alt: f.legenda || `${marco.nome}, foto ${i + 1}` })}>
       <img src={midia(f.foto, 'mini')} alt={f.legenda || `${marco.nome}, foto ${i + 1}`} loading="lazy" /></button></li>
   {/each}
 </ul>
 {#if marco.planta}
-  <button class="miniatura planta" aria-label="Ampliar a planta humanizada" onclick={() => (ampliada = { src: midia(marco.planta!, 'cheia'), alt: `Planta humanizada do ${marco.nome.toLowerCase()}` })}>
+  <button class="miniatura planta" aria-label="Ampliar a planta humanizada" onclick={() => aoAmpliar({ src: midia(marco.planta!, 'cheia'), alt: `Planta humanizada do ${marco.nome.toLowerCase()}` })}>
     <img src={midia(marco.planta, 'mini')} alt="Planta humanizada do {marco.nome.toLowerCase()}" loading="lazy" /></button>
 {/if}
-{#if ampliada}<PlantaAmpliada src={ampliada.src} alt={ampliada.alt} aoFechar={() => (ampliada = null)} />{/if}
 
 <style>
   .barra { display: flex; align-items: center; justify-content: space-between; height: var(--toque); margin: 0 -12px 2px; }

@@ -21,8 +21,9 @@
   import Marca from './componentes/Marca.svelte';
   import Marcos from './componentes/Marcos.svelte';
   import PontosEntorno from './componentes/PontosEntorno.svelte';
+  import PlantaAmpliada from './componentes/PlantaAmpliada.svelte';
 
-  import { criarHistorico, estadoInicial, type EstadoNavegacao, type Conteudo } from './lib/historico';
+  import { criarHistorico, estadoInicial, type EstadoNavegacao, type Conteudo, type ImagemAmpliada } from './lib/historico';
 
   type Fase = 'carregando' | 'pronto' | 'erro';
 
@@ -41,6 +42,7 @@
   let conteudo = $state<Conteudo>('busca');
   let consulta = $state('');
   let rolagem = $state(0);
+  let imagem = $state<ImagemAmpliada | null>(null);
   let selecionado = $state<string | null>(null);
   let etiqueta = $state<Tela | null>(null);
   let hover = $state<{ id: string; tela: Tela } | null>(null);
@@ -145,13 +147,13 @@
   const navegacao = criarHistorico(history, () => location.href, lerEstado, aplicarEstado);
 
   function lerEstado(): EstadoNavegacao {
-    return { conteudo, batente, selecionado, marcoAberto, pontoSelecionado, consulta, cinema, rolagem };
+    return { conteudo, batente, selecionado, marcoAberto, pontoSelecionado, consulta, cinema, rolagem, imagem: imagem ? { ...imagem } : null };
   }
 
   function aplicarEstado(estado: EstadoNavegacao) {
     const anterior = selecionado;
     const marcoAnterior = marcoAberto;
-    ({ conteudo, batente, selecionado, marcoAberto, pontoSelecionado, consulta, cinema, rolagem } = estado);
+    ({ conteudo, batente, selecionado, marcoAberto, pontoSelecionado, consulta, cinema, rolagem, imagem } = estado);
     hover = etiqueta = null;
     if (selecionado && selecionado !== anterior) cena?.enquadrar(selecionado);
     if (marcoAberto && marcoAberto !== marcoAnterior) cena?.enquadrarMarco(marcoAberto);
@@ -239,6 +241,7 @@
   }
 
   function teclou(e: KeyboardEvent) {
+    if (imagem) return;
     if (e.ctrlKey || e.metaKey || e.altKey || (e.target as HTMLElement).closest('input, textarea')) return;
     if (e.key === 'Escape' && cinema) alternarCinema();
     else if (e.key.toLowerCase() === 'c' && fase === 'pronto') alternarCinema();
@@ -259,6 +262,8 @@
   function tocouCena() {
     if (conteudo === 'boas-vindas' && primeiraVisita.pendente()) concluirBoasVindas();
   }
+
+  function abrirImagem(imagem: ImagemAmpliada) { navegacao.navegar({ ...lerEstado(), imagem }); }
 
   function aoPopState(e: PopStateEvent) { navegacao.restaurar(e.state); }
 
@@ -328,11 +333,11 @@
           {#if conteudo === 'ficha' && loteAberto}
             <Ficha lote={loteAberto as Lote} config={dados!.config} {precos} aoFechar={fecharFicha} />
           {:else if conteudo === 'ponto' && pontoAberto}
-            <FichaPonto ponto={pontoAberto} aoVoltar={voltarALista} />
+            <FichaPonto ponto={pontoAberto} aoVoltar={voltarALista} aoAmpliar={abrirImagem} />
           {:else if conteudo === 'entorno'}
             <ListaEntorno {pontos} fontes={dados!.fontesPontos} selecionado={pontoSelecionado} aoEscolher={escolherPonto} />
           {:else if conteudo === 'marco' && marco}
-            <Galeria {marco} aoFechar={fecharMarco} />
+            <Galeria {marco} aoFechar={fecharMarco} aoAmpliar={abrirImagem} />
           {:else if conteudo === 'boas-vindas'}
             <BoasVindas escuro={cor === 'escuro'} />
           {:else}
@@ -347,6 +352,7 @@
       </Folha>
     {/if}
   {/if}
+  {#if imagem}<PlantaAmpliada src={imagem.src} alt={imagem.alt} aoFechar={() => navegacao.fechar()} />{/if}
 </div>
 
 <style>

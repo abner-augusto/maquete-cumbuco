@@ -3,14 +3,9 @@
   import { ROTULO_CATEGORIA, rotuloKm, type Ponto } from '../lib/pontos';
   import Icone from './Icone.svelte';
   import IconePonto from './IconePonto.svelte';
-  import PlantaAmpliada from './PlantaAmpliada.svelte';
+  import type { ImagemAmpliada } from '../lib/historico';
 
-  let { ponto, aoVoltar }: { ponto: Ponto; aoVoltar: () => void } = $props();
-  let ampliada = $state(false);
-  $effect(() => {
-    void ponto.id;
-    ampliada = false;
-  });
+  let { ponto, aoVoltar, aoAmpliar }: { ponto: Ponto; aoVoltar: () => void; aoAmpliar: (imagem: ImagemAmpliada) => void } = $props();
 </script>
 
 <div class="barra">
@@ -25,7 +20,7 @@
 
 {#if ponto.foto}
   <figure class="foto">
-    <button class="ampliar" aria-label="Ampliar a foto" onclick={() => (ampliada = true)}>
+    <button class="ampliar" aria-label="Ampliar a foto" onclick={() => aoAmpliar({ src: midia(ponto.foto!, 'cheia'), alt: ponto.nome })}>
       <img src={midia(ponto.foto, 'mini')} alt={ponto.nome} loading="lazy" />
     </button>
     {#if ponto.credito}
@@ -34,7 +29,6 @@
       </figcaption>
     {/if}
   </figure>
-  {#if ampliada}<PlantaAmpliada src={midia(ponto.foto, 'cheia')} alt={ponto.nome} aoFechar={() => (ampliada = false)} />{/if}
 {/if}
 
 <a class="btn" href={ponto.maps} target="_blank" rel="noopener noreferrer">Abrir no Google Maps<Icone nome="externo" tamanho={18} /></a>
