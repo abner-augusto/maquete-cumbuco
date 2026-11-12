@@ -2,6 +2,16 @@
 
 Maquete interativa 3D (Three.js) do loteamento Cidade das Américas — Residencial Cumbuco, Fase 1 (Cancun), para venda de lotes. Publicada como Worker de assets estáticos no Cloudflare e usada offline via `iniciar.cmd`.
 
+## Check
+
+`bash scripts/check --tudo` defines green and is what the pre-push hook runs (`git config core.hooksPath scripts/git-hooks`, once per clone): pytest, svelte-check, Vitest, the `node --test` suites in `frontend/scripts/`, and `tropa quality`. `bash scripts/check` is the fast mode: the same minus `tests/test_blender.py` and `tests/test_marcos_blender.py`, which launch Blender.
+
+The Playwright e2e (`npm test` in `frontend/`) stays outside the check: it builds the site and reuses whatever already answers on port 4173, so run it only with that port free.
+
+## Tracker
+
+Tickets are local Markdown: `.scratch/<feature>/issues/NN-<slug>.md`. Format in `docs/agents/issue-tracker.md`, status strings in `docs/agents/triage-labels.md`, lane config in `docs/agents/tropa.toml`.
+
 ## Language
 
 Docs, `GLOSSARY.md`, UI text, and commit messages are Brazilian Portuguese.
