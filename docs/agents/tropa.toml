@@ -1,0 +1,29 @@
+[check]
+command = "bash scripts/check --tudo"
+
+[tracker]
+kind = "local"
+labels = "docs/agents/triage-labels.md"
+
+[autonomy]
+merge = "main"
+push = true
+
+[deploy]
+commands = ["npm run publicar", "node scripts/publicar.mjs", "wrangler deploy"]
+local = ["wrangler deploy --dry-run"]
+
+[quality]
+include = [
+    "scripts/**/*.py",
+    "tests/**/*.py",
+    "frontend/src/**/*.ts",
+    "frontend/e2e/**/*.ts",
+    "frontend/scripts/**/*.mjs",
+]
+exclude = ["scripts/marcos/conversao/**"]
+max_file_lines = 300
+max_function_lines = 40
+docstrings = false
+coverage = "coverage.json"
+baseline = "docs/agents/quality-baseline.json"

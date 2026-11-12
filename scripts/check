@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -u
+cd "$(dirname "$0")/.."
+export NO_COLOR=1
+
+modo=rapido
+case "$#:${1:-}" in
+    1:--tudo) modo=tudo ;;
+    0:) ;;
+    *) echo "uso: scripts/check [--tudo]"; exit 2 ;;
+esac
+
+quality_cmd=(tropa quality .)
+if ! command -v tropa >/dev/null 2>&1; then
+    echo "check: a CLI tropa está ausente; instale com: uv tool install --editable <agent-skills>/tropa/cli"
+    [ -n "${TROPA_OPTIONAL:-}" ] || exit 2
+    echo "check: tropa quality pulado (TROPA_OPTIONAL está definido)"
+    quality_cmd=(true)
+fi
+if [ ! -d frontend/node_modules ]; then
+    echo "check: FAIL (frontend/node_modules ausente; rode npm ci em frontend/)"
+    exit 2
+fi
+
+logs=$(mktemp -d)
+trap 'rm -rf "$logs"' EXIT
+inicio=$(tropa gate tree 2>/dev/null || true)
+falhas=""
+
+passo() {
+    local nome=$1
+    shift
+    "$@" 2>&1 | tee "$logs/$nome.log"
+    local rc=${PIPESTATUS[0]}
+    [ "$rc" -eq 0 ] || falhas="$falhas $nome=$rc"
+}
+
+testes_node() {
+    (cd frontend && node --test scripts/*.test.mjs)
+}
+
+ultima() {
+    grep -oE "$2" "$logs/$1.log" 2>/dev/null | tail -1
+}
+
+pytest_args=(-q)
+[ "$modo" = tudo ] || pytest_args+=(--ignore=tests/test_blender.py --ignore=tests/test_marcos_blender.py)
+
+passo pytest uv run pytest "${pytest_args[@]}"
+passo svelte-check npm --prefix frontend run check
+passo vitest npm --prefix frontend run test:unidade
+passo node testes_node
+passo quality "${quality_cmd[@]}"
+
+resumo="pytest: $(ultima pytest '[0-9]+ (passed|failed|error)[^=]*')"
+resumo="$resumo | svelte-check: $(ultima svelte-check '[0-9]+ ERRORS [0-9]+ WARNINGS')"
+resumo="$resumo | vitest: $(ultima vitest 'Tests +.*')"
+resumo="$resumo | node: $(ultima node 'pass [0-9]+'), $(ultima node 'fail [0-9]+')"
+resumo="$resumo | $(ultima quality 'quality: .*')"
+
+if [ -n "$falhas" ]; then
+    echo "check: FAIL ($modo;$falhas) | $resumo"
+    exit 1
+fi
+[ -n "$inicio" ] && { tropa gate record "$modo" --tree "$inicio" || true; }
+echo "check: ok ($modo) | $resumo"
