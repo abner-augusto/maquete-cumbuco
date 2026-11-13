@@ -43,7 +43,7 @@ ultima() {
     grep -oE "$2" "$logs/$1.log" 2>/dev/null | tail -1
 }
 
-pytest_args=(-q)
+pytest_args=(-q --cov=scripts --cov-report=json:coverage.json)
 [ "$modo" = tudo ] || pytest_args+=(--ignore=tests/test_blender.py --ignore=tests/test_marcos_blender.py)
 
 passo pytest uv run pytest "${pytest_args[@]}"
