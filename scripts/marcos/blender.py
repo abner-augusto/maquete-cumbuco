@@ -1,8 +1,3 @@
-"""Driver dos scripts de Blender dos marcos.
-
-Uso: uv run python -m scripts.marcos.blender [--extrair]
-"""
-
 import json
 import sys
 from pathlib import Path
@@ -27,7 +22,6 @@ OBJETOS = ("Clube", "Portaria", "Rotatoria")
 
 
 def rodar_extracao(blender: Path, fontes: dict[Path, list[str]], destino: Path) -> dict:
-    """`fontes`: cada GLB com os prefixos que ele tem de ter."""
     resumo = rodar_blender(blender, EXTRAIR, str(destino), *[f"{g}::{','.join(ps)}" for g, ps in fontes.items()])
     if "erro" in resumo:
         raise RuntimeError(resumo["erro"])
@@ -35,7 +29,6 @@ def rodar_extracao(blender: Path, fontes: dict[Path, list[str]], destino: Path) 
 
 
 def extrair() -> int:
-    """`uv run python -m scripts.marcos.blender --extrair`: caixas e chão dos GLBs fonte."""
     c = MarcosCfg.carregar()
     pasta = terreno_dir() / c.pasta
     blender = Path(ler_env(RAIZ / ".env").get("BLENDER", BLENDER_PADRAO))

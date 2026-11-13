@@ -1,8 +1,3 @@
-"""Assinaturas da marca em SVG (símbolo, produto, marca-mãe) nas quatro variantes, uma pasta por família de nome.
-
-Uso: uv run python -m scripts.marca.composicoes
-"""
-
 import math
 import sys
 from collections.abc import Callable
@@ -169,12 +164,10 @@ COMPOSICOES: dict[str, Callable[[Tipos, Familia, str, str], Peca]] = {
 
 
 def composicoes_da(f: Familia) -> dict[str, Callable[[Tipos, Familia, str, str], Peca]]:
-    """Composições que a família tem: sem marca-mãe, sem assinatura da marca-mãe."""
     return {n: c for n, c in COMPOSICOES.items() if n != "assinatura-mae" or f.mae}
 
 
 def minimos(t: Tipos, f: Familia) -> dict[str, tuple[int, int]]:
-    """Largura mínima (px, mm) de cada composição para o vão entre fita e pilar continuar visível."""
     vao = Parametros().vao
     saida = {}
     for nome, compor in composicoes_da(f).items():
@@ -186,7 +179,6 @@ def minimos(t: Tipos, f: Familia) -> dict[str, tuple[int, int]]:
 
 
 def fracao_protecao(t: Tipos, f: Familia) -> float:
-    """x da área de proteção (largura do pilar) como fração da largura do produto horizontal."""
     pc = produto_horizontal(t, f, "#000000", "#000000")
     x0, x1 = Parametros().pilar_x
     return (x1 - x0) * pc.escala / (pc.largura + 2 * _MARGEM)

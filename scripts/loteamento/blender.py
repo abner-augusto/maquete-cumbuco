@@ -1,5 +1,3 @@
-"""Roda o Blender sobre a cena do loteamento e confere o GLB. Uso: uv run python -m scripts.loteamento.blender"""
-
 import json
 import shutil
 import struct
@@ -46,7 +44,6 @@ OBJETOS_ENTORNO = ("Entorno_00", "Entorno_01", "Entorno_10", "Entorno_11", "Mar"
 
 
 def com_tiles(dados: dict, tiles: dict[str, dict], prefixos: tuple[str, ...]) -> dict:
-    """Cópia da cena com o chão pintado: `<prefixo>_<k>` recebe a imagem do tile k (material `chao`)."""
     def textura(nome: str) -> dict | None:
         pre, _, k = nome.rpartition("_")
         t = tiles.get(k) if pre in prefixos else None
@@ -61,8 +58,7 @@ def juntar_cenas(*cenas: dict) -> dict:
 
 
 def copiar_mapas_osm(tiles: dict[str, dict], destino: Path) -> list[str]:
-    """Os tiles do chão sem o masterplan vão soltos para a pasta da maquete: o front os troca pelos do
-    GLB quando o botão do masterplan desliga. Nomes `mapa-osm_<k>.jpg`."""
+    # O front troca os tiles do GLB por estes quando o botão do masterplan desliga: nomes mapa-osm_<k>.jpg.
     for k, t in tiles.items():
         shutil.copy2(t["arquivo"], destino / f"mapa-osm_{k}.jpg")
     return sorted(tiles)

@@ -1,5 +1,3 @@
-"""Mapa do chão: vias e áreas do OSM pintadas numa imagem aplicada por UV ao relevo."""
-
 from PIL import Image, ImageDraw
 
 # Cores de cena (ambiente, não marca), sRGB. O solo é a cor do terreno do Blender (0.86, 0.80, 0.68).
@@ -21,7 +19,6 @@ def _partes(geom):
 
 
 def rasterizar(camadas: list[tuple[str, object]], ext: tuple[float, float, float, float], px: int) -> Image.Image:
-    """Camadas de baixo para cima; cada uma com a cor de CORES[nome]. `px` é o lado maior."""
     x0, y0, x1, y1 = ext
     escala = px / max(x1 - x0, y1 - y0)
     tam = (round((x1 - x0) * escala), round((y1 - y0) * escala))

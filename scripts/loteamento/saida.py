@@ -1,5 +1,3 @@
-"""config.json → Config, e a montagem do lotes.json (contrato do Plano 1, Task 8)."""
-
 import json
 from dataclasses import dataclass
 from pathlib import Path

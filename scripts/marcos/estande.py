@@ -1,9 +1,3 @@
-"""Gera o estande da planta v10c e o implanta pelo lote do KMZ.
-
-Uso: uv run python -m scripts.marcos.estande
-O DWG é convertido em cache; nenhum desenho de origem é alterado.
-"""
-
 import ast
 import hashlib
 import json
@@ -66,7 +60,6 @@ def hachura(e):
 
 
 def implantacao(doc, arquivo_kmz):
-    """Encaixe rígido pelo segmento de frente do lote, sem escalar a edificação."""
     ns = {"k": "http://www.opengis.net/kml/2.2"}
     with zipfile.ZipFile(arquivo_kmz) as z:
         kml = ET.fromstring(z.read(next(n for n in z.namelist() if n.endswith(".kml"))))
@@ -102,8 +95,6 @@ def implantacao(doc, arquivo_kmz):
 
 
 class Cena:
-    """Extrusões agrupadas por componente e acabamento, mantendo os furos do CAD."""
-
     def __init__(self):
         self.objetos = {}
 
@@ -152,7 +143,6 @@ class Cena:
 
 
 def espreguicadeira(cena, g, piso):
-    """Estrutura vazada e almofada com encosto inclinado, na pegada do CAD."""
     x0, y0, x1, y1 = g.bounds
     juncao = y0 + (y1-y0)*.36
     encosto = lambda x,y: piso+.42+.48*(juncao-y)/(juncao-y0)

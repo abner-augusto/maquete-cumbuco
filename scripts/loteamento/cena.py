@@ -1,8 +1,3 @@
-"""Cena 3D do loteamento em JSON (malhas prontas). O Blender só constrói o que está aqui.
-
-Uso: uv run python -m scripts.loteamento.cena
-"""
-
 import json
 import sys
 import tomllib
@@ -72,7 +67,6 @@ def achar_lagoa(msp, cfg: CenaCfg, e0: float, n0: float) -> list[Ponto] | None:
 
 def pecas_da_placa(msp, lotes: list[dict], cfg: CenaCfg, placa_cfg: PlacaCfg, plato_aneis: list[list[Ponto]],
                    e0: float, n0: float) -> tuple[dict[str, BaseGeometry], BaseGeometry]:
-    """Peças da placa (sem malhas) e o platô; o encaixe dos marcos usa a quadra central daqui."""
     # união, não aninhamento: os anéis do platô (poligonal, áreas, lotes) se sobrepõem, nenhum é furo
     plato = unary_union([Polygon(a).buffer(0) for a in plato_aneis if len(a) >= 3])
     lagoa = achar_lagoa(msp, cfg, e0, n0)

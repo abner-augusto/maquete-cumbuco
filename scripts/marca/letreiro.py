@@ -1,5 +1,3 @@
-"""Texto → contorno SVG com fontTools (letreiros da marca sem depender de fonte instalada)."""
-
 from dataclasses import dataclass
 from functools import lru_cache
 

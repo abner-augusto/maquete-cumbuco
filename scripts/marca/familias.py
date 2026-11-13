@@ -1,9 +1,3 @@
-"""Famílias de nome da marca. O desenho (símbolo, cores, fontes) é o mesmo; muda só o que se escreve.
-
-A família ativa é a que o site e o material atual usam. As outras ficam guardadas para validação:
-"alternativa" espera o registro do nome (decisão da empresa de 14/10/2026).
-"""
-
 from dataclasses import dataclass
 
 # (texto, peso, largura alvo, espaçamento): peso "leve" = Jost 300, "normal" = Jost 400
@@ -51,7 +45,6 @@ ATIVA = "americas"
 
 
 def textos(f: Familia) -> list[str]:
-    """Tudo o que a família escreve nas assinaturas."""
     saida = [f.nome, f.produto_linha, *(l[0] for l in f.produto)]
     if f.sobre_nome:
         saida.append(f.sobre_nome)

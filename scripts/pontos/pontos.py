@@ -1,14 +1,4 @@
-"""Pontos de interesse: coordenada do OSM (Nominatim, casado pela referência da curadoria; lugar
-ausente do OSM vai com a coordenada lida no satélite, campo "satelite" da curadoria),
-minutos de carro no grafo viário do OSM e fotos livres do Wikimedia Commons.
-
-Uso: uv run python -m scripts.pontos.pontos
-
-Escreve dados/pontos.json e cache/pontos/fotos-candidatas.html (galeria para aprovar fotos:
-a escolhida vai como "foto": "File:…" no ponto da curadoria, e o script a baixa na próxima vez).
-Minutos: modelo simples de argumento de venda (velocidade fixa por classe, mão única, + 1 min de
-manobra), como no Manoa.
-"""
+# Minutos: modelo simples de argumento de venda (velocidade fixa por classe, mão única, + 1 min de manobra), como no Manoa.
 
 import heapq
 import html
@@ -54,7 +44,6 @@ def distancia_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 
 def escolher_osm(resultados: list[dict], ref_lat: float, ref_lon: float, max_m: float = 2000.0) -> dict | None:
-    """O resultado do OSM mais perto da referência da curadoria; nada além de `max_m` (homônimo)."""
     perto = [(distancia_m(ref_lat, ref_lon, float(r["lat"]), float(r["lon"])), r) for r in resultados]
     perto = [(d, r) for d, r in perto if d <= max_m]
     return min(perto, key=lambda t: t[0])[1] if perto else None
@@ -95,9 +84,8 @@ def grafo_carro(elementos: list[dict], proj: Projecao) -> tuple[dict, dict]:
 
 
 def minutos(grafo: dict, xy: dict, origem: tuple[float, float], alvo: tuple[float, float]) -> int | None:
-    """Minutos de carro: entra no grafo pelo nó mais perto da origem e sai pelo nó *alcançável* mais
-    perto do alvo (o mais perto pode estar num trecho solto da malha). As pontas (do loteamento à rua,
-    da rua ao ponto) contam a 25 km/h, como rua local."""
+    # Sai pelo nó alcançável mais perto do alvo: o mais perto pode estar num trecho solto da malha.
+    # As pontas (do loteamento à rua, da rua ao ponto) contam a 25 km/h, como rua local.
     a = min(xy, key=lambda n: math.dist(xy[n], origem))
     tempo, fila = {a: 0.0}, [(0.0, a)]
     while fila:
@@ -130,7 +118,6 @@ def _sem_html(texto: str) -> str:
 
 
 def candidatos_commons(nome: str, lat: float, lon: float) -> list[dict]:
-    """Arquivos do Commons perto do ponto (2 km) e pelo nome, só com licença livre."""
     comum = {"action": "query", "format": "json", "prop": "imageinfo", "iiprop": "url|extmetadata",
              "iiurlwidth": 1600}
     perto = _get(COMMONS, {**comum, "generator": "geosearch", "ggscoord": f"{lat}|{lon}", "ggsradius": 2000,
@@ -168,14 +155,11 @@ def galeria(candidatos: dict[str, list[dict]]) -> str:
 
 
 def separar_pendentes(pontos: list[dict]) -> tuple[list[dict], list[str]]:
-    """Ponto com "pendente" na curadoria (sem elemento no OSM, à espera de decisão) fica fora do site."""
     return [p for p in pontos if not p.get("pendente")], [f"{p['nome']}: {p['pendente']}" for p in pontos if p.get("pendente")]
 
 
 def ponto_do_elemento(proj: Projecao, el: dict, em_terra=None, ref: tuple[float, float] | None = None) -> tuple[float, float]:
-    """(lon, lat) do pino: o nó; numa área, o ponto dela mais perto de `ref` (x, y locais da referência
-    da curadoria) ou, sem `ref`, um ponto garantidamente dentro dela (o centro da caixa de uma praia
-    curva cai no mar), sempre em terra quando há `em_terra(x, y)`; numa linha, o meio dela."""
+    # Sem `ref`, um ponto garantidamente dentro da área: o centro da caixa de uma praia curva cai no mar.
     if el["type"] == "node":
         return el["lon"], el["lat"]
     g = poligono_osm(proj, el)
@@ -206,8 +190,6 @@ LIMITE_SATELITE_M = 500  # ponto marcado longe da referência do Google é digit
 
 
 def coordenada_osm(p: dict, proj: Projecao, em_terra=None) -> dict:
-    """Coordenada do pino: do OSM, ou lida sobre a imagem de satélite quando o lugar não está no OSM
-    ("satelite" na curadoria, como os marcos do Manoa)."""
     if p.get("satelite"):
         s = p["satelite"]
         d = distancia_m(p["ref_lat"], p["ref_lon"], s["lat"], s["lon"])
@@ -234,7 +216,7 @@ def coordenada_osm(p: dict, proj: Projecao, em_terra=None) -> dict:
 
 
 def credito(autor: str) -> str:
-    """Autor da foto como sai na legenda: o Commons devolve "User:Fulano" para quem não preencheu o autor."""
+    # O Commons devolve "User:Fulano" para quem não preencheu o autor.
     return re.sub(r"^User:", "", autor or "").strip()
 
 
@@ -253,8 +235,6 @@ def baixar_foto(p: dict, cand: list[dict]) -> dict:
 
 
 def baixar_externa(p: dict) -> dict:
-    """Foto de divulgação indicada na curadoria ("foto_externa"): baixa e reduz a 1600 px. Sem licença livre,
-    vai com o crédito de quem a divulga e a página de origem."""
     from io import BytesIO
 
     from PIL import Image

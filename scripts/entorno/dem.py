@@ -1,8 +1,3 @@
-"""Relevo macro do entorno: Copernicus GLO-30 (DSM, 30 m) reamostrado na grade local.
-
-Uso: uv run python -m scripts.entorno.dem
-"""
-
 import json
 import math
 import shutil
@@ -29,8 +24,8 @@ PASSO = 30.0  # m, a resolução do Copernicus
 
 
 def baixar(url: str = URL, destino: Path = CACHE) -> Path:
-    """Baixa uma vez; grava em .part e só renomeia com o tamanho que o servidor anunciou (o urllib
-    não acusa conexão fechada antes da hora), para um download cortado não virar cache."""
+    # Grava em .part e só renomeia com o tamanho que o servidor anunciou: o urllib não acusa
+    # conexão fechada no meio do download.
     if destino.exists():
         return destino
     destino.parent.mkdir(parents=True, exist_ok=True)
@@ -48,7 +43,6 @@ def baixar(url: str = URL, destino: Path = CACHE) -> Path:
 
 
 def amostrar(tif: Path, e: np.ndarray, n: np.ndarray, crs: str = CRS_LOCAL) -> np.ndarray:
-    """Cota bilinear do raster nos pontos (E, N) de `crs`; nodata vira 0 (mar)."""
     with rasterio.open(tif) as src:
         lon, lat = Transformer.from_crs(crs, src.crs, always_xy=True).transform(np.asarray(e), np.asarray(n))
         col, lin = ~src.transform @ (np.asarray(lon), np.asarray(lat))
@@ -64,7 +58,6 @@ def amostrar(tif: Path, e: np.ndarray, n: np.ndarray, crs: str = CRS_LOCAL) -> n
 
 def grade_dem(tif: Path, e0: float, n0: float, centro: tuple[float, float],
               raio: float = RAIO, passo: float = PASSO) -> Grade:
-    """Grade local (x = E − E0, y = N − N0) de `passo` m, nós em múltiplos de `passo`, cobrindo o raio."""
     x0 = math.floor((centro[0] - raio) / passo) * passo
     y0 = math.floor((centro[1] - raio) / passo) * passo
     nx = int(math.ceil((centro[0] + raio - x0) / passo)) + 1

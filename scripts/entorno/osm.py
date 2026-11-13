@@ -1,6 +1,3 @@
-"""OSM e projeção local: Overpass com cache; geometrias em metros, x = leste, y = norte, a partir
-da origem de dados/georref.json (a mesma do loteamento)."""
-
 import json
 import time
 import urllib.parse
@@ -21,8 +18,6 @@ AGENTE = "maquete-cumbuco/0.1 (maquete de vendas; scripts/entorno)"
 
 
 class Projecao:
-    """lon/lat ↔ coordenadas locais da cena (UTM 24S menos a origem)."""
-
     def __init__(self, e0: float, n0: float):
         self.e0, self.n0 = e0, n0
         self._ida = Transformer.from_crs("EPSG:4326", CRS_LOCAL, always_xy=True)
@@ -37,7 +32,6 @@ class Projecao:
 
 
 def overpass(consulta: str, cache: Path, refazer: bool = False) -> dict:
-    """Consulta com cache em disco; tenta os espelhos em rodízio, com espera crescente."""
     if cache.exists() and not refazer:
         return json.loads(cache.read_text(encoding="utf-8"))
     corpo = urllib.parse.urlencode({"data": consulta}).encode()
@@ -67,7 +61,6 @@ def linha_osm(proj: Projecao, geometria: list[dict]) -> list[tuple[float, float]
 
 
 def poligono_osm(proj: Projecao, elemento: dict):
-    """Way fechado ou relação multipolygon → polígono em metros; None se não fecha."""
     if elemento["type"] == "way":
         pts = linha_osm(proj, elemento.get("geometry") or [])
         if len(pts) < 4 or pts[0] != pts[-1]:

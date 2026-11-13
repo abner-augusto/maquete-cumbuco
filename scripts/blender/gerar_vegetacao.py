@@ -1,13 +1,6 @@
-"""Vegetação do entorno (Plano 4): gera as três espécies estilizadas (coqueiro, cajueiro, arbusto
-de restinga) que o front instancia nas posições de vegetacao.json.
-
-    blender -b --factory-startup --python-exit-code 1 -P gerar_vegetacao.py -- saida.glb
-
-Uma malha por espécie (VEG_coqueiro, VEG_cajueiro, VEG_arbusto), base em z = 0 e altura real em
-metros; a escala de cada instância vem do vegetacao.json. Cor chapada por vértice (COLOR_0) e um
-único material, para cada espécie ser um InstancedMesh de uma chamada de desenho. Adaptado do
-Manoa (cv_espelho_vendas/scripts/entorno/gerar_vegetacao.py).
-"""
+# Contrato com o front: uma malha por espécie (VEG_coqueiro, VEG_cajueiro, VEG_arbusto), base em z = 0,
+# altura real em metros, cor por vértice (COLOR_0) e um único material: cada espécie vira um
+# InstancedMesh de uma chamada de desenho. Adaptado de cv_espelho_vendas/scripts/entorno/gerar_vegetacao.py.
 
 import json
 import math
@@ -58,7 +51,7 @@ class Especie:
         self.pintar(faces, hexa)
 
     def lamina(self, angulo, topo, comprimento, queda, largura, hexa):
-        """Folha de palmeira dobrada, com as duas faces (o app usa FrontSide)."""
+        # duas faces: o app usa FrontSide
         d = Vector((math.cos(angulo), math.sin(angulo), 0))
         lado = Vector((-d.y, d.x, 0)) * largura / 2
         meio = topo + d * comprimento * 0.5 + Vector((0, 0, queda * 0.15))

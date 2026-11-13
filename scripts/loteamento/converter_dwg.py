@@ -1,5 +1,3 @@
-"""DWG → DXF pelo accoreconsole do AutoCAD. Uso: uv run python -m scripts.loteamento.converter_dwg"""
-
 import shutil
 import subprocess
 import sys

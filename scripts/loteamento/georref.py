@@ -1,4 +1,4 @@
-"""SIRGAS 2000 / UTM 24S e a origem local da cena (x = leste, y = norte, em metros)."""
+# x = leste, y = norte, em metros, a partir da origem local da cena.
 
 CRS = "EPSG:31984"
 

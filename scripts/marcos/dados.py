@@ -1,8 +1,3 @@
-"""dados/marcos.json (contrato com o front) e fotos da galeria reduzidas.
-
-Uso: uv run python -m scripts.marcos.dados
-"""
-
 import json
 import re
 import shutil

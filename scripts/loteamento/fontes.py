@@ -1,6 +1,4 @@
-"""Leitura das fontes tabulares: índice de IPTU (CSV) e tabela SET26 (XLS).
-
-O calamine lê o .xls regravado pelo Excel 2016, que o xlrd rejeita (tabela de strings)."""
+# O calamine lê o .xls regravado pelo Excel 2016, que o xlrd rejeita (tabela de strings).
 
 import csv
 from dataclasses import dataclass

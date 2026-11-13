@@ -1,16 +1,3 @@
-"""Põe os marcos no lugar e exporta. Roda dentro do Blender:
-
-    blender -b --factory-startup --python-exit-code 1 -P gerar_marcos.py -- marcos.json saida.glb [previa.png]
-
-Para cada marco: importa a fonte, fica com os objetos do prefixo, desfaz o giro (clube), aplica a
-transformação rígida e a cota, apaga as faces com algum vértice fora da pegada (a mesma regra do furo da
-placa em encaixe.py) e junta tudo num objeto.
-
-Cores: se `marcos.json` traz `cores` (o .npz de scripts/marcos/cores.py), cada face recebe a cor do material
-do SketchUp no triângulo do DAE mais perto, no lugar das cores de categoria. Normais: as que vêm no GLB são
-descartadas; os vértices soltos se soldam e o sombreamento é refeito, liso até ANGULO_SUAVE.
-"""
-
 import json
 import math
 import sys
@@ -44,7 +31,6 @@ CATEGORIAS = {"LAJE": "#3d3f41", "PISO": "#dcd8d0", "PAREDE": "#ece9e2", "PILAR"
 
 
 def dentro(px: np.ndarray, py: np.ndarray, anel: list) -> np.ndarray:
-    """Par/ímpar vetorizado: pontos (px, py) dentro do anel."""
     r = np.zeros(px.shape, dtype=bool)
     xs, ys = np.array([p[0] for p in anel]), np.array([p[1] for p in anel])
     for i in range(len(anel)):
@@ -68,8 +54,6 @@ def falhar(msg: str) -> None:
 
 
 class Planta:
-    """Vista de topo do SketchUp (scripts/marcos/planta.py) como textura projetada de cima: o chão do clube."""
-
     def __init__(self, arq: Path):
         d = json.loads(arq.read_text(encoding="utf-8"))
         self.afim = np.array(d["afim"])
@@ -103,8 +87,6 @@ def material_solido(nome: str, rgba) -> bpy.types.Material:
 
 
 class Cores:
-    """Triângulos do DAE numa KD-tree e um material por cor da paleta, criado sob demanda."""
-
     def __init__(self, npz: Path):
         d = np.load(npz)
         self.cor, self.paleta, self.tris = d["cor"], d["paleta"], d["tris"]
@@ -120,8 +102,6 @@ class Cores:
         return self.mats[k]
 
     def pintar(self, o: bpy.types.Object, planta: "Planta | None" = None) -> tuple[int, int]:
-        """Troca o material de cada face pelo da cor mais perto; com `planta`, as faces horizontais levam a vista
-        de topo como textura, projetada de cima. Devolve (pintadas, total)."""
         me = o.data
         centros = np.empty(len(me.polygons) * 3)
         me.polygons.foreach_get("center", centros)
@@ -171,7 +151,6 @@ class Cores:
 
 
 def cor_de_categoria() -> None:
-    """Os materiais de categoria do GLB fonte passam a ter cor de acabamento (só valem onde não há cor do DAE)."""
     for mat in bpy.data.materials:
         hexa = CATEGORIAS.get(mat.name.split(".")[0])
         if not hexa or not mat.use_nodes:
@@ -185,8 +164,6 @@ def cor_de_categoria() -> None:
 
 
 def planos_simples(o: bpy.types.Object) -> int:
-    """Uma superfície por plano: apaga a face horizontal coberta por outra até SOBREPOSTA acima dela (o chão
-    sob o piso) e a pequena que fica sobre uma grande (o desenho da quadra na grama). Devolve quantas."""
     bm = bmesh.new()
     bm.from_mesh(o.data)
     bm.faces.ensure_lookup_table()
@@ -211,7 +188,6 @@ def planos_simples(o: bpy.types.Object) -> int:
 
 
 def normais(o: bpy.types.Object) -> None:
-    """Fora as normais do GLB; solda, orienta as faces de forma coerente e alisa até ANGULO_SUAVE."""
     me = o.data
     if me.has_custom_normals:
         bpy.context.view_layer.objects.active = o
@@ -266,6 +242,7 @@ def marco(nome: str, m: dict, cores: Cores | None, planta: Planta | None) -> bpy
         bm.from_mesh(o.data)
         bm.verts.index_update()
         xy = np.array([v.co[:2] for v in bm.verts]) if bm.verts else np.zeros((0, 2))
+        # Mesma regra do furo da placa em encaixe.py (furo).
         fora_v = ~dentro(xy[:, 0], xy[:, 1], m["pegada"]) if len(xy) else np.zeros(0, dtype=bool)
         bmesh.ops.delete(bm, geom=[f for f in bm.faces if any(fora_v[v.index] for v in f.verts)], context="FACES")
         bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")

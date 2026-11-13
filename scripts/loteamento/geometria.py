@@ -1,4 +1,4 @@
-"""Geometria plana dos polígonos do DXF. Calcula relativo ao 1º ponto para não perder precisão em UTM."""
+# Relativo ao 1º ponto, para não perder precisão em UTM.
 
 import math
 
@@ -99,8 +99,7 @@ def indice_frente(segs: list[tuple[Ponto, Ponto, float]], vias: list[list[Ponto]
 
 
 def rumo_para_fora(seg: tuple[Ponto, Ponto, float], pontos: list[Ponto]) -> float:
-    """Rumo (graus a partir do norte, sentido horário) da normal do lado, apontando para fora do lote.
-    Lado em arco usa a corda: para enquadrar a câmera basta a direção."""
+    # Rumo em graus a partir do norte, sentido horário; lado em arco usa a corda.
     (x0, y0), (x1, y1), _ = seg
     dx, dy = x1 - x0, y1 - y0
     n = math.hypot(dx, dy) or 1.0

@@ -1,13 +1,5 @@
-"""Acesso da CE ao loteamento: a faixa do DWG entre a rotatória e a CE vira avenida em rampa.
-
-O platô fica a ~21 m e a CE no chão natural, ~17 m abaixo. O eixo sai do centro da rotatória pela
-faixa do DWG; a seção é a da avenida (calçada, pista, canteiro, pista, calçada); o perfil é plano na
-rotatória, rampa constante e um patamar antes da CE, com curvas verticais nas quebras. Na CE, as bordas
-abrem em curva (raio `raio_boca`) e o canteiro termina numa ilha triangular.
-
-Python puro: terreno.py calcula o acesso (precisa do chão natural na CE) e grava cache/cena/acesso.json;
-cena.py monta as peças em rampa; preparar.py tira a faixa do platô.
-"""
+# terreno.py calcula o acesso (precisa do chão natural na CE) e grava cache/cena/acesso.json;
+# cena.py monta as peças em rampa; preparar.py tira a faixa do platô.
 
 import json
 import math
@@ -79,8 +71,6 @@ class Acesso:
 
 
 def perfil_vertical(pvis: list[tuple[float, float]], curva: float):
-    """z(s) pelos pontos de inflexão, com parábola de comprimento `curva` em cada inflexão interna
-    (encurtada se o trecho não couber). Antes do primeiro e depois do último ponto, segue a rampa da ponta."""
     s = np.array([p[0] for p in pvis], dtype=float)
     z = np.array([p[1] for p in pvis], dtype=float)
     g = np.diff(z) / np.diff(s)
@@ -102,7 +92,6 @@ def perfil_vertical(pvis: list[tuple[float, float]], curva: float):
 
 def perfil_acesso(s_ini: float, s_fim: float, z0: float, z_fim: float, cfg: AcessoCfg
                   ) -> tuple[list[tuple[float, float]], float]:
-    """Plano até a primeira curva (que começa em s_ini), rampa, patamar de `cfg.patamar` m até a CE."""
     s_rampa = s_ini + cfg.curva_vertical / 2
     s_pat = s_fim - cfg.patamar
     z_pat = z_fim + cfg.patamar * cfg.patamar_inclinacao
@@ -116,8 +105,6 @@ def perfil_acesso(s_ini: float, s_fim: float, z0: float, z_fim: float, cfg: Aces
 
 def eixo_da_faixa(faixa: Polygon, circulos: list[tuple[float, float, float]], recuo: float = 0.0
                   ) -> tuple[tuple[float, float], tuple[float, float], float, float]:
-    """Centro da rotatória (o círculo mais perto da faixa), direção do lado comprido da faixa, para longe
-    dele, e o começo (`recuo` m antes do ponto mais recuado da faixa) e o fim da faixa no eixo."""
     cx, cy, _ = min(circulos, key=lambda c: faixa.distance(Point(c[0], c[1])))
     r = np.array(faixa.minimum_rotated_rectangle.exterior.coords)[:4]
     lados = [r[1] - r[0], r[2] - r[1]]
@@ -141,7 +128,6 @@ def _local(a: Acesso, g: BaseGeometry) -> BaseGeometry:
 
 
 def _borda_ce(ce_l: BaseGeometry, s_fim: float) -> tuple[np.ndarray, np.ndarray]:
-    """Um ponto e a direção da borda da CE onde o eixo chega (perto da boca a CE é reta)."""
     anel = min((q.exterior for q in partes(ce_l)), key=lambda r: r.distance(Point(s_fim, 0.0)))
     k = anel.project(Point(s_fim, 0.0))
     p1, p2 = (np.array(anel.interpolate(k + dk).coords[0]) for dk in (-5.0, 5.0))
@@ -151,12 +137,6 @@ def _borda_ce(ce_l: BaseGeometry, s_fim: float) -> tuple[np.ndarray, np.ndarray]
 
 
 def pecas_acesso(a: Acesso, ce: BaseGeometry, cfg: AcessoCfg) -> dict[str, BaseGeometry]:
-    """Pista, calçadas e canteiro (com a ilha) do acesso, no referencial do mundo. `ce`: a faixa da CE.
-
-    Em cada lado, a borda da avenida concorda com a borda da CE por um arco tangente às duas. A CE cruza
-    na diagonal: o lado do ângulo agudo (a conversão mais fechada) leva `raio_boca`; o outro, o raio que
-    dá a mesma tangente, e a boca abre o mesmo tanto ao longo da CE. A calçada é a faixa de `w` m ao longo
-    da borda e do arco; o arco de dentro (raio + w) corta a borda da CE antes, e a calçada termina afinando."""
     h = sum(cfg.secao) / 2
     w, c = cfg.secao[0], cfg.secao[2] / 2
     ce_l = _local(a, ce).intersection(box(a.s_ini, -h - 200, a.s_fim + 200, h + 200))
@@ -203,16 +183,13 @@ def pecas_acesso(a: Acesso, ce: BaseGeometry, cfg: AcessoCfg) -> dict[str, BaseG
 
 
 def dz(a: Acesso, cfg: AcessoCfg, xy, cota: float) -> np.ndarray:
-    """Quanto cada ponto do acesso desce em relação à cota do platô (zero até o começo da rampa)."""
     zs = perfil_vertical(a.pvis, cfg.curva_vertical)
     s, _ = a.local(np.atleast_2d(xy))
     return np.array([zs(min(max(x, a.s_ini), a.s_fim)) for x in s]) - cota
 
 
 def _topo_em_faixas(a: Acesso, g: BaseGeometry, passo: float) -> tuple[list[list[float]], list[list[int]]]:
-    """Topo cortado em faixas de `passo` m perpendiculares ao eixo, cada uma triangulada à parte: como a
-    cota só varia ao longo do eixo, o triângulo curto nessa direção já segue o perfil (refinar as arestas
-    dos triângulos compridos do earcut multiplicava a malha)."""
+    # Refinar as arestas dos triângulos compridos do earcut multiplica a malha: por isso as faixas.
     loc = _local(a, g)
     s0, t0, s1, t1 = loc.bounds
     vs, fs = [], []
@@ -230,8 +207,6 @@ def _topo_em_faixas(a: Acesso, g: BaseGeometry, passo: float) -> tuple[list[list
 
 def montar_acesso(a: Acesso, pecas: dict[str, BaseGeometry], vizinhos: dict[str, tuple[BaseGeometry, float]],
                   cota: float, fundo: float, cfg: AcessoCfg) -> list[dict]:
-    """Objetos de cena das peças do acesso: topo refinado a `cfg.passo` e paredes, tudo descido pelo perfil.
-    `vizinhos`: as peças planas da placa (geometria, altura), para a parede só onde ninguém encosta."""
     todos = {**{k: (g, ALTURAS[k]) for k, g in pecas.items()}, **vizinhos}
     objetos = []
     for nome, g in pecas.items():
@@ -249,15 +224,12 @@ def montar_acesso(a: Acesso, pecas: dict[str, BaseGeometry], vizinhos: dict[str,
 
 
 def corredor(a: Acesso, cfg: AcessoCfg) -> BaseGeometry:
-    """A área toda do acesso (para tirar do platô e furar o terreno)."""
     ce = unary_union([Polygon(r[0], r[1:]) for r in a.ce]) if a.ce else Polygon()
     return unary_union(list(pecas_acesso(a, ce, cfg).values()))
 
 
 def faixa_ce(vias: list[dict], a_c0, a_d, s_max: float, larguras: dict[str, float], folga: float = 0.0
              ) -> tuple[BaseGeometry, float]:
-    """A rodovia que o eixo cruza primeiro: todas as vias com o mesmo nome e classe, com meia largura
-    + `folga`. Devolve a faixa e o s do primeiro cruzamento do eixo com a borda dela."""
     raio = LineString([a_c0, (a_c0[0] + a_d[0] * s_max, a_c0[1] + a_d[1] * s_max)])
     cruzam = [v for v in vias if v["classe"] in larguras and LineString(v["pontos"]).intersects(raio)]
     if not cruzam:
@@ -273,7 +245,6 @@ def faixa_ce(vias: list[dict], a_c0, a_d, s_max: float, larguras: dict[str, floa
 
 
 def faixa_comprida(aneis: list[list]) -> Polygon:
-    """A faixa de acesso entre os anéis da camada: o único comprido (lado maior ≥ 5× o menor)."""
     def alongamento(p: Polygon) -> float:
         r = np.array(p.minimum_rotated_rectangle.exterior.coords)[:3]
         a, b = np.hypot(*(r[1] - r[0])), np.hypot(*(r[2] - r[1]))
@@ -286,10 +257,7 @@ def faixa_comprida(aneis: list[list]) -> Polygon:
 
 
 def sem_faixa(aneis: list[list], a: Acesso, cfg: AcessoCfg) -> list[list]:
-    """Os anéis do platô menos o corredor reto do acesso: somem a faixa do DWG e as calçadas dela, e a
-    língua da poligonal que vai até a CE perde o trecho do acesso. O acesso sai do platô e desce com o perfil.
-    Anel que o corredor não toca fica como está. O corredor sobra 1 m para os lados, mas começa em s_ini:
-    recuar dali abria uma fresta entre o braço da rotatória e o acesso."""
+    # O corredor começa em s_ini: recuar dali abre uma fresta entre o braço da rotatória e o acesso.
     h = sum(cfg.secao) / 2 + 1.0
     reto = _mundo(a, box(a.s_ini, -h, a.s_fim + h, h))
     fica = []
@@ -309,8 +277,6 @@ RAIO_BOCA_CE = 150.0  # m: só a CE perto da boca entra na curva das bordas
 
 
 def eixo_do_acesso(msp, cfg: AcessoCfg, e0: float, n0: float) -> tuple[Acesso, BaseGeometry]:
-    """Eixo pela faixa do DWG, da rotatória à borda da CE do OSM (sem perfil ainda) e a faixa da CE com
-    folga, que fica no chão natural."""
     from scripts.entorno.preparar import VIAS_CLASSES
 
     from .cena import CFG_TOML, CenaCfg, aneis_da_layer
@@ -331,7 +297,6 @@ def eixo_do_acesso(msp, cfg: AcessoCfg, e0: float, n0: float) -> tuple[Acesso, B
 
 
 def com_perfil(a: Acesso, perto, cota: float, cfg: AcessoCfg) -> Acesso:
-    """O perfil: do platô (`cota`) ao chão natural na borda da CE (+ a altura da faixa dela)."""
     x, y = a.c0[0] + a.d[0] * a.s_fim, a.c0[1] + a.d[1] * a.s_fim
     z_fim = round(perto.cota_malha(x, y) + OFFSET_CE, 3)
     pvis, rampa = perfil_acesso(a.s_ini, a.s_fim, cota, z_fim, cfg)

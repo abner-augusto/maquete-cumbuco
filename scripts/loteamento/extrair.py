@@ -1,5 +1,3 @@
-"""Lotes do DXF de venda: polígono, quadra, número, lados e frente."""
-
 import re
 import tomllib
 from dataclasses import dataclass
@@ -53,7 +51,7 @@ class ExtracaoErro(Exception):
 
 
 def textos_da_layer(msp, layer: str) -> list[tuple[Ponto, str]]:
-    """TEXT, MTEXT e ATTRIB da layer. Bloco na layer conta inteiro, no ponto de inserção do bloco."""
+    # Bloco na layer conta inteiro, no ponto de inserção do bloco.
     saida = []
     for e in msp:
         t = e.dxftype()
@@ -84,7 +82,6 @@ def _textos_soltos(msp) -> list[tuple[Ponto, str]]:
 
 
 def _frente(e, vias) -> tuple[float | None, float | None]:
-    """Comprimento e rumo para fora do lado mais próximo da via."""
     if not vias:
         return None, None
     segs = segmentos(e)

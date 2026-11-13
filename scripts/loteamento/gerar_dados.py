@@ -1,5 +1,3 @@
-"""Gera dados/lotes.json, georref.json e relatorio-conferencia.md. Uso: uv run python -m scripts.loteamento.gerar_dados"""
-
 import json
 import sys
 from pathlib import Path

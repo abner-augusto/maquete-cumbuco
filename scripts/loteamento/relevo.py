@@ -1,8 +1,3 @@
-"""Relevo da Fase 1: curvas de nível do masterplan cotadas pelos rótulos, em grade regular.
-
-Uso: uv run python -m scripts.loteamento.relevo
-"""
-
 import json
 import math
 import sys
@@ -49,9 +44,6 @@ def cotar_mestras(
     mestras: list[Curva], rotulos: list[tuple[Ponto, float]], raio: float = 25.0,
     raio_curto: float = 6.0, emenda: float = 6.0,
 ) -> int:
-    """Cota as mestras pelos rótulos. No desenho a mestra é cortada no rótulo, então o rótulo cota
-    todo pedaço a até `raio_curto` (além do mais próximo, até `raio`), e o pedaço sem rótulo herda
-    a cota do pedaço cotado cuja ponta está a até `emenda`."""
     votos: list[Counter] = [Counter() for _ in mestras]
     for p, z in rotulos:
         dists = [(_dist_polilinha(p, c.pontos), i) for i, c in enumerate(mestras)]
@@ -78,8 +70,6 @@ def cotar_mestras(
 
 
 def completar_mestras(mestras: list[Curva], cotadas: list[Curva], intervalo: float = 5.0) -> None:
-    """Mestra que nem rótulo nem emenda cotaram (topo de duna fechado): múltiplo de `intervalo`
-    mais próximo da cota da curva cotada mais perto."""
     for m in (m for m in mestras if m.z is None and not m.fechada):
         p = m.pontos[len(m.pontos) // 2]
         _, z = min(((_dist_polilinha(p, c.pontos), c.z) for c in cotadas if c is not m), default=(0, None))
@@ -88,7 +78,6 @@ def completar_mestras(mestras: list[Curva], cotadas: list[Curva], intervalo: flo
 
 
 def _entre_mestras(p: Ponto, cotadas: list[Curva]) -> tuple[float, float, float, float] | None:
-    """Mestra mais perto de `p` e a mais perto de cota diferente: (d1, z1, d2, z2)."""
     d = _dist_curvas([p], cotadas)
     ordem = np.argsort(d)
     z1 = cotadas[ordem[0]].z
@@ -97,8 +86,6 @@ def _entre_mestras(p: Ponto, cotadas: list[Curva]) -> tuple[float, float, float,
 
 
 def cotar_intermediarias(inters: list[Curva], mestras: list[Curva], passo: float = 1.0, amostras: int = 40) -> None:
-    """Curva aberta: interpolada entre as duas mestras que a cercam, no trecho em que elas estão
-    mais perto (curva de km sai das mestras carregadas, e o meio dela pode estar longe de tudo)."""
     cotadas = [m for m in mestras if m.z is not None and len(m.pontos) > 1]
     for c in (c for c in inters if not c.fechada):
         if not cotadas:
@@ -118,7 +105,6 @@ def cotar_intermediarias(inters: list[Curva], mestras: list[Curva], passo: float
 
 
 def _dist_curvas(pts: list[Ponto], curvas: list[Curva]) -> np.ndarray:
-    """Menor distância de qualquer ponto de `pts` a cada curva (vetorizado)."""
     a = np.array([p for c in curvas for p in c.pontos[:-1]], dtype=float)
     b = np.array([p for c in curvas for p in c.pontos[1:]], dtype=float)
     inicio = np.cumsum([0] + [len(c.pontos) - 1 for c in curvas[:-1]])
@@ -132,11 +118,6 @@ def _dist_curvas(pts: list[Ponto], curvas: list[Curva]) -> np.ndarray:
 
 
 def cotar_aneis(mestras: list[Curva], inters: list[Curva], intervalo: float = 5.0, passo: float = 1.0) -> None:
-    """Curvas fechadas (topos e fundos de duna), de fora para dentro: um passo além do anel que as
-    contém, no sentido em que o relevo vinha de fora (morro continua subindo, cova continua descendo).
-    Anel solto, sem anel em volta, toma por pai a curva cotada mais perto do lado de fora; se ela e a
-    seguinte deixam um vão (mestras sem intermediária entre elas), o anel fica no vão. Curva já cotada
-    dentro do anel manda no sentido: a cadeia caminha até ela."""
     todas = [c for c in mestras + inters if len(c.pontos) > 1]
     eh_mestra = {id(m) for m in mestras}
     aneis = sorted((c for c in todas if c.fechada), key=lambda c: area(c.pontos), reverse=True)
@@ -216,9 +197,8 @@ class Grade:
         return (z[j][i] * (1 - tx) + z[j][i + 1] * tx) * (1 - ty) + (z[j + 1][i] * (1 - tx) + z[j + 1][i + 1] * tx) * ty
 
     def cota_malha(self, x: float, y: float) -> float:
-        """Cota na superfície que a malha desenha: cada célula em dois triângulos pela diagonal de
-        (i, j) a (i+1, j+1) (faces [a, a+1, a+nx+1] e [a, a+nx+1, a+nx]). O bilinear de `cota` difere
-        disso em até |z00 − z10 + z11 − z01|/4 dentro da célula."""
+        # Cada célula em dois triângulos pela diagonal de (i, j) a (i+1, j+1); o bilinear de `cota` difere disso em
+        # até |z00 − z10 + z11 − z01|/4 dentro da célula.
         fx = min(max((x - self.x0) / self.passo, 0.0), self.nx - 1.0)
         fy = min(max((y - self.y0) / self.passo, 0.0), self.ny - 1.0)
         i, j = min(int(fx), self.nx - 2), min(int(fy), self.ny - 2)
@@ -230,7 +210,6 @@ class Grade:
         return z00 + (z11 - z01) * tx + (z01 - z00) * ty
 
     def para_json(self) -> dict:
-        """NaN (fora do levantamento) vai como null: JSON padrão."""
         z = [[None if v is None or math.isnan(v) else v for v in linha] for linha in self.z]
         return {"x0": self.x0, "y0": self.y0, "passo": self.passo, "nx": self.nx, "ny": self.ny, "z": z}
 
@@ -242,7 +221,6 @@ class Grade:
 
 def gerar_grade(curvas: list[Curva], ext: tuple[float, float, float, float], passo: float,
                 preencher: bool = True) -> Grade:
-    """Interpolação linear entre as curvas; fora delas, vizinho mais próximo ou (sem `preencher`) NaN."""
     pts = np.array([(x, y) for c in curvas if c.z is not None for x, y in c.pontos])
     zs = np.array([c.z for c in curvas if c.z is not None for _ in c.pontos])
     xmin, ymin, xmax, ymax = ext
@@ -256,7 +234,6 @@ def gerar_grade(curvas: list[Curva], ext: tuple[float, float, float, float], pas
 
 
 def mascara(grade: Grade, aneis: list[list[Ponto]]) -> np.ndarray:
-    """Pontos da grade dentro de algum dos anéis (z[j][i] → mascara[j, i]); par-ímpar, vetorizado."""
     gx, gy = np.meshgrid(grade.x0 + grade.passo * np.arange(grade.nx), grade.y0 + grade.passo * np.arange(grade.ny))
     dentro = np.zeros(gx.shape, dtype=bool)
     for anel in aneis:
@@ -279,7 +256,6 @@ def _densificar(pts: list[Ponto], passo: float = 10.0) -> list[Ponto]:
 
 
 def curva_do_dxf(e, e0: float, n0: float) -> Curva:
-    """POLYLINE de curva de nível em coordenadas locais; a fechada volta ao início (o fecho conta)."""
     pts = [(p.x - e0, p.y - n0) for p in e.points()]
     fechada = bool(e.is_closed) and len(pts) > 2
     if fechada and pts[0] != pts[-1]:

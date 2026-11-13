@@ -1,12 +1,3 @@
-"""Extrai dos GLBs fonte dos marcos só o que o encaixe precisa. Roda dentro do Blender:
-
-    blender -b --factory-startup --python-exit-code 1 -P extrair_marcos.py -- destino.json a.glb::PREFIXO[,PREFIXO] [b.glb::...]
-
-Caixa de cada objeto, triângulos de chão (normal para cima, perto de z = 0) e de topo (normal para cima, em
-qualquer altura: a projeção que confere a cobertura do clube) e de baixo (normal para cima, até 0,6 m: o chão
-do modelo, piscina inclusive, que fura a placa), em coordenadas do Blender. Cada GLB tem de ter os seus prefixos.
-"""
-
 import json
 import sys
 from pathlib import Path

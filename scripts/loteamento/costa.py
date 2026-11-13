@@ -1,12 +1,3 @@
-"""Linha de costa do OSM imposta ao relevo: o plano do mar corta a terra sobre a linha, não na
-escada das células de 30 m do Copernicus.
-
-Perto da costa a cota vira a distância com sinal até a linha vezes a inclinação da praia (a
-mesma dos dois lados), e a interpolação bilinear de uma função afim é exata: o contorno da água
-segue a linha dentro de cada célula. Mais longe, a terra volta ao relevo e o fundo desce até o
-rebaixo do mar.
-"""
-
 import numpy as np
 import shapely
 from shapely.geometry import LineString, MultiLineString, Point
@@ -22,7 +13,6 @@ OSM_COSTA = RAIZ / "cache" / "entorno" / "orla-costa.json"  # scripts/entorno/or
 
 
 def agua_do_osm(e0: float, n0: float) -> BaseGeometry | None:
-    """Rios e lagoas do cache do entorno (as áreas `agua` do OSM), em coordenadas locais."""
     import json
 
     from scripts.entorno.osm import Projecao, poligono_osm, tipo_area
@@ -36,9 +26,6 @@ def agua_do_osm(e0: float, n0: float) -> BaseGeometry | None:
 
 
 def linhas_de_costa(e0: float, n0: float) -> list[LineString]:
-    """`natural=coastline` em coordenadas locais: a costa regional da orla (do Pecém a Iracema), se
-    estiver no cache, senão a do entorno; vazio sem nenhum dos dois. Com a regional, o mar segue a
-    costa de verdade além do entorno, em vez da reta prolongada."""
     import json
 
     from scripts.entorno.osm import Projecao, linha_osm
@@ -53,9 +40,7 @@ def linhas_de_costa(e0: float, n0: float) -> list[LineString]:
 
 
 def _prolongar(linha: LineString, d: float, base: float = 3000.0) -> LineString:
-    """A linha com as pontas esticadas `d` m. A direção é a média dos últimos `base` m de orla
-    (da ponta até o ponto a `base` m dela, pela linha), não a do último trecho, que no OSM costuma
-    dobrar num espigão ou na foz: fora do entorno o mar segue o rumo geral da orla."""
+    # Direção média dos últimos `base` m de orla, não a do último trecho, que no OSM costuma dobrar num espigão ou na foz.
     c = list(linha.coords)
     b = min(base, linha.length / 2)
 
@@ -69,8 +54,7 @@ def _prolongar(linha: LineString, d: float, base: float = 3000.0) -> LineString:
 
 
 def mar_da_costa(linhas: list[LineString], centro: tuple[float, float], raio: float) -> BaseGeometry:
-    """Polígono do mar num disco de `raio`. Convenção do OSM: terra à esquerda do sentido da
-    linha, água à direita. Cada trecho é prolongado nas pontas até sair do disco."""
+    # Convenção do OSM: terra à esquerda do sentido da linha, água à direita.
     disco = Point(centro).buffer(raio, 256)
     # directed: o sentido de cada via do OSM diz de que lado está a terra
     juntas = shapely.line_merge(MultiLineString([list(l.coords) for l in linhas]), directed=True)
@@ -91,12 +75,6 @@ def mar_da_costa(linhas: list[LineString], centro: tuple[float, float], raio: fl
 def costa_suave(g: Grade, mar: BaseGeometry, nivel: float, praia: float, fundo: float, rebaixo: float,
                 celula: float | None = None, agua: BaseGeometry | None = None,
                 agua_fixa: BaseGeometry | None = None) -> Grade:
-    """Cota de `g` com a costa de `mar`: rampa de `praia` (m/m) dos dois lados até 1,5 célula da
-    linha; além disso o fundo desce a `fundo` até `nivel − rebaixo` e a terra volta ao relevo até
-    4,5 células (a duna além disso fica como está). Abaixo do nível terra adentro só fica o que
-    está em `agua` (rios e lagoas do OSM): o resto é a costa em escada do Copernicus e vira terra.
-    `agua_fixa` entra sempre, sem depender da cota. A água que fica (a lagoa da foz) entra no mar da conta: a margem dela segue o polígono do OSM. `celula` (m) mede as faixas; uma grade fina que encosta numa grossa
-    usa a célula da grossa, e as duas coincidem perto da costa (sem dente na emenda)."""
     gx, gy = np.meshgrid(g.x0 + g.passo * np.arange(g.nx), g.y0 + g.passo * np.arange(g.ny))
     z0 = np.array(g.z, dtype=float)
     if agua is not None:
@@ -122,9 +100,6 @@ def costa_suave(g: Grade, mar: BaseGeometry, nivel: float, praia: float, fundo: 
 
 def malha_mar(centro: tuple[float, float], raio: float, mar: BaseGeometry, alcance: float,
               nivel: float) -> tuple[list[list[float]], list[list[int]]]:
-    """Plano da água: o disco do entorno (sob a terra, para rios e foz no nível do mar) mais o mar
-    aberto até `alcance`, só do lado do mar. Visto rente, o mar chega perto do horizonte em vez de
-    acabar na borda do entorno; do lado da terra não sobra água além do entorno."""
     from .malha import triangular
 
     g = Point(centro).buffer(raio, 96).union(mar.intersection(Point(centro).buffer(alcance, 96)))

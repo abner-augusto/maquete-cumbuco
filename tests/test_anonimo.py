@@ -1,5 +1,3 @@
-"""O repositório não carrega nada da máquina de quem o escreveu: caminhos, pastas de sincronização e IPs
-da rede local vêm do `.env` (modelo em `.env.example`)."""
 import re
 import subprocess
 

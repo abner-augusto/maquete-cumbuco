@@ -164,7 +164,6 @@ def test_anel_solto_no_vao_entre_mestras_fica_entre_elas():
 
 
 def _arco(r, z, cx=0.0, cy=0.0):
-    """Mestra fechada cortada no rótulo: arco aberto com um vão de uns 4 m."""
     return Curva([(cx + r * math.cos(t / 20 * 6.0), cy + r * math.sin(t / 20 * 6.0)) for t in range(21)], z)
 
 

@@ -1,9 +1,3 @@
-"""Encaixe dos marcos na planta de venda: dois pares de pontos (ilha↔círculo, clube↔quadra) dão a
-transformação rígida; ICP com o chão da portaria a refina. Python puro: o Blender só extrai e aplica.
-
-Uso: uv run python -m scripts.marcos.encaixe
-"""
-
 import json
 import math
 import sys
@@ -57,7 +51,6 @@ def girar(pts, pivo: tuple[float, float], graus: float) -> np.ndarray:
 def escolher_circulo(circulos: list[tuple[float, float, float]], raio: float, dist_clube: float,
                      quadra: tuple[float, float], tol_raio: float = 3.0, tol_dist: float = 10.0
                      ) -> tuple[float, float, float]:
-    """O círculo do DWG com o raio da ilha do GLB e à distância ilha–clube da quadra central."""
     bons = [c for c in circulos if abs(c[2] - raio) <= tol_raio
             and abs(math.hypot(c[0] - quadra[0], c[1] - quadra[1]) - dist_clube) <= tol_dist]
     if len(bons) != 1:
@@ -67,7 +60,6 @@ def escolher_circulo(circulos: list[tuple[float, float, float]], raio: float, di
 
 
 def ancora(ilha, clube, circulo, quadra) -> Semelhanca:
-    """Transformação rígida que leva ilha→círculo e o rumo ilha→clube ao rumo círculo→quadra."""
     ilha, clube, circulo, quadra = (np.asarray(p, dtype=float) for p in (ilha, clube, circulo, quadra))
     de, para = clube - ilha, quadra - circulo
     theta = math.atan2(para[1], para[0]) - math.atan2(de[1], de[0])
@@ -77,7 +69,6 @@ def ancora(ilha, clube, circulo, quadra) -> Semelhanca:
 
 
 def _normais(pts: np.ndarray, arvore: cKDTree, k: int = 6) -> np.ndarray:
-    """Normal de cada ponto do destino: o eixo de menor variância dos k vizinhos."""
     _, viz = arvore.query(pts, k=min(k, len(pts)))
     d = pts[viz] - pts[viz].mean(1, keepdims=True)
     _, vetores = np.linalg.eigh(np.einsum("nki,nkj->nij", d, d))
@@ -86,9 +77,6 @@ def _normais(pts: np.ndarray, arvore: cKDTree, k: int = 6) -> np.ndarray:
 
 def icp_rigido(origem: np.ndarray, destino: np.ndarray, inicial: Semelhanca, iteracoes: int = 30,
                corte: float = 5.0) -> tuple[Semelhanca, float]:
-    """ICP rígido ponto-a-reta a partir de `inicial`; par mais longe que `corte` não entra (sobra de um
-    dos lados). Ponto-a-ponto empaca na distância entre amostras; ponto-a-reta desliza ao longo da borda.
-    Devolve também o resíduo mediano ponto-a-ponto."""
     arvore = cKDTree(destino)
     normais = _normais(destino, arvore)
     t = inicial
@@ -110,7 +98,6 @@ def icp_rigido(origem: np.ndarray, destino: np.ndarray, inicial: Semelhanca, ite
 
 
 def quadra_do_clube(chao_plato, plato) -> Polygon:
-    """A maior parte do ChaoPlato que não toca a borda do platô: a quadra sem lote do meio."""
     borda = plato.exterior if isinstance(plato, Polygon) else unary_union([p.exterior for p in partes(plato)])
     interiores = [p for p in partes(chao_plato) if not p.buffer(0.01).intersects(borda)]
     if not interiores:
@@ -120,21 +107,18 @@ def quadra_do_clube(chao_plato, plato) -> Polygon:
 
 
 def pegada_de_triangulos(tris) -> object:
-    """União dos triângulos; o milímetro a mais fecha as frestas de arredondamento e depois sai."""
     return unary_union([Polygon([(t[0], t[1]), (t[2], t[3]), (t[4], t[5])]).buffer(0.001, join_style="mitre")
                         for t in tris]).buffer(-0.001, join_style="mitre")
 
 
 def pegada_portaria(tris, margem: float) -> Polygon:
-    """Envoltória dos triângulos de topo da edificação + margem. Caixa não serve: parede solta sem topo
-    estica a caixa do objeto por centenas de metros."""
+    # Caixa não serve: parede solta sem topo estica a caixa do objeto por centenas de metros.
     pts = [(t[i], t[i + 1]) for t in tris for i in (0, 2, 4)]
     return MultiPoint(pts).convex_hull.buffer(margem, join_style="mitre")
 
 
 def furo(tris, pegada, tol: float = 0.01) -> BaseGeometry:
-    """O que a placa perde: os triângulos de baixo do modelo com os três vértices na pegada (+ `tol`), a mesma
-    regra com que gerar_marcos.py recorta o modelo. Sem buraco para o vazio, sem chão coplanar fora."""
+    # Mesma regra com que gerar_marcos.py recorta o modelo.
     a = np.asarray(tris, dtype=float).reshape(-1, 3, 2)
     if not len(a):
         return Polygon()
@@ -150,7 +134,7 @@ def conferir_clube(clube: np.ndarray, quadra: Polygon) -> None:
 
 
 def poligonos_json(g) -> list:
-    """[[exterior, *buracos], ...] com 3 casas."""
+    # [[exterior, *buracos], ...] com 3 casas.
     r = lambda anel: [[round(x, 3), round(y, 3)] for x, y in anel.coords[:-1]]  # noqa: E731
     return [[r(p.exterior), *[r(i) for i in p.interiors]] for p in partes(g)]
 
@@ -173,7 +157,6 @@ def _borda(g, passo: float = 1.0) -> np.ndarray:
 
 
 def _chao_clube(tris, pivo, giro, t: Semelhanca) -> object:
-    """Triângulos de chão do clube no referencial local: desfaz o giro e aplica a transformação."""
     pts = np.asarray(tris, dtype=float).reshape(-1, 2)
     pts = t.aplicar(girar(pts, pivo, -giro))
     return pegada_de_triangulos(pts.reshape(-1, 6).tolist())

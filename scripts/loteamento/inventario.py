@@ -1,5 +1,3 @@
-"""Inventário de layers de um DXF, para decidir o layers.toml. Uso: uv run python -m scripts.loteamento.inventario"""
-
 import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass

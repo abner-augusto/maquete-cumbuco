@@ -92,8 +92,6 @@ def baixar_overture(bbox: tuple[float, float, float, float], cache, refazer: boo
 
 def quebra_mares(proj: Projecao, osm: dict, centro: tuple[float, float], raio: float,
                  largura: float = 8.0) -> list:
-    """Quebra-mares e espigões do OSM no raio, como polígonos (anéis): o que vem como linha
-    ganha `largura` de pedra; way fechado e multipolygon ficam como estão."""
     circulo = Point(centro).buffer(raio, 128)
     partes = []
     for e in osm["elements"]:
@@ -107,7 +105,7 @@ def quebra_mares(proj: Projecao, osm: dict, centro: tuple[float, float], raio: f
 
 def montar_base(proj: Projecao, centro: tuple[float, float], cfg: EntornoCfg,
                 osm_vias: dict, osm_areas: dict, overture: dict) -> dict:
-    """Recorta e converte; falha alto se um download veio vazio (Overpass às vezes devolve 0)."""
+    # Overpass às vezes devolve 0 elementos.
     cvias = Point(centro).buffer(cfg.raio_vias, 128)
     cpredios = Point(centro).buffer(cfg.raio_predios, 128)
     if cfg.raio_predios_orla > cfg.raio_predios and cfg.orla_m > 0:

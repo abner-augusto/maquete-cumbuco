@@ -1,8 +1,3 @@
-"""Placa do loteamento: o platô partido em peças sem sobreposição e levantado em volume.
-
-Cada metro quadrado do platô pertence a uma peça só, por prioridade; por isso nada briga na vista.
-"""
-
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -36,7 +31,6 @@ class PlacaCfg:
 
 
 def partes(g: BaseGeometry) -> list[Polygon]:
-    """Só os polígonos com área (diferenças do shapely deixam linhas e pontos soltos)."""
     if g.is_empty:
         return []
     if isinstance(g, Polygon):
@@ -49,7 +43,6 @@ def _limpa(g: BaseGeometry) -> BaseGeometry:
 
 
 def poligonos(aneis: list[list[Ponto]], tol: float = 0.0) -> BaseGeometry:
-    """Anéis de uma layer → polígonos com furos (o anel de dentro é furo do de fora)."""
     aneis = [simplificar(a, tol) if tol else list(a) for a in aneis if len(a) >= 3]
     return unary_union([Polygon(e, furos).buffer(0) for e, furos in aninhar(aneis)])
 
@@ -106,7 +99,6 @@ def ccw(a: Ponto, b: Ponto, c: Ponto) -> bool:
 
 
 def topo(g: BaseGeometry, z: float) -> tuple[list[list[float]], list[list[int]]]:
-    """Topo plano da peça, triangulado com os furos; normais para cima."""
     vs: list[list[float]] = []
     fs: list[list[int]] = []
     for p in partes(g):
@@ -129,8 +121,6 @@ def _linhas(g: BaseGeometry) -> list[LineString]:
 
 def paredes(g: BaseGeometry, z_topo: float, z_base: float,
             cobertura: BaseGeometry) -> tuple[list[list[float]], list[list[int]]]:
-    """Parede vertical do topo à base no trecho do contorno que `cobertura` (as peças de topo igual
-    ou mais alto) não encosta. A normal aponta para fora da peça."""
     cob = None if cobertura.is_empty else cobertura.buffer(0.005)
     vs: list[list[float]] = []
     fs: list[list[int]] = []
@@ -160,7 +150,6 @@ def altura(nome: str, cfg: PlacaCfg) -> float:
 
 def montar_placa(pecas: dict[str, BaseGeometry], cfg: PlacaCfg, cota: float,
                  materiais_lote: dict[str, str]) -> list[dict]:
-    """Objetos de cena das peças: topo + paredes. Lote com `origem` no centro da caixa do topo (o pivô)."""
     nomes = list(pecas)
     arvore = STRtree([pecas[n] for n in nomes])
     objetos = []

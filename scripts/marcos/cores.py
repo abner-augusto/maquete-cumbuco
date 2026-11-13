@@ -1,15 +1,5 @@
-"""Cores dos marcos: a cor de cada material do SketchUp (média da textura ou a cor do difuso), por triângulo do DAE.
-
-Os GLBs fonte (`clube - sem mobiliario.glb`, `portaria e rotatoria.glb`) só têm materiais por categoria
-(PAREDE, LAJE…), em cores de diagnóstico. O DAE do mesmo SKP guarda os materiais originais. Grava, para
-cada triângulo do DAE, os vértices e o centro no referencial dos GLBs fonte e o índice da cor; o `gerar_marcos.py` pinta
-cada face com a cor do triângulo mais perto da face.
-
-O referencial é o do `prep_np.py` que gerou os GLBs (04-CLUBE/DWG Abner/_scripts 3D para 2D): metros,
-menos ORIGEM, e o clube girado GIRO graus em torno de PIVO.
-
-Uso: uv run --with pycollada python -m scripts.marcos.cores
-"""
+# Os GLBs fonte só têm materiais por categoria (PAREDE, LAJE…); o DAE do mesmo SKP guarda os originais.
+# Referencial do prep_np.py que gerou os GLBs: metros, menos ORIGEM, e o clube girado GIRO graus em torno de PIVO.
 
 import json
 import math
@@ -34,7 +24,6 @@ def linear(c: np.ndarray) -> np.ndarray:
 
 
 def cor_do_efeito(efeito, pasta, cache: dict) -> tuple[float, ...]:
-    """RGBA linear 0–1 do difuso: a média da textura (sRGB → linear) ou a cor; a transparência do efeito."""
     d = efeito.diffuse
     if isinstance(d, tuple):
         rgb = linear(np.array(d[:3], dtype=float))
@@ -55,7 +44,6 @@ def cor_do_efeito(efeito, pasta, cache: dict) -> tuple[float, ...]:
 
 
 def referencial(p: np.ndarray) -> np.ndarray:
-    """Polegadas do DAE (z para cima) → referencial dos GLBs fonte."""
     q = p * POL_M
     clube = q[:, 1] < Y_CLUBE
     q = q - ORIGEM

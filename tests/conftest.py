@@ -24,7 +24,6 @@ def mapa_sintetico():
 
 @pytest.fixture
 def doc_sintetico():
-    """Quadra 01 com dois lotes 10×20 e quadra H com um lote 30×20 de frente em arco; meio-fio ao sul."""
     doc = ezdxf.new()
     msp = doc.modelspace()
     msp.add_lwpolyline(_ret(-1, -1, 22, 22), close=True, dxfattribs={"layer": "QUADRAS"})
@@ -65,7 +64,6 @@ def iptu_sintetico():
 
 @pytest.fixture
 def fonte_teste(tmp_path):
-    """TTF mínima: toda letra de A a Z, Ç, Õ e · é um retângulo 500×700 com avanço 600; espaço avança 300."""
     from fontTools.fontBuilder import FontBuilder
     from fontTools.pens.ttGlyphPen import TTGlyphPen
 

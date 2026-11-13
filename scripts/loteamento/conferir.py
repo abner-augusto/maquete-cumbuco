@@ -1,5 +1,3 @@
-"""Conferência desenho × tabela × IPTU (spec §6). Erro bloqueia o lotes.json; aviso só informa."""
-
 from dataclasses import dataclass, field
 from pathlib import Path
 

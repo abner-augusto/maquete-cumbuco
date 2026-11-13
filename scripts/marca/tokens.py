@@ -1,4 +1,4 @@
-"""Tema do front (formato do temas/manoa.css do espelho) derivado da paleta. Uso: uv run python -m scripts.marca.tokens"""
+# Formato do temas/manoa.css do espelho.
 
 import sys
 
@@ -24,7 +24,6 @@ def _texto_sobre(fundo: Cor, *candidatas: Cor) -> Cor:
 
 
 def _legivel(cor: Cor, fundos: list[Cor], minimo: float = 4.5) -> Cor:
-    """Ajusta a cor contra o pior dos fundos em que o front a usa, até passar em todos."""
     for _ in range(len(fundos)):
         pior = min(fundos, key=lambda f: contraste(cor, f))
         if contraste(cor, pior) >= minimo:

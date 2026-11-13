@@ -1,11 +1,4 @@
-"""Masterplan das fases 2–10 pintado no chão, em segundo plano.
-
-Fonte: página 5 ("MASTERPLAN") do MASTER URBANO.pdf (plano b), em vetor, sem as curvas de nível (`sem_curvas`). O registro é a semelhança
-que leva a poligonal desenhada no PDF à poligonal do DWG R05. O PDF tem y para baixo: o contorno
-entra como (x, −y), senão a semelhança teria de ser um espelho.
-
-Uso: uv run python -m scripts.entorno.masterplan
-"""
+# O PDF tem y para baixo: o contorno entra como (x, −y), senão a semelhança teria de ser um espelho.
 
 import json
 import math
@@ -61,7 +54,6 @@ class Semelhanca:
 
 
 def amostrar(contorno: np.ndarray, passo: float) -> np.ndarray:
-    """Pontos a cada `passo` ao longo do contorno fechado."""
     fechado = np.vstack([contorno, contorno[:1]])
     seg = np.diff(fechado, axis=0)
     comp = np.hypot(seg[:, 0], seg[:, 1])
@@ -73,7 +65,6 @@ def amostrar(contorno: np.ndarray, passo: float) -> np.ndarray:
 
 
 def umeyama(a: np.ndarray, b: np.ndarray, escala: bool = True) -> Semelhanca:
-    """Semelhança de mínimos quadrados a → b, sem espelho; com `escala=False`, rígida (s = 1)."""
     ma, mb = a.mean(0), b.mean(0)
     da, db = a - ma, b - mb
     u, d, vt = np.linalg.svd(db.T @ da / len(a))
@@ -86,8 +77,6 @@ def umeyama(a: np.ndarray, b: np.ndarray, escala: bool = True) -> Semelhanca:
 
 def registrar(origem: np.ndarray, destino: np.ndarray, passo: float = 2.0,
               iteracoes: int = 50) -> tuple[Semelhanca, float]:
-    """Semelhança origem → destino: escala pela razão de áreas, varredura de rotação de 1 em 1° e ICP.
-    Devolve também o resíduo mediano (na unidade do destino)."""
     s0 = math.sqrt(Polygon(destino).buffer(0).area / Polygon(origem).buffer(0).area)  # contorno do PDF é inválido
     dest = amostrar(destino, passo)
     orig = amostrar(origem, passo / s0)
@@ -114,8 +103,6 @@ def _compacidade(c: np.ndarray) -> float:
 
 
 def escolher_contorno(caminhos: list[np.ndarray], alvo: np.ndarray) -> np.ndarray:
-    """O caminho cuja forma (compacidade, invariante à semelhança) mais se parece com a da gleba,
-    entre os 10 de maior área."""
     grandes = sorted(caminhos, key=lambda c: Polygon(c).buffer(0).area, reverse=True)[:10]
     ka = _compacidade(alvo)
     return min(grandes, key=lambda c: abs(_compacidade(c) - ka))
@@ -143,9 +130,6 @@ def _neutro(cor) -> bool:
 
 
 def sem_curvas(pagina):
-    """Cópia vetorial da página sem os traços neutros (cinza, preto, branco): curvas de nível e contornos.
-    Ficam os preenchimentos (áreas, lotes, vias) e os traços coloridos (a hachura das áreas verdes). O PDF
-    não tem camadas, então a separação é pela cor; o texto também sai, como devia no chão da maquete."""
     import pymupdf
 
     doc = pymupdf.open()
@@ -173,9 +157,8 @@ def sem_curvas(pagina):
 
 
 def rasterizar_contorno(pagina, px_por_pt: float, contorno: np.ndarray | None = None) -> tuple[Image.Image, list[float]]:
-    """Raster da caixa do contorno (+5 pt), sem as curvas de nível (`sem_curvas`). Zera o /Rotate da página
-    antes: get_drawings dá o vetor sem o giro e get_pixmap desenha com ele; sem giro, os dois ficam no mesmo
-    espaço (o registro absorve o giro)."""
+    # Zera o /Rotate da página: get_drawings dá o vetor sem o giro e get_pixmap desenha com ele;
+    # sem giro, os dois ficam no mesmo espaço (o registro absorve o giro).
     import pymupdf
 
     pagina.set_rotation(0)
@@ -188,7 +171,6 @@ def rasterizar_contorno(pagina, px_por_pt: float, contorno: np.ndarray | None = 
 
 
 def poligonal_gleba(msp, e0: float, n0: float, ref: Ponto) -> list[Ponto]:
-    """A cópia da poligonal da gleba (o R05 a repete em vários deslocamentos) que contém `ref`."""
     copias = [a for a in aneis_da_layer(msp, ["POLIGONAL"], e0, n0) if len(a) >= 600]
     marca = Polygon([ref, (ref[0] + 0.1, ref[1]), (ref[0], ref[1] + 0.1)])
     dentro = {tuple((round(x, 2), round(y, 2)) for x, y in a): a  # cópia idêntica repetida conta uma vez
@@ -200,7 +182,6 @@ def poligonal_gleba(msp, e0: float, n0: float, ref: Ponto) -> list[Ponto]:
 
 
 def rio_da_gleba(doc, e0: float, n0: float, gleba: Polygon):
-    """A lagoa que contorna o masterplan: a maior hachura de CAMADA_RIO que encosta na gleba georreferenciada."""
     from ezdxf import path as zpath
 
     cands = []
@@ -215,8 +196,6 @@ def rio_da_gleba(doc, e0: float, n0: float, gleba: Polygon):
 
 
 def vias_das_fases(msp, e0: float, n0: float, rotatoria: Ponto):
-    """Pista das avenidas que ligam a Fase 1 às próximas: as bordas de CAMADAS_VIAS na cópia deslocada de
-    DESLOC_FASE1, fechadas (buffer +r, −r) até virar superfície. Confere o deslocamento pela rotatória da Fase 1."""
     from ezdxf import path as zpath
 
     dx, dy = DESLOC_FASE1
@@ -236,14 +215,12 @@ def vias_das_fases(msp, e0: float, n0: float, rotatoria: Ponto):
 
 
 def pintar_por_cima(tile: Image.Image, ext_m, camadas: list[tuple[tuple[int, int, int], object]]) -> Image.Image:
-    """Camadas de cor chapada sobre o tile, de baixo para cima."""
     for cor, geom in camadas:
         tile.paste(cor, (0, 0, *tile.size), _mascara(geom, ext_m, tile.size))
     return tile
 
 
 def _afim(f) -> tuple[float, ...]:
-    """Coeficientes do Image.AFFINE a partir de f(u, v) → (x, y) no raster de entrada."""
     o = np.array(f(0.0, 0.0))
     a, b = np.array(f(1.0, 0.0)) - o, np.array(f(0.0, 1.0)) - o
     return (a[0], b[0], o[0], a[1], b[1], o[1])
@@ -264,7 +241,6 @@ def _mascara(geom, ext_m, tam) -> Image.Image:
 
 def pintar(tile: Image.Image, ext_m, mp_img: Image.Image, meta: dict, mascara,
            saturacao: float, opacidade: float) -> Image.Image:
-    """O masterplan registrado sobre o tile, dessaturado e meio transparente, só dentro da máscara."""
     w, h = tile.size
     x0, y0, x1, y1 = ext_m
     T = Semelhanca(**meta["transf"])

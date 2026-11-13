@@ -52,7 +52,6 @@ ORDEM_AREAS = ["urbano", "verde", "lazer", "areia", "estacionamento", "agua"]  #
 
 
 def recorte_entre(a: tuple[float, float], b: tuple[float, float], margem: float, largura: float = 1e6) -> Polygon:
-    """Faixa perpendicular ao eixo a→b que guarda o trecho entre as duas pontas, mais `margem`."""
     ux, uy = np.subtract(b, a) / math.dist(a, b)
     vx, vy = -uy, ux
     t0, t1 = -margem, math.dist(a, b) + margem
@@ -63,14 +62,11 @@ def recorte_entre(a: tuple[float, float], b: tuple[float, float], margem: float,
 def faixa_da_orla(costa: list[LineString], mar: BaseGeometry, centro: tuple[float, float], raio: float,
                   profundidade: float, a: tuple[float, float], b: tuple[float, float], margem: float,
                   folga_disco: float) -> BaseGeometry:
-    """Terra até `profundidade` m da costa, entre as pontas `a` e `b`, mais o disco do entorno com
-    `folga_disco`: a borda do disco fica dentro da faixa, onde ela ainda não desbotou."""
     perto = unary_union(costa).buffer(profundidade, 16).union(Point(centro).buffer(raio + folga_disco, 128))
     return perto.difference(mar).intersection(recorte_entre(a, b, margem)).buffer(0)
 
 
 def alfa_da_borda(pontos: np.ndarray, faixa: BaseGeometry, mar: BaseGeometry, desbote: float) -> np.ndarray:
-    """0 na borda de terra da faixa, 1 a `desbote` m dela; a borda que encosta no mar não conta."""
     borda = faixa.boundary.difference(mar.buffer(1.0))
     if borda.is_empty:
         return np.ones(len(pontos))
@@ -83,9 +79,6 @@ def malha_orla(g: Grade, faixa: BaseGeometry, centro: tuple[float, float], raio:
                cota_dentro: Callable[[float, float], float], afundar: float,
                janela: tuple[float, float, float, float] | None = None
                ) -> tuple[list[list[float]], list[list[int]], np.ndarray]:
-    """Células da grade com o centro na faixa, menos as que caem inteiras no disco do entorno. O
-    vértice sob o disco fica `afundar` m abaixo da superfície dele (`cota_dentro`): não fura o
-    terreno detalhado. Devolve vértices, faces e os (x, y) dos vértices."""
     cx = g.x0 + g.passo * (np.arange(g.nx - 1) + 0.5)
     cy = g.y0 + g.passo * (np.arange(g.ny - 1) + 0.5)
     mx, my = np.meshgrid(cx, cy)
@@ -128,7 +121,6 @@ def linhas_da_costa_regional(proj: Projecao) -> list[LineString]:
 
 
 def pontas(cfg: EntornoCfg) -> tuple[tuple[float, float], tuple[float, float]]:
-    """As pontas da faixa: os pontos de referência nomeados no entorno.toml (dados/pontos.json)."""
     pontos = {p["nome"]: p for p in json.loads(PONTOS.read_text(encoding="utf-8"))["pontos"]}
     try:
         return tuple((pontos[n]["x"], pontos[n]["y"]) for n in (cfg.orla_de, cfg.orla_ate))  # type: ignore[return-value]
@@ -143,7 +135,6 @@ def caixa_lonlat(proj: Projecao, ext: tuple[float, float, float, float]) -> tupl
 
 
 def baixar_costa(proj: Projecao, cfg: EntornoCfg, refazer: bool = False) -> dict:
-    """A linha de costa de toda a orla: o mar da cena (terreno.py) segue ela além do entorno."""
     a, b = pontas(cfg)
     m = cfg.orla_margem + cfg.orla_profundidade
     s, w, n, e = caixa_lonlat(proj, (min(a[0], b[0]) - m, min(a[1], b[1]) - m, max(a[0], b[0]) + m, max(a[1], b[1]) + m))

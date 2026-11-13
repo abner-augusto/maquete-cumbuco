@@ -1,5 +1,3 @@
-"""Aritmética de cor em sRGB 8 bits e contraste WCAG 2.x."""
-
 Cor = tuple[int, int, int]
 
 
@@ -32,7 +30,6 @@ def contraste(a: Cor, b: Cor) -> float:
 
 
 def ajustar_contraste(cor: Cor, fundo: Cor, minimo: float) -> Cor:
-    """Escurece (fundo claro) ou clareia (fundo escuro) a cor, mantendo o matiz, até o contraste mínimo."""
     alvo: Cor = (0, 0, 0) if luminancia(fundo) > 0.18 else (255, 255, 255)
     for passo in range(101):
         nova = misturar(cor, alvo, passo / 100)

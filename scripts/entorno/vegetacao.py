@@ -1,9 +1,3 @@
-"""Vegetação: posições das três espécies para o front instanciar (vegetacao.glb), já com a cota
-do relevo. Zonas do OSM no raio da vegetação e coqueiros nos canteiros estreitos da Fase 1.
-
-Uso: uv run python -m scripts.entorno.vegetacao
-"""
-
 import json
 import math
 import random
@@ -42,7 +36,6 @@ OFFSET_CANTEIRO = PlacaCfg.carregar(CFG_TOML).alturas["Verdes"]  # coqueiro no t
 
 
 def pontos_zona(zona, m2: float, mistura: dict[str, float], sorte: random.Random) -> list[tuple[float, float, str]]:
-    """Grade com sorteio dentro de cada célula: uma árvore a cada `m2`."""
     if zona.is_empty:
         return []
     dentro = prep(zona)
@@ -59,8 +52,6 @@ def pontos_zona(zona, m2: float, mistura: dict[str, float], sorte: random.Random
 
 
 def canteiros(aneis: list[list[tuple[float, float]]], largura_max: float = 8.0, passo: float = 12.0) -> list[tuple[float, float]]:
-    """Coqueiros no eixo dos canteiros: anel estreito (2·área/perímetro < largura_max) e comprido.
-    Pontos na borda a cada `passo`, levados meia largura para dentro; vizinhos a < passo/2 viram um."""
     pts: list[tuple[float, float]] = []
     for anel in aneis:
         p = Polygon(anel).buffer(0)
@@ -82,7 +73,6 @@ def canteiros(aneis: list[list[tuple[float, float]]], largura_max: float = 8.0, 
 
 
 def sem_perto(pontos: list[tuple[float, float]], retirar, raio: float = 1.5) -> list[tuple[float, float]]:
-    """Tira de `pontos` o ponto mais perto de cada (x, y) de `retirar`, se estiver a até `raio` m."""
     resto = list(pontos)
     for alvo in retirar:
         perto = min(resto, key=lambda p: math.dist(p, alvo), default=None)
@@ -93,8 +83,8 @@ def sem_perto(pontos: list[tuple[float, float]], retirar, raio: float = 1.5) -> 
 
 def instancias(pontos: list[tuple[float, float, str]], relevo, nivel_mar: float, sorte: random.Random,
                offset: float = 0.0) -> dict[str, list[int]]:
-    """Planos [x_dm, y_dm, z_cm, escala_pct, rotacao_graus] por espécie, embaralhados (as N
-    primeiras são uma amostra uniforme: o app escolhe N pelo aparelho). Ponto no mar sai."""
+    # [x_dm, y_dm, z_cm, escala_pct, rotacao_graus] por espécie, embaralhados: as N primeiras são uma
+    # amostra uniforme (o app escolhe N pelo aparelho).
     saida = {e: [] for e in ESPECIES}
     for x, y, esp in pontos:
         z = relevo.cota(x, y)
@@ -113,8 +103,6 @@ def _poligono(a):
 
 
 def area_livre(base: dict, raio: float, plato, gleba=None):
-    """Onde pode haver árvore: o raio menos o platô, vias, prédios, água, areia e o masterplan
-    (as fases 2–10 são pintadas no chão; árvore por cima esconde o desenho)."""
     tirar = [
         plato.buffer(5), faixas(base["vias"], "via_principal").buffer(2), faixas(base["vias"], "via_local").buffer(1),
         *[_poligono(p).buffer(1.5) for pr in base["predios"] for p in pr["poligonos"]],
@@ -126,7 +114,6 @@ def area_livre(base: dict, raio: float, plato, gleba=None):
 
 
 def plantar(base: dict, livre, sorte: random.Random) -> tuple[list[tuple[float, float, str]], dict[str, int]]:
-    """As árvores de cada zona do OSM dentro de `livre`; onde duas zonas se sobrepõem vale a primeira."""
     pts, ja, por_zona = [], Polygon(), {}
     for nome, regra, m2, mistura in ZONAS:
         g = unary_union([_poligono(p) for a in base["areas"] if regra(a["tags"]) for p in a["poligonos"]])

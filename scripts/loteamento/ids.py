@@ -1,5 +1,3 @@
-"""Id canônico de lote: Q<quadra>L<lote> (Q07L04, QHL01)."""
-
 import re
 
 _PREFIXO_QUADRA = re.compile(r"^(QUADRA|QD\.?|Q)\s*-?\s*")

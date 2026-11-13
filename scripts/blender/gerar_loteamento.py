@@ -1,11 +1,4 @@
-"""Constrói o loteamento a partir de cache/cena/loteamento.json. Roda dentro do Blender:
-
-    blender -b --factory-startup --python-exit-code 1 -P gerar_loteamento.py -- cena.json saida.blend saida.glb [previa.png] [contexto.json]
-
-O contexto (o entorno) entra só nas prévias: não vai ao .blend nem ao GLB.
-
-Não calcula geometria: só cria malhas, materiais e exporta. Ajuste é no Python de fora.
-"""
+# O contexto (o entorno) entra só nas prévias: não vai ao .blend nem ao GLB.
 
 import json
 import math
@@ -58,7 +51,6 @@ def material(nome: str) -> bpy.types.Material:
 
 
 def material_textura(arquivo: str) -> bpy.types.Material:
-    """Chão pintado: a imagem do tile na cor base (o glTF leva a imagem embutida). Um material por tile."""
     nome = "chao_" + Path(arquivo).stem
     if nome in bpy.data.materials:
         return bpy.data.materials[nome]
@@ -107,7 +99,6 @@ def construir(dados: dict, nome: str = "Loteamento") -> bpy.types.Collection:
 
 
 def _vista(cena, alvo_xyz, distancia: float, destino: Path) -> None:
-    """Câmera a sudoeste, 40° acima do horizonte, olhando para o alvo."""
     alvo = bpy.data.objects.new("Alvo", None)
     cena.collection.objects.link(alvo)
     alvo.location = alvo_xyz
@@ -136,8 +127,7 @@ def _caixa(cos) -> tuple[tuple[float, float, float], float]:
     return centro, max(max(xs) - min(xs), max(ys) - min(ys))
 
 
-def _mundo(objetos) -> list:
-    """Vértices em coordenadas de mundo: com o pivô no lote, v.co é local."""
+def _vertices_no_mundo(objetos) -> list:
     bpy.context.view_layer.update()  # em -b, matrix_world só reflete location depois do update
     return [ob.matrix_world @ v.co for ob in objetos for v in ob.data.vertices]
 
@@ -153,18 +143,18 @@ def previa(destino: Path, col: bpy.types.Collection, ctx: bpy.types.Collection |
     cena.render.resolution_x, cena.render.resolution_y = 1600, 1000
     sufixo = lambda s: destino.with_name(destino.stem + s + destino.suffix)  # noqa: E731
     if ctx is not None:
-        centro, raio = _caixa(_mundo(ctx.objects))
+        centro, raio = _caixa(_vertices_no_mundo(ctx.objects))
         _vista(cena, centro, raio * 1.1, sufixo("-entorno"))
-    lotes = _mundo([ob for ob in col.objects if ob.name.startswith("Q")])
+    lotes = _vertices_no_mundo([ob for ob in col.objects if ob.name.startswith("Q")])
     if not lotes:
-        centro, raio = _caixa(_mundo(col.objects))
+        centro, raio = _caixa(_vertices_no_mundo(col.objects))
         _vista(cena, centro, raio * 1.1, destino)
         return
     centro, raio = _caixa(lotes)
     _vista(cena, centro, raio * 1.1, destino)
     _vista(cena, centro, 160.0, sufixo("-perto"))
     if "Lagoa" in col.objects:
-        vs = _mundo([col.objects["Lagoa"]])
+        vs = _vertices_no_mundo([col.objects["Lagoa"]])
         meio = (sum(c.x for c in vs) / len(vs), sum(c.y for c in vs) / len(vs), vs[0].z)
         _vista(cena, meio, 140.0, destino.with_name(destino.stem + "-lagoa" + destino.suffix))
 

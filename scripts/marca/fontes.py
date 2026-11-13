@@ -1,5 +1,3 @@
-"""Fontes OFL (Cinzel, Jost) de um commit fixo do google/fonts. Uso: uv run python -m scripts.marca.fontes"""
-
 import hashlib
 import sys
 import urllib.request

@@ -1,5 +1,3 @@
-"""Raiz do repo e leitura do .env (sem dependência externa)."""
-
 import os
 from pathlib import Path
 

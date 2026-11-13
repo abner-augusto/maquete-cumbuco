@@ -1,5 +1,3 @@
-"""Exporta as malhas do CAD em GLB e gera prévias locais do estande."""
-
 import json
 import math
 import sys

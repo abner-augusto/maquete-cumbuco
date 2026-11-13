@@ -1,9 +1,3 @@
-"""Etapa 2 do entorno: mapa do chão (vias e áreas pintadas), vias principais perto do loteamento
-em faixa 3D e prédios extrudados, tudo assentado no relevo da cena.
-
-Uso: uv run python -m scripts.entorno.preparar
-"""
-
 import json
 import math
 import sys
@@ -76,16 +70,12 @@ def altura_predio(p: dict, area: float) -> float:
 
 
 def pegada_longe(g: Polygon, tolerancia: float = 1.0) -> Polygon:
-    """Pegada de prédio distante (faixa da orla, a 2–4 km da câmera): o retângulo mínimo quando a
-    forma já é quase isso; senão, a forma simplificada a `tolerancia` m. Corta os triângulos do GLB."""
     r = g.minimum_rotated_rectangle
     return r if r.area and g.area / r.area > 0.85 else g.simplify(tolerancia)
 
 
 def extrudar(aneis: list, relevo, altura: float,
              cotas: tuple[float, float] | None = None) -> tuple[list[list[float]], list[list[int]]]:
-    """Caixa de teto plano: base na menor cota sob a pegada − 0,3 m (não flutua na encosta),
-    teto na cota média + altura. Com `cotas` (base, teto), o relevo não entra (quebra-mar)."""
     # externo anti-horário e furos horários: a direita de cada lado é fora, a parede olha para fora
     externo, furos = aneis_orientados(Polygon(aneis[0], aneis[1:]))
     if cotas is not None:
@@ -106,8 +96,6 @@ def extrudar(aneis: list, relevo, altura: float,
 
 
 def sem_vias_na_divisa(vias: list[dict], gleba: Polygon) -> list[dict]:
-    """Tira as vias do OSM que correm pela divisa da gleba: o masterplan desenha o acesso real ali, e a
-    metade de fora da faixa pintada aparecia como uma segunda estrada ao lado da CE."""
     borda = gleba.exterior.buffer(BORDA_GLEBA)
     return [v for v in vias if (l := LineString(v["pontos"])).length == 0
             or l.intersection(borda).length < 0.8 * l.length]
@@ -120,9 +108,7 @@ def faixas(vias: list[dict], grupo: str) -> object:
 
 def faixa_3d(pontos: list, largura: float, relevo, offset: float, passo: float = MAX_ARESTA_FAIXA,
              fora=None) -> tuple[list[list[float]], list[list[int]]]:
-    """Faixa pelo eixo da via: uma seção transversal a cada `passo` m, assentada no relevo. Trecho
-    com o meio dentro de `fora` (o platô) sai. Triangular o polígono unido dava diagonais de centenas
-    de metros, que cortavam o relevo ou explodiam no refino."""
+    # Triangular o polígono unido dá diagonais de centenas de metros, que cortam o relevo ou explodem no refino.
     eixo = []
     for a, b in zip(pontos, pontos[1:]):
         n = max(1, math.ceil(math.dist(a, b) / passo))
@@ -150,8 +136,6 @@ def faixa_3d(pontos: list, largura: float, relevo, offset: float, passo: float =
 
 
 def camadas_do_chao(base: dict, vias: list[dict], plato, lagoa=None) -> list[tuple[str, object]]:
-    """As camadas do mapa do chão, de baixo para cima. Com `lagoa` (a do masterplan), a água do OSM
-    some em volta dela: a lagoa do R05 é pintada por cima."""
     camadas = []
     for tipo in ORDEM_AREAS:
         g = unary_union([_poligono(p).buffer(0) for a in base["areas"] if a["tipo"] == tipo for p in a["poligonos"]])
@@ -165,7 +149,6 @@ def camadas_do_chao(base: dict, vias: list[dict], plato, lagoa=None) -> list[tup
 
 def gerar_tiles(camadas, ext: Ext, passo: float, px: int, margem_px: int, pasta: Path, pos=None,
                 prefixo: str = "mapa") -> dict[str, dict]:
-    """Um JPEG por janela, com `margem_px` de borda; `pos(img, ext_m)` pinta por cima (o masterplan)."""
     tiles = {}
     for k, jan in janelas(ext, passo).items():
         ext_m = com_margem(jan, px, margem_px)

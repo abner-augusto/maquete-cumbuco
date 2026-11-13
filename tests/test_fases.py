@@ -9,7 +9,6 @@ from scripts.fases.fases import CURADORIA, IMAGEM, achar_recorte, correlacao
 
 
 def _pagina(semente=3, forma=(400, 600)) -> np.ndarray:
-    """Uma 'página' de manchas suaves e traços, sem repetição, para a correlação ter um só pico."""
     r = np.random.default_rng(semente)
     return ndimage.gaussian_filter(r.random(forma), 4) * 255 + ndimage.gaussian_filter(r.random(forma), 1) * 60
 

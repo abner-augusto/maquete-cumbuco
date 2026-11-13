@@ -1,5 +1,3 @@
-"""Rotatória procedural: calçada circular e escultura de curvas, sem inscrições."""
-
 import math
 from pathlib import Path
 
@@ -65,7 +63,6 @@ def curva(inicio, trechos, passos=20):
 
 
 def casca(nome, contorno, profundidade, espessura, pedra, ouro):
-    """Silhueta extrudada com leve torção: frente e verso claros, borda dourada."""
     n = len(contorno)
     perfil = [Vector((x, z, 0)) for x, z in contorno]
     indices = {tuple(v): i for i, v in enumerate(perfil)}

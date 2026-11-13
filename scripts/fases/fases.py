@@ -1,17 +1,3 @@
-"""Fases do loteamento: onde cada uma fica, para a etiqueta "Fase N · Em breve" na maquete.
-
-Fonte: `masterplan-fases.png`, um recorte da página do MASTERPLAN (MASTER URBANO.pdf) em que o autor marcou o
-número de cada fase. Os pontos estão em `curadoria.json`, em pixels desse recorte. O recorte é achado na página do
-PDF por correlação cruzada normalizada (escala e posição); dali, o ponto vai ao referencial da maquete pela
-mesma semelhança que pinta o masterplan no chão (scripts/entorno/masterplan.py, cache/entorno/masterplan.json).
-
-A Fase 1 é a própria maquete e não ganha etiqueta: não entra no arquivo.
-
-Uso: uv run python -m scripts.fases.fases   (depois de scripts.entorno.masterplan)
-
-Escreve dados/fases.json.
-"""
-
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -37,7 +23,7 @@ SCORE_MIN = 0.8          # correlação mínima aceita
 
 @dataclass(frozen=True)
 class Registro:
-    """Onde o recorte está no raster da página: pixel da página = (x, y) + escala · pixel do recorte."""
+    # pixel da página = (x, y) + escala · pixel do recorte
     escala: float
     x: float
     y: float
@@ -45,7 +31,6 @@ class Registro:
 
 
 def correlacao(pagina: np.ndarray, molde: np.ndarray) -> np.ndarray:
-    """Correlação cruzada normalizada do molde em cada posição da página (só onde ele cabe inteiro)."""
     h, w = molde.shape
     t = molde - molde.mean()
     soma = signal.fftconvolve(pagina, t[::-1, ::-1], mode="valid")
@@ -63,7 +48,6 @@ def _cinza(img: Image.Image, escala: float) -> np.ndarray:
 
 
 def achar_recorte(pagina: np.ndarray, recorte: Image.Image) -> Registro:
-    """Escala e posição do recorte na página: busca grossa em metade da resolução e refino na cheia."""
     pagina_grossa = pagina[::GROSSO, ::GROSSO]
     melhor = (-1.0, 1.0, 0, 0)
     for f in ESCALAS:
@@ -92,8 +76,8 @@ def achar_recorte(pagina: np.ndarray, recorte: Image.Image) -> Registro:
 
 
 def para_a_cena(u: float, v: float, reg: Registro, pagina: pymupdf.Page, T: Semelhanca) -> tuple[float, float]:
-    """Pixel (u, v) do recorte → metros (leste, norte) da maquete. A página tem /Rotate: o ponto sai do espaço
-    girado do raster e volta ao do vetor, que é o em que o masterplan foi registrado (y para baixo, daí o −y)."""
+    # A página tem /Rotate: o ponto sai do espaço girado do raster e volta ao do vetor, o em que o masterplan
+    # foi registrado (y para baixo, daí o −y).
     ponto = pymupdf.Point((reg.x + u * reg.escala) / PX_POR_PT, (reg.y + v * reg.escala) / PX_POR_PT) * pagina.derotation_matrix
     leste, norte = T.aplicar(np.array([[ponto.x, -ponto.y]]))[0]
     return float(leste), float(norte)

@@ -1,16 +1,6 @@
-"""Cor do chão do clube a partir da vista de topo do SketchUp (`maqueteclubeplanta.jpg`).
-
-Os pisos externos do clube (grama, deque, areia das quadras, borda da piscina) estão com o material padrão
-do SketchUp no DAE: brancos. A vista de topo exportada do SketchUp completo tem essas cores. Grava a planta
-recortada no clube (JPEG) e a afinidade metro → pixel do recorte, no referencial do GLB fonte do clube; o
-`gerar_marcos.py` a aplica como textura, por projeção de cima, nas faces horizontais do clube.
-
-A afinidade foi achada uma vez (2026-10-17) casando as arestas de uma vista de topo ortogonal do
-`marcos.glb` com as da planta (busca de giro e escala por correlação, `cv2.matchTemplate`), e levada ao
-referencial do GLB fonte pelo encaixe do clube. Vale enquanto a planta e o GLB fonte forem os mesmos.
-
-Uso: uv run python -m scripts.marcos.planta
-"""
+# A afinidade foi achada uma vez (2026-10-17) casando as arestas de uma vista de topo ortogonal do `marcos.glb`
+# com as da planta (giro e escala por correlação, `cv2.matchTemplate`) e levada ao referencial do GLB fonte
+# pelo encaixe do clube. Vale enquanto a planta e o GLB fonte forem os mesmos.
 
 import json
 import sys

@@ -9,7 +9,6 @@ from scripts.entorno.masterplan import Semelhanca, escolher_contorno, pintar, po
 
 
 def _estrela(n=120):
-    """Contorno radial sem simetria de rotação nem autointerseção."""
     ts = [2 * math.pi * k / n for k in range(n)]
     return np.array([((1000 + 300 * math.sin(3 * t) + 150 * math.cos(5 * t + 0.7)) * math.cos(t),
                       (1000 + 300 * math.sin(3 * t) + 150 * math.cos(5 * t + 0.7)) * math.sin(t)) for t in ts])

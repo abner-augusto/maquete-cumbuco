@@ -1,9 +1,4 @@
-"""Símbolo de arco e pilar (estudo E5), redesenhado por parâmetros.
-
-Unidades: largura 1000, y para cima a partir da base. Ajuste um número em Parametros e rode de novo;
-a sobreposição com o E5 sai em cache/marca/comparacao-simbolo.png.
-Uso: uv run python -m scripts.marca.simbolo
-"""
+# Unidades: largura 1000, y para cima a partir da base.
 
 import math
 import sys
@@ -43,7 +38,6 @@ class Parametros:
     pilar_topo_espessura: float = 24.0
 
     def espessura(self, u: float) -> float:
-        """Espessura da fita no parâmetro u ∈ [0, 1]: fina na subida e na crista, larga na descida."""
         if u <= self.pico_u:
             w, expoente = u / (2 * self.pico_u), self.expoente_subida
         else:
@@ -51,7 +45,6 @@ class Parametros:
         return self.espessura_pe + (self.espessura_pico - self.espessura_pe) * math.sin(math.pi * w) ** expoente
 
     def espessura_maxima(self, x: float) -> float:
-        """Espessura da fita perto da abscissa x (para o teste do vão)."""
         topo = _curva_topo(self)
         i = min(range(len(topo)), key=lambda k: abs(topo[k][0] - x))
         return self.espessura(i / (len(topo) - 1))
@@ -102,7 +95,6 @@ def _altura_topo_fita(p: Parametros, x: float) -> float:
 
 
 def _pilar(p: Parametros) -> list[Ponto]:
-    """Pilar atrás da fita: a base dele segue a borda de cima da fita (no E5 ele não desce até o chão)."""
     x0, x1 = p.pilar_x
     rx, ry = x1 - x0, p.pilar_topo - p.pilar_ombro
     topo = [(x0 + rx * math.cos(a), p.pilar_ombro + ry * math.sin(a)) for a in (math.pi / 2 * (1 - i / 40) for i in range(41))]
@@ -111,7 +103,6 @@ def _pilar(p: Parametros) -> list[Ponto]:
 
 
 def _pilar_vazio(p: Parametros) -> list[Ponto]:
-    """Vazio do pilar: o mesmo quarto de elipse do topo, recuado pela parede, pela face e pela faixa do topo."""
     x0, x1 = p.pilar_x[0] + p.pilar_parede, p.pilar_x[1] - p.pilar_face
     rx, ry = x1 - x0, p.pilar_topo - p.pilar_topo_espessura - p.pilar_ombro
     topo = [(x0 + rx * math.cos(a), p.pilar_ombro + ry * math.sin(a)) for a in (math.pi / 2 * (1 - i / 40) for i in range(41))]

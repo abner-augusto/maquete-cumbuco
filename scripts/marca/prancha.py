@@ -1,7 +1,4 @@
-"""Prancha comparativa dos logos, para o gate da escolha. Uso: uv run python -m scripts.marca.prancha
-
-Fica em cache/ (fora do git) e não é publicada: o nome é confidencial até o compliance.
-"""
+# Fica em cache/ (fora do git) e não é publicada: o nome é confidencial até o compliance.
 
 import base64
 import io

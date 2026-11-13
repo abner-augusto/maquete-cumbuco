@@ -1,5 +1,3 @@
-"""Brandbook preliminar em HTML autocontido e PDF. Uso: uv run python -m scripts.marca.brandbook"""
-
 import base64
 import re
 import sys
@@ -32,8 +30,6 @@ _FUNDO = {"positivo": "creme", "negativo": "preto", "mono-escuro": "creme", "mon
 
 
 class _Usos:
-    """Entrega cada SVG com ids renomeados a cada uso: a mesma assinatura aparece em várias seções."""
-
     def __init__(self, svgs: dict[str, str]):
         self._svgs, self._n = svgs, 0
 

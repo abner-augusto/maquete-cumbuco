@@ -1,7 +1,3 @@
-"""Terreno perto com o furo da placa: a grade de 10 m de sempre (dois triângulos por célula, a mesma
-superfície em que vegetação e prédios se assentam), menos a placa. Só a célula que cruza o contorno
-é recortada; a borda do furo coincide com o contorno da placa por construção."""
-
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 from shapely.prepared import prep

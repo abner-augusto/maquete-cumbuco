@@ -1,5 +1,4 @@
-"""Corte do recorte do chão em 2×2 tiles. As linhas caem em nós da grade, então nenhuma célula
-(e nenhum triângulo) é partida. Chave "ij": i = 0 oeste / 1 leste, j = 0 sul / 1 norte."""
+# Chave "ij": i = 0 oeste / 1 leste, j = 0 sul / 1 norte.
 
 Ext = tuple[float, float, float, float]
 
@@ -17,7 +16,6 @@ def janelas(ext: Ext, passo: float) -> dict[str, Ext]:
 
 
 def da_janela(janela: Ext, x: float, y: float) -> bool:
-    """Borda oeste e sul incluídas, leste e norte não: cada ponto cai numa janela só."""
     x0, y0, x1, y1 = janela
     return x0 <= x < x1 and y0 <= y < y1
 
@@ -27,8 +25,7 @@ def ext_da_grade(g) -> Ext:
 
 
 def com_margem(janela: Ext, px: int, margem_px: int) -> Ext:
-    """Janela aumentada em `margem_px` pixels de cada lado, para a imagem de `px` no lado maior.
-    O UV usa esta extensão: o texel da borda já tem o conteúdo do vizinho e o filtro não abre costura."""
+    # O UV usa esta extensão: o texel da borda já tem o conteúdo do vizinho e o filtro não abre costura.
     x0, y0, x1, y1 = janela
     m = max(x1 - x0, y1 - y0) / (px - 2 * margem_px) * margem_px
     return (x0 - m, y0 - m, x1 + m, y1 + m)

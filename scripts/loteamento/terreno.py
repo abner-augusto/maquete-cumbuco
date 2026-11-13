@@ -1,8 +1,3 @@
-"""Terreno da cena: platô do loteamento, morro pelo levantamento suavizado e entorno pelo Copernicus.
-
-Uso: uv run python -m scripts.loteamento.terreno
-"""
-
 import json
 import math
 import sys
@@ -60,14 +55,12 @@ def _nos(g: Grade) -> tuple[np.ndarray, np.ndarray]:
 
 
 def amostrar_grade(g: Grade, xs: np.ndarray, ys: np.ndarray) -> np.ndarray:
-    """Bilinear presa na borda (como Grade.cota), vetorizada; NaN da grade se propaga."""
     fx = np.clip((np.asarray(xs) - g.x0) / g.passo, 0, g.nx - 1)
     fy = np.clip((np.asarray(ys) - g.y0) / g.passo, 0, g.ny - 1)
     return map_coordinates(np.array(g.z, dtype=float), [fy, fx], order=1, mode="nearest")
 
 
 def reamostrar(g: Grade, ext: tuple[float, float, float, float], passo: float) -> Grade:
-    """`g` numa grade nova; fora de `g` (ou onde ela é NaN) fica NaN."""
     x0, y0, x1, y1 = ext
     nx, ny = int(round((x1 - x0) / passo)) + 1, int(round((y1 - y0) / passo)) + 1
     gx, gy = np.meshgrid(x0 + passo * np.arange(nx), y0 + passo * np.arange(ny))
@@ -78,14 +71,12 @@ def reamostrar(g: Grade, ext: tuple[float, float, float, float], passo: float) -
 
 
 def cota_plato(lev: Grade, lotes: list[dict], passo: float = 0.5) -> float:
-    """Mediana do levantamento nos centróides dos lotes, arredondada a `passo`."""
     zs = [lev.cota(*centroide([tuple(p) for p in l["poligono"]])) for l in lotes]
     zs = [z for z in zs if not math.isnan(z)]
     return float(round(float(np.median(zs)) / passo) * passo)
 
 
 def ajustar_datum(lev: Grade, dem: Grade, onde: np.ndarray) -> float:
-    """Mediana de (levantamento − Copernicus) nos nós de `lev` marcados em `onde` que têm levantamento."""
     z = np.array(lev.z, dtype=float)
     gx, gy = _nos(lev)
     d = amostrar_grade(dem, gx, gy)
@@ -94,8 +85,6 @@ def ajustar_datum(lev: Grade, dem: Grade, onde: np.ndarray) -> float:
 
 
 def separar_mar(dem: Grade, nivel: float = 0.0, rebaixo: float = 1.0) -> Grade:
-    """Água ligada à borda com cota ≤ `nivel` é mar: desce a `nivel − rebaixo`. Baixio isolado
-    no continente sobe a `nivel + 0,2`, para o plano do mar não aparecer nele."""
     z = np.array(dem.z, dtype=float)
     rotulo, _ = label(z <= nivel)
     borda = set(np.unique(np.concatenate([rotulo[0], rotulo[-1], rotulo[:, 0], rotulo[:, -1]]))) - {0}
@@ -105,17 +94,11 @@ def separar_mar(dem: Grade, nivel: float = 0.0, rebaixo: float = 1.0) -> Grade:
 
 
 def _distancia_fora(g: Grade, aneis: list[list[Ponto]]) -> np.ndarray:
-    """Metros de cada nó até a área dos anéis (0 dentro). A distância ao nó de dentro mais perto
-    passa da distância à borda em até uma célula: desconta-se uma célula (erra para o lado do platô)."""
     return np.maximum(distance_transform_edt(~mascara(g, aneis)) * g.passo - g.passo, 0.0)
 
 
 def compor_perto(lev: Grade, dem: Grade, poligonal: list[list[Ponto]], cota: float, cfg: TerrenoCfg,
                  livre: BaseGeometry | None = None) -> Grade:
-    """Platô na cota dentro da poligonal; talude de `cfg.talude` m; depois o levantamento suavizado
-    (σ = `cfg.sigma`) até `cfg.alcance` m, passando ao Copernicus em `cfg.transicao` m. Onde o
-    levantamento acaba, a troca também é gradual (peso pela cobertura suavizada). Em `livre` (a faixa
-    da CE), o chão natural: o talude do platô não sobe nela."""
     z = np.array(lev.z, dtype=float)
     tem = ~np.isnan(z)
     s = cfg.sigma / lev.passo
@@ -135,8 +118,6 @@ def compor_perto(lev: Grade, dem: Grade, poligonal: list[list[Ponto]], cota: flo
 
 
 def aplicar_acesso(g: Grade, a: Acesso, acfg: AcessoCfg, area: BaseGeometry, talude: float) -> Grade:
-    """Chão do corredor do acesso: 0,5 m abaixo do perfil até uma célula e meia da área (a célula que a
-    borda corta fica toda no perfil), depois talude de `talude` m até o chão que já estava."""
     gx, gy = _nos(g)
     dist = shapely.distance(area, shapely.points(gx, gy))
     perto = dist <= 1.5 * g.passo + talude
@@ -150,11 +131,6 @@ def aplicar_acesso(g: Grade, a: Acesso, acfg: AcessoCfg, area: BaseGeometry, tal
 
 
 def costurar(perto: Grade, longe: Grade, aneis: int = 3) -> Grade:
-    """A borda do perto (10 m) vira a do longe (30 m): a malha do entorno liga ao perto pela linha do
-    buraco, e as duas só se encostam sem fresta se tiverem a mesma cota ao longo dela. A costa e o
-    acesso mexem no perto depois do Copernicus e deixavam a borda até metros fora da reta do longe
-    (a água aparecia por baixo, em frestas finas). A borda recebe o longe; os `aneis` nós de dentro
-    voltam ao perto aos poucos, sem degrau."""
     gx, gy = _nos(perto)
     alvo = amostrar_grade(longe, gx, gy)  # sobre a borda, a bilinear é a reta entre os nós do longe
     z = np.array(perto.z, dtype=float)
@@ -167,11 +143,6 @@ def costurar(perto: Grade, longe: Grade, aneis: int = 3) -> Grade:
 def malha_entorno(dem: Grade, buraco: tuple[float, float, float, float], centro: tuple[float, float],
                   raio: float, janela: tuple[float, float, float, float] | None = None
                   ) -> tuple[list[list[float]], list[list[int]]]:
-    """Grade do Copernicus em triângulos: células com algum canto no raio e fora do `buraco`
-    (o terreno perto). O buraco cai em linhas da grade, então cada célula está toda dentro ou fora.
-    Canto de fora do raio vem ao círculo pelo seu raio, com a cota da superfície da malha ali: a
-    borda do mundo é redonda, não em escada de célula. Com `janela`, só as células cujo centro
-    cai nela (tiles.da_janela)."""
     bx0, by0, bx1, by1 = buraco
     z = dem.z
     indice: dict[tuple[int, int], int] = {}
@@ -209,7 +180,6 @@ def malha_entorno(dem: Grade, buraco: tuple[float, float, float, float], centro:
 
 
 def disco_mar(centro: tuple[float, float], raio: float, nivel: float, n: int = 96) -> tuple[list[list[float]], list[list[int]]]:
-    """Plano da água: disco no raio do entorno; a terra acima do nível o esconde."""
     cx, cy = centro
     v = [[round(cx, 2), round(cy, 2), nivel]] + [
         [round(cx + raio * math.cos(2 * math.pi * k / n), 2), round(cy + raio * math.sin(2 * math.pi * k / n), 2), nivel]
@@ -221,9 +191,6 @@ DESTINO_LONGE = RAIZ / "cache" / "cena" / "longe.json"
 
 
 class Relevo:
-    """Cota do chão da cena: a grade perto onde ela existe (borda incluída), o Copernicus ajustado fora.
-    A borda do perto coincide com o longe (costura do 3c), então a troca não tem degrau."""
-
     def __init__(self, perto: Grade, longe: Grade):
         self.perto, self.longe = perto, longe
         self._x1 = perto.x0 + perto.passo * (perto.nx - 1)
@@ -242,7 +209,6 @@ class Relevo:
 
 
 def aneis_do_plato(msp, cfg: TerrenoCfg, lotes: list[dict], e0: float, n0: float) -> list[list[Ponto]]:
-    """Poligonal + todas as áreas da cena + lotes: o que fica plano (e fora do entorno)."""
     camadas = [l for ls in CenaCfg.carregar(CFG_TOML).camadas.values() for l in ls]
     return (aneis_da_layer(msp, cfg.poligonal, e0, n0) + aneis_da_layer(msp, camadas, e0, n0)
             + [[tuple(p) for p in l["poligono"]] for l in lotes])
@@ -256,7 +222,6 @@ ZONA_LAGOA = 300.0  # m além da gleba do masterplan em que a água do OSM dá l
 
 
 def lagoa_do_masterplan():
-    """(gleba, lagoa) do cache do masterplan (scripts.entorno.masterplan), ou None sem ele."""
     from shapely.geometry import Polygon, shape
 
     from scripts.entorno.masterplan import META

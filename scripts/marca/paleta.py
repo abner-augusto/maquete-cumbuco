@@ -1,5 +1,3 @@
-"""Paleta medida nos logos raster. Uso: uv run python -m scripts.marca.paleta"""
-
 import json
 import sys
 from dataclasses import asdict, dataclass
@@ -48,7 +46,7 @@ class Paleta:
 
 
 def pixels(img: Image.Image, lado: int | None = None) -> np.ndarray:
-    """Pixels RGB; sem lado, na resolução nativa (reduzir mistura traço fino com o fundo)."""
+    # Sem lado, na resolução nativa: reduzir mistura o traço fino com o fundo.
     img = img.convert("RGB")
     if lado:
         img.thumbnail((lado, lado))
@@ -76,7 +74,6 @@ def _mediana(px: np.ndarray, nome: str) -> str:
 
 
 def medir(imagens_ouro: list[Image.Image], imagens_preto: list[Image.Image]) -> Paleta:
-    """Ouros e creme das imagens de logo sobre fundo claro; preto das imagens de fundo escuro."""
     px = np.concatenate([pixels(i) for i in imagens_ouro])
     h, s, v = _hsv(px)
     dourado = px[(h >= 20) & (h <= 55) & (s >= 0.25) & (v >= 0.25)]
