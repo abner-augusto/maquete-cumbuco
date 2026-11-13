@@ -24,6 +24,8 @@ Use Conventional Commits: `tipo(escopo opcional): descrição`. Mantenha os tipo
 
 The design spec lives in `docs/superpowers/specs/`. Read it before changing scope, data rules, or the pipeline.
 
+Para scripts do pipeline, esquemas de `dados/` ou ordem de geração, leia `.agents/guides/pipeline.md`.
+
 ## Sources of truth
 
 - Lot geometry, cadastre, prices, and media are read from the terrain folder pointed to by `TERRENO_DIR` in `.env`. Never copy a number into the front by hand: regenerate `dados/` with the scripts.
