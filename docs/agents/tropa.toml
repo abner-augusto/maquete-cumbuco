@@ -18,6 +18,7 @@ include = [
     "scripts/**/*.py",
     "tests/**/*.py",
     "frontend/src/**/*.ts",
+    "frontend/src/**/*.svelte",
     "frontend/e2e/**/*.ts",
     "frontend/scripts/**/*.mjs",
 ]
