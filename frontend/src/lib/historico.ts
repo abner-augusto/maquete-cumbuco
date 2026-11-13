@@ -36,7 +36,6 @@ function entrada(valor: unknown): valor is Entrada {
     && ['some', 'espiar', 'cheia'].includes(e.estado.batente);
 }
 
-/** A restauração aplica o retrato completo e nunca escreve no histórico. */
 export function criarHistorico(historico: Historico, endereco: () => string,
   ler: () => EstadoNavegacao, aplicar: (estado: EstadoNavegacao) => void) {
   let pendente = false;

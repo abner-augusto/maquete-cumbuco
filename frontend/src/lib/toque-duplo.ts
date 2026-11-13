@@ -22,7 +22,7 @@ const PADRAO: Limites = {
   distanciaMaxima: 28,
 };
 
-/** Reconhece dois contatos completos. Os tempos usam a mesma origem monotônica de PointerEvent.timeStamp. */
+// Os tempos usam a mesma origem monotônica de PointerEvent.timeStamp.
 export function criarToqueDuplo(ajustes: Partial<Limites> = {}) {
   const limites = { ...PADRAO, ...ajustes };
   const ativos = new Set<number>();

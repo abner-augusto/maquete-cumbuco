@@ -9,7 +9,6 @@ import { lerEnv } from './publicar.mjs';
 const LIMITE = 15 * 1024 * 1024;
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-/** O padrão dos termos proibidos, sem diferenciar maiúsculas; null se não houver nenhum. */
 export function nomeProibido(lista) {
   const termos = (lista ?? '').split(',').map(t => t.trim()).filter(Boolean);
   return termos.length ? new RegExp(termos.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'i') : null;

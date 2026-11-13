@@ -6,7 +6,6 @@ import type { MapaCosta } from './mapa-costa';
 
 const QUADRO_MS = 1000 / 24;
 
-/** Pede um quadro novo para a água? Só no entorno, sem movimento reduzido, a ~24 quadros/s. */
 export function quadroDaAgua(o: { entorno: boolean; reduzido: boolean; agora: number; ultimo: number }): boolean {
   return o.entorno && !o.reduzido && o.agora - o.ultimo >= QUADRO_MS;
 }
@@ -22,10 +21,7 @@ export interface CoresCeu {
   sol: THREE.Vector3;
 }
 
-/**
- * Até onde o plano da água vai, em metros do `centro` (dos lotes): lido da malha, não de um número.
- * No mundo: o GLB quantizado guarda a posição normalizada e a escala no nó.
- */
+// No mundo: o GLB quantizado guarda a posição normalizada e a escala no nó.
 export function alcanceDaAgua(malha: THREE.Mesh, centro: THREE.Vector3): number {
   const p = malha.geometry.getAttribute('position');
   const v = new THREE.Vector3();
@@ -38,7 +34,6 @@ export function alcanceDaAgua(malha: THREE.Mesh, centro: THREE.Vector3): number 
   return Math.sqrt(r2);
 }
 
-/** Cota do mar (y do mundo), lida de um vértice do plano da água. */
 export function nivelDaAgua(malha: THREE.Mesh): number {
   return new THREE.Vector3().fromBufferAttribute(malha.geometry.getAttribute('position'), 0).applyMatrix4(malha.matrixWorld).y;
 }
@@ -52,7 +47,6 @@ const vertexShader = /* glsl */ `
   }
 `;
 
-/** Um parâmetro numérico da água: vira uniform do shader e slider do painel do modo dev. */
 export interface ParametroAgua {
   uniforme: string;
   nome: string;
@@ -62,7 +56,7 @@ export interface ParametroAgua {
   valor: number;
 }
 
-/** Valores do laboratório costeiro, ajustados à costa do Cumbuco (raso/espuma). */
+// Valores do laboratório costeiro, ajustados à costa do Cumbuco (raso/espuma).
 export const PARAMETROS_AGUA: readonly ParametroAgua[] = [
   { uniforme: 'uOndaAmp', nome: 'Ondulação: amplitude', min: 0, max: 2.5, passo: 0.01, valor: 0.75 },
   { uniforme: 'uOndaFreq', nome: 'Ondulação: frequência', min: 0.0005, max: 0.012, passo: 0.0001, valor: 0.006 },
@@ -226,11 +220,8 @@ const fragmentShader = /* glsl */ `
   }
 `;
 
-/**
- * Onde a água começa e acaba de desbotar para o céu, em metros da câmera, pelo `raio` da terra do
- * entorno. O polígono do mar prolonga a costa em linha reta logo depois da terra: o desbotar tem de
- * estar completo a dois raios, senão essa aresta se lê contra o céu.
- */
+// O polígono do mar prolonga a costa em linha reta logo depois da terra: o desbotar tem de estar completo
+// a dois raios, senão essa aresta se lê contra o céu.
 export function desbotarDaAgua(raio: number): THREE.Vector2 {
   return new THREE.Vector2(raio * 0.75, raio * 2);
 }
@@ -238,13 +229,11 @@ export function desbotarDaAgua(raio: number): THREE.Vector2 {
 export type ModoCor = 'claro' | 'escuro';
 export type CorDaAgua = { rasa: string; funda: string; espuma: string };
 
-/** Cores da água nos modos claro e escuro: turquesa rasa, azul funda e espuma (o reflexo do céu vem por cima). */
 export const COR_AGUA_PADRAO: Readonly<Record<ModoCor, Readonly<CorDaAgua>>> = {
   claro: { rasa: '#70E1DF', funda: '#3196AF', espuma: '#A6BFC4' },
   escuro: { rasa: '#1C5A6A', funda: '#0E2A44', espuma: '#46646E' },
 };
 
-/** As cores em uso: o painel do modo dev as muda, e trocar de modo não as perde. */
 export const COR_AGUA: Record<ModoCor, CorDaAgua> = { claro: { ...COR_AGUA_PADRAO.claro }, escuro: { ...COR_AGUA_PADRAO.escuro } };
 
 export type MaterialAgua = THREE.ShaderMaterial & {
@@ -262,7 +251,6 @@ export type MaterialAgua = THREE.ShaderMaterial & {
   };
 };
 
-/** Põe as cores do modo claro ou escuro na água. */
 export function corDaAgua(m: MaterialAgua, modo: ModoCor): void {
   const c = COR_AGUA[modo];
   m.uniforms.uRasa.value.set(c.rasa);
@@ -270,7 +258,6 @@ export function corDaAgua(m: MaterialAgua, modo: ModoCor): void {
   m.uniforms.uEspuma.value.set(c.espuma);
 }
 
-/** Entrega à água o mapa da costa, fino (em volta do loteamento) ou largo: a faixa rasa e a espuma passam a seguir a praia. */
 export function costaDaAgua(m: MaterialAgua, mapa: MapaCosta, alcance: 'fina' | 'longe'): void {
   const [textura, caixa] = alcance === 'fina' ? [m.uniforms.uCostaFina, m.uniforms.uCostaFinaCaixa] : [m.uniforms.uCostaLonge, m.uniforms.uCostaLongeCaixa];
   textura.value.dispose();

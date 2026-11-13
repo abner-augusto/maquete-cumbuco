@@ -3,17 +3,12 @@
 // que está acima do nível do mar; a distância vem de um chanfro de duas passadas na CPU.
 import * as THREE from 'three';
 
-/** Além desta distância (m) a água é funda: o mapa não precisa guardar mais. */
+// Além desta distância (m) a água é funda: o mapa não precisa guardar mais.
 export const ALCANCE_COSTA = 6000;
 const LADO = 2048;
 const CAMADA = 7;
 const RAIZ2 = Math.SQRT2;
 
-/**
- * Distância, em metros, de cada célula à terra mais próxima (0 na própria terra). Chanfro 1/√2
- * em duas passadas: erro de poucos por cento, de sobra para uma faixa de água de centenas de metros.
- * Sem terra nenhuma, tudo fica em `Infinity`.
- */
 export function distanciaAteATerra(terra: Uint8Array, n: number, passo: number): Float32Array {
   const d = new Float32Array(n * n);
   for (let i = 0; i < d.length; i++) d[i] = terra[i] ? 0 : Infinity;
@@ -38,7 +33,7 @@ export function distanciaAteATerra(terra: Uint8Array, n: number, passo: number):
   return d;
 }
 
-/** Um byte por célula, em raiz da distância: fino na praia, onde a espuma precisa, e filtrável pela GPU. */
+// Em raiz da distância: fino na praia, onde a espuma precisa, e filtrável pela GPU.
 export function codificarDistancia(d: Float32Array, max: number): Uint8Array {
   const out = new Uint8Array(d.length);
   for (let i = 0; i < d.length; i++) out[i] = Math.round(Math.sqrt(Math.min(d[i]! / max, 1)) * 255);
@@ -108,11 +103,6 @@ const cotaFrag = /* glsl */ `
   }
 `;
 
-/**
- * Cota do terreno (m, ao menos 0) em (x, z do mundo), lida de uma vista de cima feita uma vez; vale
- * dentro do quadrado de meio lado `meio` em volta de `centro` e devolve a maior cota de um raio de
- * `folga` pixels. Barata o bastante para amostrar os anéis de distância de 16 em 16 metros.
- */
 export function mapaDeCotas(renderer: THREE.WebGLRenderer, cena: THREE.Scene, terreno: THREE.Object3D[], centro: THREE.Vector3, meio: number, folga = 3): (x: number, z: number) => number {
   const material = new THREE.ShaderMaterial({ vertexShader: alturaVert, fragmentShader: cotaFrag, side: THREE.DoubleSide });
   const pixels = vistaDeCima(renderer, cena, terreno, centro, 0, meio, material);
@@ -132,10 +122,6 @@ export function mapaDeCotas(renderer: THREE.WebGLRenderer, cena: THREE.Scene, te
   };
 }
 
-/**
- * Mapa da costa num quadrado de lado `2 * meio` em volta de `centro`. `terreno` são as malhas do
- * entorno detalhado; `nivel` é a cota do mar. Renderiza uma vez e devolve a textura.
- */
 export function mapaDaCosta(renderer: THREE.WebGLRenderer, cena: THREE.Scene, terreno: THREE.Object3D[], centro: THREE.Vector3, nivel: number, meio: number): MapaCosta {
   const material = new THREE.ShaderMaterial({ uniforms: { uNivel: { value: nivel + 0.1 } }, vertexShader: alturaVert, fragmentShader: alturaFrag, side: THREE.DoubleSide });
   const pixels = vistaDeCima(renderer, cena, terreno, centro, nivel, meio, material);

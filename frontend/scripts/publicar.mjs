@@ -15,13 +15,8 @@ export function lerEnv(arquivo) {
     .map(l => { const i = l.indexOf('='); return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^"|"$/g, '')]; }));
 }
 
-/** `https://exemplo.com/` e `exemplo.com` dão o mesmo domínio. */
 export const normalizarDominio = d => (d ?? '').trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
 
-/**
- * O wrangler.jsonc com a rota do domínio e, se pedido, outro nome de Worker. O endereço cru
- * (workers.dev) fica sempre ligado, com ou sem domínio: serve de link de reserva.
- */
 export function configurar(base, { dominio = '', nome = '' } = {}) {
   const config = JSON.parse(base.replace(/^\s*\/\/.*$/gm, ''));
   delete config.$schema;

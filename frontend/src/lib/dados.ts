@@ -10,7 +10,7 @@ export interface Marco { id: string; nome: string; x: number; y: number; z: numb
 export interface PontoBruto { nome: string; categoria: string; lat: number; lon: number; x: number; y: number;
   km: number; minutos_carro: number; faixa: 'proximo' | 'distante'; foto: string | null; credito: string | null;
   licenca: string | null; licenca_url: string | null; fonte_foto: string | null }
-/** Uma fase do projeto: o centro dela, em metros da origem da maquete (x leste, y norte). */
+// Em metros da origem da maquete (x leste, y norte).
 export interface Fase { id: number; nome: string; x: number; y: number }
 export interface Dados { lotes: Lote[]; marcos: Marco[]; pontos: PontoBruto[]; fontesPontos: string; fases: Fase[]; config: Config }
 

@@ -6,13 +6,8 @@ import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 
-/** Raios dos anéis de distância, em metros: 1, 2 e 4 km. */
 export const RAIOS_ANEIS: readonly number[] = [1000, 2000, 4000];
 
-/**
- * Rótulos de anel que cabem na tela: do anel de fora para dentro (o maior é o que mais informa),
- * fica o que está a `folga` px ou mais de todos os que já ficaram. De longe, os anéis se juntam.
- */
 export function rotulosQueCabem<T extends { raio: number; tela: { x: number; y: number } | null }>(aneis: T[], folga: number): T[] {
   const ficam: T[] = [];
   for (const a of [...aneis].sort((p, q) => q.raio - p.raio)) {

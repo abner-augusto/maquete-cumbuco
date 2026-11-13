@@ -16,14 +16,9 @@ import { Chao } from './chao';
 export type Tela = { x: number; y: number };
 export type Formato = 'retrato' | 'paisagem';
 
-/** Quanto um marcador pode sair da tela antes de sumir: é a faixa em que ele esmaece. */
 export const MARGEM_FADE = 48;
 
-/**
- * Onde cada coisa do entorno cai na tela, em pixels. Ponto perto: a posição, ou `null` além de
- * `MARGEM_FADE` fora da tela. Ponto distante: o rumo na tela (radianos, y para baixo) e a posição
- * real quando ela cai dentro da tela.
- */
+// `angulo` é o rumo na tela em radianos, com y para baixo.
 export interface QuadroEntorno {
   origem: Tela;
   /** Distância da câmera ao alvo, em metros: de perto, as setas da borda saem. */
@@ -33,7 +28,7 @@ export interface QuadroEntorno {
   /** O centro de cada fase do projeto; a posição vai um pouco além da borda, para a etiqueta esmaecer ao sair. */
   fases: { id: number; nome: string; tela: Tela | null }[];
 }
-/** O sol da maquete: azimute em graus do norte (horário), altitude em graus, calor do céu (0 a 1) e halo do sol no céu (0 a 1). */
+// azimute em graus do norte (horário), altitude em graus; calor e brilho de 0 a 1
 export interface Sol { azimute: number; altitude: number; calor: number; brilho: number }
 
 export interface Cena {
@@ -82,7 +77,7 @@ export function loader(base: URL): GLTFLoader {
   return new GLTFLoader().setDRACOLoader(draco).setMeshoptDecoder(MeshoptDecoder);
 }
 
-/** Direção a partir de azimute (graus do norte, horário) e altura: norte = −Z, leste = +X. */
+// Azimute em graus do norte, horário; norte = −Z, leste = +X.
 export function direcao(azimute: number, altura: number): THREE.Vector3 {
   const az = THREE.MathUtils.degToRad(azimute);
   const alt = THREE.MathUtils.degToRad(altura);

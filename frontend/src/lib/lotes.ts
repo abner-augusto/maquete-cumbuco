@@ -4,7 +4,6 @@ const norm = (s: string) => s.trim().toUpperCase();
 /** "07" e "7" são a mesma quadra; "H" fica "H". */
 const quadra = (s: string) => (/^\d+$/.test(s) ? s.padStart(2, '0') : s);
 
-/** Quadra e lote em qualquer formato que o corretor digita: "7 4", "Q7L4", "q07 l04", "07-04". */
 export function buscar(lotes: Lote[], termo: string): Lote[] {
   const m = norm(termo).match(/^Q?\s*([0-9]{1,2}|[A-Z])(?:\s*[-\s]\s*|\s*L\s*)?([0-9]{1,2})?$/);
   if (!m) return [];
@@ -31,7 +30,6 @@ export const metros = (n: number) => `${n2.format(n)} m`;
 export const formatarArea = (n: number) => `${n2.format(n)} m²`;
 export const reais = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
-/** Link para compartilhar o lote: só o `lote`, mais o `precos=0` de quem apresenta sem preço. */
 export function linkDoLote(href: string, id: string): string {
   const url = new URL(href);
   const semPreco = url.searchParams.get('precos') === '0';

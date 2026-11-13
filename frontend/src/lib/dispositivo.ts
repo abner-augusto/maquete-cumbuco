@@ -3,10 +3,6 @@
 
 const CHAVE = { visitou: 'maquete:visitou', cor: 'maquete:cor', vegetacao: 'maquete:vegetacao' } as const;
 
-/**
- * Quanto da vegetação do entorno o aparelho desenha: tela com mouse, tudo; tablet, metade;
- * celular, um quarto. `maquete:vegetacao` (0 a 1) sobrepõe a faixa, para medir num aparelho.
- */
 export const vegetacao = {
   ler(): number {
     try {
@@ -20,7 +16,6 @@ export const vegetacao = {
   },
 };
 
-/** Escolha manual de claro/escuro; sem ela, vale o `prefers-color-scheme` do aparelho. */
 export const modoCor = {
   ler(): 'claro' | 'escuro' | null {
     try {

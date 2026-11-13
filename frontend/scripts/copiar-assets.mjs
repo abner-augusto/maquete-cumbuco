@@ -33,10 +33,8 @@ const MODELOS_FINAIS = path.join(FRONT, 'modelos-finais');
 
 const readFileSyncTexto = p => readFileSync(p, 'utf8');
 
-/**
- * Meshopt com as posições em 16 bits (o padrão, 14, dá passos de 24 cm numa janela de 4 km do
- * entorno: a terra baixa, a 20 cm da água, caía no plano dela e piscava; em 16 bits o passo é de 6 cm).
- */
+// Posições em 16 bits (o padrão é 14): em 14, uma janela de 4 km dá passos de 24 cm e a terra a 20 cm da água
+// pisca no plano dela; em 16 o passo é de 6 cm.
 export async function comprimirDocumento(doc) {
   const { meshopt } = await import('@gltf-transform/functions');
   const { MeshoptEncoder } = await import('meshoptimizer');
