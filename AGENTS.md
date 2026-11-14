@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Maquete interativa 3D (Three.js) do loteamento Cidade das Américas — Residencial Cumbuco, Fase 1 (Cancun), para venda de lotes. Publicada como Worker de assets estáticos no Cloudflare e usada offline via `frontend/offline/iniciar.cmd`.
+Interactive 3D model (Three.js) of the Cidade das Américas — Residencial Cumbuco subdivision, Phase 1 (Cancun), for selling lots. Published as a static-assets Worker on Cloudflare and used offline through `frontend/offline/iniciar.cmd`.
 
 ## Check
 
@@ -18,13 +18,13 @@ Docs, `GLOSSARY.md`, UI text, and commit messages are Brazilian Portuguese.
 
 ## Commits
 
-Use Conventional Commits: `tipo(escopo opcional): descrição`. Mantenha os tipos convencionais em inglês (`feat`, `fix`, `docs`, `refactor`, `chore`) e escreva a descrição em português brasileiro. Exemplo: `feat(rotatoria): adiciona monumento com praça central`.
+Use Conventional Commits: `tipo(escopo opcional): descrição`. Keep the conventional types in English (`feat`, `fix`, `docs`, `refactor`, `chore`) and write the description in Brazilian Portuguese. Example: `feat(rotatoria): adiciona monumento com praça central`.
 
 ## Design
 
 The design spec lives in `docs/superpowers/specs/`. Read it before changing scope, data rules, or the pipeline.
 
-Para scripts do pipeline, esquemas de `dados/` ou ordem de geração, leia `.agents/guides/pipeline.md`.
+For pipeline scripts, `dados/` schemas or generation order, read `.agents/guides/pipeline.md`.
 
 ## Sources of truth
 
