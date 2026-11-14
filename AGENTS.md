@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Maquete interativa 3D (Three.js) do loteamento Cidade das Américas — Residencial Cumbuco, Fase 1 (Cancun), para venda de lotes. Publicada como Worker de assets estáticos no Cloudflare e usada offline via `iniciar.cmd`.
+Maquete interativa 3D (Three.js) do loteamento Cidade das Américas — Residencial Cumbuco, Fase 1 (Cancun), para venda de lotes. Publicada como Worker de assets estáticos no Cloudflare e usada offline via `frontend/offline/iniciar.cmd`.
 
 ## Check
 
